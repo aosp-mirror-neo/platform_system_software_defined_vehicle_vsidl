@@ -1,0 +1,77 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package com.sdv.google.vsidl_provider_agent;
+
+import "google/protobuf/descriptor.proto";
+import "sdv/diagnostics/v1/diagnostics_syntax.proto";
+
+message GetDiagnosticsDeclarationRequest {
+  ServiceFqbn fqbn = 1;
+}
+
+message GetDiagnosticsDeclarationResponse {
+  .sdv.diagnostics.v1.DiagnosticsDeclaration declaration = 1;
+}
+
+message GetPublicationDescriptorRequest {
+  ServiceFqbn source_fqbn = 1;
+  UnitTypeProto unit_type = 2;
+}
+
+message GetPublicationDescriptorResponse {
+  PublicationDescriptorProto publication_descriptor = 1;
+}
+
+message GetRpcMethodDescriptorRequest {
+  ServiceFqbn source_fqbn = 1;
+  UnitTypeProto unit_type = 2;
+  string method_name = 3;
+}
+
+message GetRpcMethodDescriptorResponse {
+  optional MessageDescriptorProto request_message_descriptor = 1;
+  optional MessageDescriptorProto response_message_descriptor = 2;
+}
+
+message GetMessageDescriptorRequest {
+  ServiceFqbn source_fqbn = 1;
+  string message_name = 2;
+}
+
+message GetMessageDescriptorResponse {
+  MessageDescriptorProto message_descriptor = 1;
+}
+
+message ServiceFqbn {
+  string package = 1;
+  string bundle = 2;
+}
+
+message UnitTypeProto {
+  string package = 1;
+  string bundle = 2;
+  string type_name = 3;
+}
+
+message MessageDescriptorProto {
+  repeated .google.protobuf.FileDescriptorProto file_descriptors = 1;
+  string message_name = 2;
+}
+
+message PublicationDescriptorProto {
+  message SizeMetadataProto {
+    message FieldSizeConstraintProto {
+      optional uint32 repeated_max_count = 1;
+      optional uint32 variable_type_max_size = 2;
+    }
+
+    uint32 message_size = 1;
+    uint32 message_count = 2;
+    map<string, FieldSizeConstraintProto> field_size_constraints = 3;
+  }
+
+  MessageDescriptorProto message_descriptor = 1;
+  SizeMetadataProto size_metadata = 2;
+}

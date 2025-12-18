@@ -1,0 +1,10 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package com.vsidl_provider_agent_api_test;
+
+message TestMessage {
+  string name = 1;
+  int64 number = 2;
+}

@@ -1,0 +1,16 @@
+# Copyright 2024 Google LLC
+# proto-file: //system/software_defined_vehicle/core_services/service_bundles_registry/proto/sdv_service_bundles_manifest.proto
+# proto-message: SdvServiceBundleManifestEntry
+
+# This manifest will be used by a config-only APEX for the Vsidl Provider Agent.
+sdv_service_bundle_metadata {
+    # This name must match the agent's Bundle Name
+    name: "Agent"
+    version_number: 1
+    version_name: "1"
+
+    # Reference the manifest itself to mark this as a config-only declaration.
+    native_library_path: "etc/sdv_service_bundles_manifest.textproto"
+
+    access_control_list_policy_path: "etc/acl.textproto"
+}
