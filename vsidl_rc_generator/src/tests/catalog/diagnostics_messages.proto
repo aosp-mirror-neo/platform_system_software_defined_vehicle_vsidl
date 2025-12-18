@@ -1,0 +1,21 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package diagnostics;
+
+message DataItem {
+  float value = 1;
+}
+
+message RoutineRequest {
+  int64 request = 1;
+}
+
+message IoData {
+  float value = 1;
+}
+
+message EventData {
+  float value = 1;
+}

@@ -1,0 +1,40 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package sdv.transmission;
+
+import "sdv/vsidl/v1/annotations.proto";
+import "google/protobuf/empty.proto";
+import "nested.proto";
+
+enum Location {
+  FRONT_LEFT = 0;
+  FRONT_RIGHT = 1;
+}
+
+message TirePressure {
+  option (sdv.vsidl.v1.publication) = {
+    instances_enum: "Location"
+    message_count: 8
+    model: SINGLE_PUB
+  };
+
+  uint32 pressure = 1;
+  NestedMessage nested = 2;
+}
+
+message TirePressureRange {
+  option (sdv.vsidl.v1.publication) = {
+    model: SINGLE_PUB
+    message_count: 8
+  };
+
+  enum Range {
+    OK = 0;
+    LOW = 1;
+    HIGH = 2;
+  }
+
+  Range range = 1;
+}
