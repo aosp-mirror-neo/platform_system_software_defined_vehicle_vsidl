@@ -1,0 +1,13 @@
+# VSIDL provider infrastructure owners
+imariggis@google.com
+hrayan@google.com
+tantoshchuk@google.com
+tmot@google.com
+
+# All OWNERS below are marked as #{LAST_RESORT_SUGGESTION} so that they won't be auto-suggested by Gerrit.
+# Please always CC Domain OWNERS when asking other OWNERS to approve.
+
+# Build Team
+# Build ownership should only be used to resolve build breakages or critical PDK-blocking issues.
+atomar@google.com #{LAST_RESORT_SUGGESTION}
+hugojacob@google.com #{LAST_RESORT_SUGGESTION}

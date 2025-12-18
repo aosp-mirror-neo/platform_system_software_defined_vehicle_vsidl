@@ -1,0 +1,9 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package com.sdv.google.sample.vsidl_provider;
+
+message NestedMessage {
+  uint32 nested = 1;
+}

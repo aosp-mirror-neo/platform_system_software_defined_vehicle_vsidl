@@ -1,0 +1,88 @@
+// Copyright 2025 Google LLC
+
+use crate::local_provider_from_apexes::LocalProviderFromApexes;
+use crate::local_provider_from_files::LocalProviderFromFiles;
+use crate::provider_from_agent::ProviderFromAgent;
+use crate::types::DataType;
+// use crate::types::DataSource;
+use crate::vsidl_provider_api::VsidlConfigProviderV1;
+use log::warn;
+use mockall::automock;
+use sdv_comms::ContextRef;
+use std::collections::HashSet;
+
+/// Abstract factory for VsidlProvider sub-implementations
+#[automock]
+pub trait Factory {
+    /// Implementation fetching data from local VM system files.
+    fn provider_from_files(
+        &self,
+        data_types: HashSet<DataType>,
+        source_directory_path: &str,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>>;
+
+    /// Implementation fetching data from local VM APEX files.
+    fn provider_from_apexes(
+        &self,
+        data_types: HashSet<DataType>,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>>;
+
+    /// Implementation fetching data from VSIDL provider Agent on the VM corresponding to the FQIN in the request.
+    ///
+    /// This implementation will provide data from local VM Agent, in case FQIN is from local VM.
+    fn provider_from_agent(
+        &self,
+        data_types: HashSet<DataType>,
+        ctx: ContextRef,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>>;
+
+    /// Implementation fetching data from VSIDL provider Agent on the remote VM corresponding to the FQIN in the request.
+    ///
+    /// This implementation will *not* provide data from local VM Agent, allowing to fallback for in-process implementations of VsidlProvider (i.e. provider from APEXes or files).
+    fn provider_from_remote_agent(
+        &self,
+        data_types: HashSet<DataType>,
+        ctx: ContextRef,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>>;
+}
+
+pub struct FactoryImpl;
+
+impl Factory for FactoryImpl {
+    fn provider_from_agent(
+        &self,
+        data_types: HashSet<DataType>,
+        ctx: ContextRef,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
+        Some(Box::new(ProviderFromAgent::new_from_agent(ctx, data_types)))
+    }
+
+    fn provider_from_remote_agent(
+        &self,
+        data_types: HashSet<DataType>,
+        ctx: ContextRef,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
+        Some(Box::new(ProviderFromAgent::new_from_remote_agent(ctx, data_types)))
+    }
+
+    fn provider_from_apexes(
+        &self,
+        data_types: HashSet<DataType>,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
+        match LocalProviderFromApexes::new(data_types) {
+            Ok(local_provider_from_apexes) => Some(Box::new(local_provider_from_apexes)),
+            Err(e) => {
+                warn!("Failed to create local provider from apexes: {e:?}");
+                None
+            }
+        }
+    }
+
+    fn provider_from_files(
+        &self,
+        data_types: HashSet<DataType>,
+        source_directory_path: &str,
+    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
+        Some(Box::new(LocalProviderFromFiles::new(source_directory_path, data_types)))
+    }
+}
