@@ -1,0 +1,13 @@
+# Copyright 2024 Google LLC
+# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "someip.rpc"
+
+service_bundle {
+    name: "HelloService"
+
+    server {
+        service: "HelloInterface"
+    }
+}

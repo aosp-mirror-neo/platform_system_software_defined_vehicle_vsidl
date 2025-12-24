@@ -1,0 +1,14 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package someip.rpc;
+
+import "hello_messages.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service HelloInterface {
+  rpc SayHello(HelloMessageRequest) returns (HelloMessageResponse) {}
+  rpc Foo(google.protobuf.Empty) returns (google.protobuf.BoolValue) {}
+}

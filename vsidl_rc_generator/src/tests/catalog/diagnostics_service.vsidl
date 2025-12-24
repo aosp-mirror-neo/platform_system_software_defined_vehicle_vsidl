@@ -1,0 +1,45 @@
+# Copyright 2024 Google LLC
+# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "diagnostics"
+
+service_bundle {
+    name: "DiagnosticsService"
+    server {
+        service: "com.sdv.google.diagnostics.data_item.DataItemService"
+    }
+    server {
+        service: "com.sdv.google.diagnostics.routine_control.RoutineControlService"
+    }
+    server {
+        service: "com.sdv.google.diagnostics.io_control.IoControlService"
+    }
+    server {
+        service: "com.sdv.google.diagnostics.fault.FaultListenerService"
+    }
+
+    diagnostics_declaration {
+        data_item {
+            id: "data_item"
+            message_name: "DataItem"
+        }
+
+        routine {
+            id: "routine"
+            start {
+                request: "RoutineRequest"
+            }
+        }
+
+        event {
+            id: "event"
+            extended_data_message_name: "EventData"
+        }
+
+        io_control {
+            id: "io_control"
+            message_name: "IoData"
+        }
+    }
+}

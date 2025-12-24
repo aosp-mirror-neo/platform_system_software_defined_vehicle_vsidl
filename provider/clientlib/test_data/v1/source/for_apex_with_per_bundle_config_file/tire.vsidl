@@ -1,0 +1,30 @@
+# Copyright 2024 Google LLC
+# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file"
+
+service_bundle {
+    name: "Manager"
+
+    publisher {
+        message: "com.sdv.google.sample.vsidl_provider.TirePressure"
+        channel: "FRONT_LEFT_PER_BUNDLE"
+        channel: "FRONT_RIGHT_PER_BUNDLE"
+    }
+}
+
+service_bundle {
+    name: "Monitor"
+
+    subscriber {
+        message: "com.sdv.google.sample.vsidl_provider.TirePressure"
+        channel: "FRONT_LEFT_PER_BUNDLE"
+        channel: "FRONT_RIGHT_PER_BUNDLE"
+    }
+
+    publisher {
+        message: "com.sdv.google.sample.vsidl_provider.TirePressureRange"
+        channel: "PER_BUNDLE"
+    }
+}

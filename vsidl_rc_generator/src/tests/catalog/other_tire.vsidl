@@ -1,0 +1,29 @@
+# Copyright 2024 Google LLC
+# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "sdv.transmission2"
+
+service_bundle {
+    name: "OtherManager"
+
+    publisher {
+        message: "OtherTirePressure"
+        channel: "FRONT_LEFT"
+        channel: "FRONT_RIGHT"
+    }
+}
+
+service_bundle {
+    name: "OtherMonitor"
+
+    subscriber {
+        message: "OtherTirePressure"
+        channel: "FRONT_LEFT"
+        channel: "FRONT_RIGHT"
+    }
+
+    publisher {
+        message: "OtherTirePressureRange"
+    }
+}

@@ -1,0 +1,20 @@
+// Copyright 2024 Google LLC
+{
+  "sdv_core_services_presubmit": [
+    {
+      "name": "sdv_core_core_services_unit_vsidl_provider_agent_api_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidl_provider_agent_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_config_provider_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidl_rc_generator_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidl_rc_generator_golden_tests"
+    }
+  ]
+}

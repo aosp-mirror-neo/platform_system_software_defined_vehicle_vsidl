@@ -1,0 +1,13 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package someip.rpc;
+
+message HelloMessageRequest {
+  string request = 1;
+}
+
+message HelloMessageResponse {
+  string response = 1;
+}

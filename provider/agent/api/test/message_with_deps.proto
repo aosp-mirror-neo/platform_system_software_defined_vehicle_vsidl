@@ -1,0 +1,13 @@
+// Copyright 2024 Google LLC
+
+syntax = "proto3";
+
+package com.vsidl_provider_agent_api_test;
+
+import "google/protobuf/timestamp.proto";
+
+message TestMessageWithDeps {
+  string name = 1;
+  int64 number = 2;
+  .google.protobuf.Timestamp time = 3;
+}
