@@ -1,5 +1,17 @@
 #!/bin/sh
-# Copyright 2025 Google LLC
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 ${ANDROID_BUILD_TOP}/out/host/linux-x86/bin/vsidl_rc_generator --catalog-path ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog --output-path ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/latest/Android._bp --variant runtime-config-prebuilts     --filegroup system_software_defined_vehicle_core_services_stable_test_tire_vsidl --dependency-catalog-path ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1
 
