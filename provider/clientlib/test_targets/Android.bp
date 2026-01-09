@@ -18,6 +18,10 @@
 //! This file was generated using the following command:
 //! vsidl_rc_generator --catalog-path ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source --output-path ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/vsidl/provider/clientlib/test_targets/Android.bp --variant runtime-config-prebuilts     --filegroup test_v1_catalog_files
 
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
 // Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.
 //
 // Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file manifest declaration
