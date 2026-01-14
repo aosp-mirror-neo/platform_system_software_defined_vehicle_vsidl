@@ -1,0 +1,358 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "sdv.test"
+
+service_bundle {
+    name: "AllAstNodeTypes"
+
+    publisher { message: "Pressure" channel: "ONE" }
+    publisher { message: "Pressure" channel: "TWO" }
+    subscriber { message: "Pressure" channel: "TWO" }
+
+    server { service: "DummyRpc" }
+    client { service: "DummyRpc" }
+
+    diagnostics_declaration {
+        data_item {
+            id: "data_item_id1"
+            message_name: "sdv.test.diagnostics.DataItemOne"
+            is_writable: true
+        }
+
+        io_control {
+            id: "io_control_data1"
+            message_name: "sdv.test.diagnostics.IoControllableData"
+        }
+
+        event {
+            id: "event1"
+            extended_data_message_name: "sdv.test.diagnostics.FirstEventExt"
+            fault_listener_mask: 0x3
+        }
+
+        routine {
+            id: "routine1"
+            start {
+                request: "sdv.test.diagnostics.RoutineRequestParameter"
+                response: "sdv.test.diagnostics.RoutineResponseParameter"
+            }
+            stop {
+                response: "Temperature"
+            }
+            result {
+                response: "Temperature"
+            }
+        }
+    }
+
+    build_cfg {
+        target_name: "my_custom_target_name"
+    }
+}
+
+some_ip_mapping {
+  someip_service_mapping {
+    someip_service_id: 0x3200
+    version_major: 0x1
+    version_minor: 0x0
+    instance {
+      instance_id: 0x1000
+      sdv_service_unit_parameterization {key: 0 value: "first_service_unit"}
+      sdv_service_unit_parameterization {key: 1 value: "second_service_unit"}
+    }
+    instance_impl {
+      offered_event {
+        group_id: 0x9320
+        event_id: 0x8320
+        simple_event {
+          sdv_unit_type {
+            package_name: "com.google.sdv"
+            service_bundle_name: "SomeIpBroker"
+            type_name: "SamplePressureUnitType"
+          }
+          service_unit: 0
+          type_definition {
+            length_field_size: ZERO
+            field {
+              field_name: "pressure"
+              field_type { someip_primitive: UINT32 }
+            }
+          }
+        }
+      }
+    }
+    instance_impl {
+      offered_event {
+        group_id: 0x9320
+        event_id: 0x8321
+        simple_event {
+          sdv_unit_type {
+            package_name: "com.google.sdv"
+            service_bundle_name: "SomeIpBroker"
+            type_name: "SampleTemperatureUnitType"
+          }
+          service_unit: 1
+          type_definition {
+            length_field_size: ZERO
+            field {
+              field_name: "temperature"
+              field_type { someip_primitive: UINT32 }
+            }
+          }
+        }
+      }
+    }
+    instance_impl {
+      offered_event {
+        group_id: 0x9320
+        event_id: 0x8320
+        group_event {
+          type_definition {
+            field {
+              field_name: "some_bool"
+              field_type { someip_primitive: BOOL }
+            }
+            field {
+              field_name: "some_int"
+              field_type { someip_primitive: UINT32 }
+            }
+          }
+          event_part {
+            sdv_unit_type {
+              package_name: "com.sdv.someip"
+              service_bundle_name: "SomeIpBroker"
+              type_name: "FirstPart"
+            }
+            service_unit: 0
+            field_name_mapping {key: "some_bool" value: "sample_boolean"}
+          }
+          event_part {
+            sdv_unit_type {
+              package_name: "com.sdv.someip"
+              service_bundle_name: "SomeIpBroker"
+              type_name: "SecondPart"
+            }
+            service_unit: 1
+            field_name_mapping {key: "some_int" value: "sample_int"}
+          }
+        }
+      }
+    }
+    instance_impl {
+      offered_interface {
+        sdv_unit_type {
+          package_name: "com.sdv.someip"
+          service_bundle_name: "SomeIpBroker"
+          type_name: "SomeIpInterface"
+        }
+        service_unit: 1
+        method {
+          procedure: "DoubleNum"
+          method_id: 0x1500
+          request_payload_mapping {
+            field {
+              field_name: "request"
+              field_type { someip_primitive: UINT32 }
+            }
+          }
+          response_payload_mapping {
+            field {
+              field_name: "response"
+              field_type { someip_primitive: UINT32 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.sdv.someip.sample"
+      service_bundle_name: "ServiceBundleFoo"
+      type_name: "SdvInterface"
+    }
+    someip_service_id: 0x48
+    version_major: 0x1
+    version_minor: 0x0
+    offered_topic {
+      type_definition {
+        length_field_size: ZERO
+        field {
+          field_name: "value"
+          field_type { someip_primitive: UINT32 }
+        }
+      }
+      simple_mapping {
+        group_id: 0x491
+        event_id: 54
+      }
+    }
+    service_unit_mapping {
+      service_unit_id {
+        package_name: "com.sdv.someip.sample"
+        service_bundle_name: "ServiceBundleName"
+        service_unit_name: "com-sdv-someip-sample-name"
+      }
+      instance_id: 0x0001
+      fire_and_forget_method {
+        service_id: 0x3700
+        instance_id: 0x1000
+        version_major: 0x1
+        version_minor: 0x0
+        method_id: 0x1000
+      }
+    }
+  }
+}
+
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.sdv.someip.sample"
+      service_bundle_name: "ServiceBundleFoo"
+      type_name: "SdvInterface"
+    }
+    someip_service_id: 0x48
+    version_major: 0x1
+    version_minor: 0x0
+    offered_interface {
+      method {
+        procedure: "AddTen"
+        method_id: 0x1600
+        request_payload_mapping {
+          field {
+            field_name: "request"
+            field_type { someip_primitive: UINT32 }
+          }
+        }
+        response_payload_mapping {
+          field {
+            field_name: "response"
+            field_type { someip_primitive: UINT32 }
+          }
+        }
+      }
+    }
+    service_unit_mapping {
+      service_unit_id {
+        package_name: "com.sdv.someip.sample"
+        service_bundle_name: "ServiceBundleName"
+        service_unit_name: "com-sdv-someip-sample-name"
+      }
+      instance_id: 0x0001
+    }
+  }
+}
+
+vhal_mapping {
+  property {
+    prop_config {
+      prop: 392168201
+      access: READ
+      change_mode: ON_CHANGE
+      config_array: 1
+      config_array: 2
+      config_array: 3
+      config_string: "any"
+      min_sample_rate: 1.0
+      max_sample_rate: 2.0
+      area_configs {
+        area_id: 123
+      }
+    }
+    default_value {
+      float_values: 200.0
+    }
+    default_area_config {
+      area_id: 9
+      min_float_value: 100.0
+      max_float_value: 200.0
+      supported_enum_values: 1
+      supported_enum_values: 2
+      supported_enum_values: 3
+      access: READ
+      support_variable_update_rate: false
+    }
+  }
+  source {
+    unit_type: "sdv.test.TirePressure"
+    action: ACTION_SUBSCRIBE
+    field_path: "pressure"
+  }
+  area_mapping {
+    area {
+      area_config {
+        area_id: 1
+        min_float_value: 193.0
+      max_float_value: 300.0
+      supported_enum_values: 1
+      access: WRITE
+      support_variable_update_rate: true
+      }
+      default_value {
+        float_values: 100.0
+      }
+    }
+    publication_instance: "FRONT_LEFT"
+  }
+  area_mapping {
+    area {
+      area_config {
+        area_id: 2
+      }
+      default_value {
+      float_values: 110.0
+    }
+    }
+    publication_instance: "FRONT_RIGHT"
+  }
+  area_mapping {
+    area {
+      area_config {
+        area_id: 4
+        min_float_value: 193.0
+      max_float_value: 300.0
+      supported_enum_values: 1
+      access: READ
+      support_variable_update_rate: false
+      }
+      default_value {
+      float_values: 120.0
+    }
+    }
+    publication_instance: "REAR_LEFT"
+  }
+  area_mapping {
+    area {
+      area_config {
+        area_id: 8
+        min_float_value: 193.0
+      max_float_value: 300.0
+      supported_enum_values: 1
+      access: READ
+      support_variable_update_rate: false
+      }
+      default_value {
+      float_values: 120.0
+    }
+    }
+    publication_instance: "REAR_RIGHT"
+  }
+}

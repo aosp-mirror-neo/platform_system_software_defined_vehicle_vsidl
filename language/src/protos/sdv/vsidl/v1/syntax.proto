@@ -1,0 +1,191 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// Defines a schema for Vehicle Services IDL (VSIDL)
+
+syntax = "proto3";
+
+package sdv.vsidl.v1;
+
+import "google/protobuf/any.proto";
+import "sdv/diagnostics/v1/diagnostics_syntax.proto";
+import "sdv/someip/v1/someip.proto";
+import "sdv/vhal/vhal_proxy.proto";
+
+// Parsing metadata that describes where the syntax element was found in the
+// input. Do not fill fields of this type manually.
+message Span {
+  // The path to the file where this syntax element was found.
+  string file_path = 1;
+  // The starting character offset of the syntax element.
+  uint32 start = 2;
+  // The ending character offset of the syntax element.
+  uint32 end = 3;
+}
+
+// Defines the metadata for a unit type within the SDV ecosystem.
+message UnitType {
+  // Required. Underling protobuf message/interface of the unit type. Must be
+  // defined in the same package as the service bundle it is associated with.
+  string type = 1;
+
+  // Parsing metadata that describes where the syntax element was found in the
+  // input. Do not fill fields of this type manually.
+  Span span = 10000;
+  Span type_span = 10001;
+}
+
+// Defines additional information used to configure build settings
+message BuildConfiguration {
+  /// Build target name
+  optional string target_name = 1;
+  // Do not generate code for this service bundle
+  optional bool skip_codegen = 2;
+
+  // Parsing metadata that describes where the syntax element was found in the
+  // input. Do not fill fields of this type manually.
+  optional Span span = 10000;
+  optional Span target_name_span = 10001;
+  optional Span skip_codegen_span = 10002;
+}
+
+// Defines an SDV service
+message ServiceBundle {
+  // Represents a publisher within a service bundle.
+  message Publisher {
+    // Deprecated, use "message" instead. The type of data being published.
+    string type = 1 [ deprecated = true ];
+    // Deprecated, use "channel" instead.
+    repeated string instance = 2 [ deprecated = true ];
+    // Name of the service unit. Name may only use characters from [a-z0-9\-]+,
+    // must start with [a-z], may not end with a hyphen,
+    // and may not contain consecutive hyphens.
+    string service_unit_name = 3;
+    // Required. The type of data being published.
+    string message = 4;
+    // Specific channel(s) on which the data is being published.
+    repeated string channel = 5;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    Span span = 10000;
+    Span service_unit_name_span = 10003;
+    Span message_span = 10004;
+    repeated Span channel_span = 10005;
+  }
+
+  // Represents a subscriber within a service bundle.
+  message Subscriber {
+    // Deprecated, use "message" instead. The type of data being subscribed to.
+    string type = 1 [ deprecated = true ];
+    // Deprecated, use "channel" instead.
+    repeated string instance = 2 [ deprecated = true ];
+    // Required. The type of data being published.
+    string message = 4;
+    // Specific channel(s) of the message to subscribe to.
+    repeated string channel = 5;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    Span span = 10000;
+    Span message_span = 10004;
+    repeated Span channel_span = 10005;
+  }
+
+  // Represents an RPC server within a service bundle.
+  message Server {
+    // Deprecated, use "service" instead.
+    string interface = 1 [ deprecated = true ];
+    // Name of the service unit. Name may only use characters from [a-z0-9\-]+,
+    // must start with [a-z], may not end with a hyphen,
+    // and may not contain consecutive hyphens.
+    string service_unit_name = 3;
+    // Required. Name of the RPC service.
+    string service = 4;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    Span span = 10000;
+    Span service_unit_name_span = 10003;
+    Span service_span = 10004;
+  }
+
+  // Represents an RPC client within a service bundle.
+  message Client {
+    // Deprecated, use "service" instead.
+    string interface = 1 [ deprecated = true ];
+    // Required. Name of the RPC service.
+    string service = 2;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    Span span = 10000;
+    Span service_span = 10002;
+  }
+
+  // Required. Name of the service bundle (without the package name).
+  string name = 1;
+  // List of publications the service bundle provides.
+  repeated Publisher publisher = 2;
+  // List of publications a service bundle subscribes to.
+  repeated Subscriber subscriber = 3;
+  // RPC interfaces offered by a service bundle.
+  repeated Server server = 4;
+  // RPC interfaces consumed by a service bundle.
+  repeated Client client = 5;
+  // List of unit types owned by the service bundle.
+  repeated UnitType unit_type = 6;
+  // Enables custom extensions beyond the standard VSIDL model.
+  repeated google.protobuf.Any extension = 7;
+
+  // Diagnostics declarations
+  sdv.diagnostics.v1.DiagnosticsDeclaration diagnostics_declaration = 8;
+
+  // Build Configuration
+  optional BuildConfiguration build_cfg = 9;
+
+  // Register metadata for service units provided by this service bundle.
+  // Setting this to true will increase the memory footprint
+  // and network load significantly.
+  bool register_reflection_metadata = 10;
+
+  // Parsing metadata that describes where the syntax element was found in the
+  // input. Do not fill fields of this type manually.
+  Span span = 10000;
+  Span name_span = 10001;
+  Span register_reflection_metadata_span = 10010;
+}
+
+// The root message for VSIDL files
+message VsidlEntry {
+  // Required. Package name for entities mentioned in the file.
+  string package = 1;
+  // Deprecated, use "service_bundle" instead.
+  repeated ServiceBundle sdv_service_bundle = 2 [ deprecated = true ];
+  // Enables custom extensions beyond the standard VSIDL model.
+  repeated google.protobuf.Any extension = 3;
+
+  // SOMEIP mapping rules
+  repeated sdv.someip.v1.SomeIpMapping some_ip_mapping = 4;
+  // VHAL mapping rules
+  repeated VhalMapping vhal_mapping = 5;
+  // List of SDV service bundles defined in the file.
+  repeated ServiceBundle service_bundle = 6;
+
+  // Parsing metadata that describes where the syntax element was found in the
+  // input. Do not fill fields of this type manually.
+  Span span = 10000;
+  Span package_span = 10001;
+}

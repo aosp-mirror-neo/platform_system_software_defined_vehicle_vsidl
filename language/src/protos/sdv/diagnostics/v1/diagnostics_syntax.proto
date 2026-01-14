@@ -1,0 +1,121 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// Defines field options for Diagnostics serialization.
+
+// WARNING: This is an experimental API and not expected to be stable or final.
+//          Content of the file might drastically change with further
+//          development iterations.
+
+syntax = "proto3";
+
+package sdv.diagnostics.v1;
+
+message DiagnosticsDeclaration {
+  // Diagnostics data item declaration.
+  //
+  // See com.sdv.google.diagnostics.data_item.DataItemService service.
+  message DataItem {
+    // Required. Id of the data item.
+    string id = 1;
+
+    // Required. Fully qualified name of the message that defines a structure of
+    // the data item.
+    string message_name = 2;
+
+    // Flag that indicates whether the data item is writable by the Diagnostics
+    // Manager.
+    //
+    // Effectively, this indicates whether the call to DataItemService::Write,
+    // is supported for this data item id.
+    bool is_writable = 3;
+  }
+
+  // Declaration of diagnostics data for input/output control.
+  //
+  // See com.sdv.google.diagnostics.io_control.IoControl service.
+  message InputOutputControlData {
+    // Id of the input/output control data.
+    string id = 1;
+
+    // Fully qualified name of the message that defines a structure of the data.
+    string message_name = 2;
+  }
+
+  // Declaration of diagnostics routine.
+  //
+  // See com.sdv.google.diagnostics.routine_control.RoutineControl.
+  message Routine {
+    // Information about routine control method.
+    message Method {
+      // Fully qualified name of the request message.
+      string request = 1;
+
+      // Fully qualified name of the response message.
+      string response = 2;
+    }
+
+    // Id of the routine.
+    string id = 1;
+
+    // Information about routine start method.
+    //
+    // See com.sdv.google.diagnostics.routine_control.RoutineControl::Start.
+    Method start = 2;
+
+    // Information about routine stop method.
+    //
+    // See com.sdv.google.diagnostics.routine_control.RoutineControl::Stop.
+    Method stop = 3;
+
+    // Information about routine result method.
+    //
+    // See
+    // com.sdv.google.diagnostics.routine_control.RoutineControl::RequestResult.
+    Method result = 4;
+  }
+
+  // Declaration of diagnostics event and corresponding fault listener.
+  //
+  // See com.sdv.google.diagnostics.event.Event.
+  // See com.sdv.google.diagnostics.fault.FaultListener.
+  message Event {
+    // Id of the event.
+    string id = 1;
+
+    // Fully qualified message name of the event's extended data message.
+    string extended_data_message_name = 2;
+
+    // Fault status changes which service wants to be notified of.
+    //
+    // See com.sdv.google.diagnostics.fault.FaultListener.StatusMask.
+    uint32 fault_listener_mask = 3;
+
+    // User-defined service unit name of a corresponding event publisher.
+    string service_unit_name = 4;
+  }
+
+  // Diagnostic data items exposed by the service bundle.
+  repeated DataItem data_item = 1;
+
+  // Diagnostic data exposed for input/output control by the service bundle.
+  repeated InputOutputControlData io_control = 2;
+
+  // Diagnostic routines exposed by the service bundle.
+  repeated Routine routine = 3;
+
+  // Diagnostic events sent by the service bundle.
+  repeated Event event = 4;
+}

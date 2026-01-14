@@ -1,0 +1,63 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "sdv.test"
+
+# Invalid repeated '_' in build_cfg.target_name
+service_bundle {
+    name: "ServiceBundleTest1"
+    build_cfg {
+        target_name: "service_bundle_target__name"
+    }
+}
+
+# Invalid ending '_' in build_cfg.target_name
+service_bundle {
+    name: "ServiceBundleTest2"
+    build_cfg {
+        target_name: "service_bundle_target_name_"
+    }
+}
+
+# Invalid starting '_' in build_cfg.target_name
+service_bundle {
+    name: "ServiceBundleTest2"
+    build_cfg {
+        target_name: "_service_bundle_target_name"
+    }
+}
+
+# Invalid uppercarse 'S' in build_cfg.target_name
+service_bundle {
+    name: "ServiceBundleTest3"
+    build_cfg {
+        target_name: "Service_bundle_target_name"
+    }
+}
+
+service_bundle {
+    name: "ServiceBundleTest4"
+    build_cfg {
+        target_name: "8ervice_bundle_target_name_valid"
+    }
+}
+
+service_bundle {
+    name: "ServiceBundleTest6"
+    build_cfg {
+        target_name: "service_bund7le_target_name_valid"
+    }
+}

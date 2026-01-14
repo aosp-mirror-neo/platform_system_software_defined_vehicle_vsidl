@@ -1,0 +1,57 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# proto-file: system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "sdv.test"
+
+# Valid example: publisher does not have a user-defined name
+service_bundle {
+  name: "UserDefinedNameMultipub"
+
+  publisher {
+    message: "Pressure"
+  }
+}
+
+# Valid example: 'Temperature' has multiple channels, publisher specifies which one to use
+service_bundle {
+  name: "UserDefinedNameMultipleChannels"
+
+  publisher {
+    message: "Temperature"
+    channel: "ONE"
+    service_unit_name: "my-pressure"
+  }
+}
+
+# Valid example: 'BatteryLevel' has only one channel
+service_bundle {
+  name: "UserDefinedNameSingleChannel"
+
+  publisher {
+    message: "BatteryLevel"
+    service_unit_name: "my-battery"
+  }
+}
+
+# Valid example: 'FuelLevel' has only "UNIQUE" channel
+service_bundle {
+  name: "UserDefinedNameNoChannels"
+
+  publisher {
+    message: "FuelLevel"
+    service_unit_name: "my-fuel"
+  }
+}

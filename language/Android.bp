@@ -1,0 +1,414 @@
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package {
+    default_team: "trendy_team_automotive",
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+rust_defaults {
+    name: "vsidl_v1_parser_defaults@rust_defaults",
+    rustlibs: [
+        "libprotobuf",
+        "libprotobuf_parse",
+        "libanyhow",
+        "libwalkdir",
+        "libregex",
+        "libheck",
+        "libanes",
+        "libis_terminal",
+        "libsdv_vsidl_common",
+        "libindexmap",
+        "libvsidl_v1_proto_rs",
+        "liblazy_static",
+        "libmockall",
+        "libglob",
+        "libtempfile",
+        "libunicode_xid",
+        "libwalkdir",
+        "libsdv_comms_id_validator",
+        "libtermcolor",
+        "libpest",
+    ],
+    proc_macros: [
+        "libpest_derive",
+        "libserde_derive",
+    ],
+    defaults: [
+        "sdv@rust_defaults",
+    ],
+    compile_multilib: "first",
+}
+
+/* --------------------------------- */
+// LIBRARIES
+/* --------------------------------- */
+
+rust_library_host {
+    name: "libvsidl_v1_common",
+    crate_name: "vsidl_v1_common",
+    srcs: [
+        "src/lib.rs",
+    ],
+    rustlibs: [
+        "libvsidl_v1_pest_parser",
+    ],
+    defaults: [
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+    flags: [
+        "-A missing_docs",
+    ],
+}
+
+rust_library_host {
+    name: "libvsidl_v1_pest_parser",
+    crate_name: "vsidl_v1_pest_parser",
+    srcs: [
+        "src/parser/lib.rs",
+    ],
+    defaults: [
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+    flags: [
+        "-A missing_docs",
+    ],
+}
+
+rust_library_host {
+    name: "libvsidl_v1_context_conditions",
+    crate_name: "vsidl_v1_context_conditions",
+    srcs: [
+        "src/context_conditions/lib.rs",
+    ],
+    rustlibs: [
+        "libvsidl_v1_common",
+        "libvsidl_v1_symbols",
+        "librayon",
+        "liblsp_types",
+    ],
+    defaults: [
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+    flags: [
+        "-A missing_docs",
+    ],
+}
+
+rust_library_host {
+    name: "libvsidl_v1_symbols",
+    crate_name: "vsidl_v1_symbols",
+    srcs: [
+        "src/symbols/lib.rs",
+    ],
+    rustlibs: [
+        "libvsidl_v1_common",
+        "libvsidl_v1_pest_parser",
+    ],
+    defaults: [
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+    flags: [
+        "-A missing_docs",
+    ],
+}
+
+rust_library_host {
+    name: "libvsidl_v1_parser",
+    crate_name: "vsidl_v1_parser",
+    srcs: [
+        "src/vsidl_v1_parser/lib.rs",
+    ],
+    rustlibs: [
+        "libvsidl_v1_common",
+        "libvsidl_v1_symbols",
+        "libvsidl_v1_pest_parser",
+        "libvsidl_v1_context_conditions",
+    ],
+    defaults: [
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+    flags: [
+        "-A missing_docs",
+    ],
+}
+
+/* --------------------------------- */
+// TESTS
+/* --------------------------------- */
+
+rust_defaults {
+    name: "vsidl_v1_test_defaults@rust_defaults",
+    test_options: {
+        unit_test: true,
+    },
+    test_suites: [
+        "automotive-sdv-tests",
+    ],
+    rustlibs: [
+        "libsdv_vsidl_v1_test_protos_rs",
+        "libgoogletest_rust",
+        "libvsidl_v1_test_data",
+    ],
+    data: [
+        "src/tests_vsidl_v1/**/*",
+        ":sdv_vsidl_v1_protos",
+    ],
+    defaults: [
+        "sdv@rust_defaults",
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+}
+
+rust_library_host {
+    name: "libvsidl_v1_test_data",
+    crate_name: "vsidl_v1_test_data",
+    crate_root: "src/test_data.rs",
+    srcs: [
+        "**/*.vsidl",
+    ],
+    rustlibs: [
+        "libsdv_vsidl_v1_test_protos_rs",
+        "libvsidl_v1_common",
+        "libvsidl_v1_pest_parser",
+    ],
+    defaults: [
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+    flags: [
+        "-A missing_docs",
+    ],
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_libvsidl_v1_pest_parser_test",
+    srcs: [
+        "src/parser/lib.rs",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    test_suites: [
+        "automotive-sdv-tests",
+        "sdv-host-unit-tests",
+    ],
+    rustlibs: [
+        "libsdv_vsidl_v1_test_protos_rs",
+        "libgoogletest_rust",
+        "libvsidl_v1_pest_parser",
+    ],
+    data: [
+        "src/tests_vsidl_v1/**/*",
+        ":sdv_vsidl_v1_protos",
+    ],
+    defaults: [
+        "sdv@rust_defaults",
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_libvsidl_v1_common_test",
+    crate_root: "src/lib.rs",
+    srcs: [
+        "**/*.vsidl",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    test_suites: [
+        "automotive-sdv-tests",
+        "sdv-host-unit-tests",
+    ],
+    rustlibs: [
+        "libsdv_vsidl_v1_test_protos_rs",
+        "libgoogletest_rust",
+        "libvsidl_v1_pest_parser",
+    ],
+    data: [
+        "src/tests_vsidl_v1/**/*",
+        ":sdv_vsidl_v1_protos",
+    ],
+    defaults: [
+        "sdv@rust_defaults",
+        "vsidl_v1_parser_defaults@rust_defaults",
+    ],
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_libvsidl_v1_context_conditions_test",
+    srcs: [
+        "src/context_conditions/lib.rs",
+    ],
+    test_suites: [
+        "sdv-host-unit-tests",
+    ],
+    rustlibs: [
+        "libvsidl_v1_common",
+        "libvsidl_v1_symbols",
+        "librayon",
+        "liblsp_types",
+    ],
+    defaults: [
+        "vsidl_v1_test_defaults@rust_defaults",
+    ],
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_libvsidl_v1_symbols_test",
+    srcs: [
+        "src/symbols/lib.rs",
+    ],
+    test_suites: [
+        "sdv-host-unit-tests",
+    ],
+    rustlibs: [
+        "libvsidl_v1_common",
+        "libvsidl_v1_pest_parser",
+    ],
+    defaults: [
+        "vsidl_v1_test_defaults@rust_defaults",
+    ],
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_libvsidl_v1_parser_test",
+    srcs: [
+        "src/vsidl_v1_parser/lib.rs",
+    ],
+    test_suites: [
+        "sdv-host-unit-tests",
+    ],
+    rustlibs: [
+        "libvsidl_v1_common",
+        "libvsidl_v1_symbols",
+        "libvsidl_v1_pest_parser",
+        "libvsidl_v1_context_conditions",
+    ],
+    defaults: [
+        "vsidl_v1_test_defaults@rust_defaults",
+    ],
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_vsidl_catalog_size_computation_test",
+    srcs: [
+        "src/message_size.rs",
+    ],
+    test_suites: [
+        "sdv-host-unit-tests",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    defaults: [
+        "vsidl_v1_test_defaults@rust_defaults",
+    ],
+}
+
+// Rust protobuf library for VSIDL v1. Used by the VSIDL compiler (vsidlc) for code generation.
+// Most targets SHOULD NOT link against this directly.
+rust_protobuf {
+    name: "libvsidl_v1_proto_rs",
+    crate_name: "vsidl_v1",
+    protos: [":vsidl_v1_proto_rs_sources"],
+    source_stem: "vsidl_v1_proto_source",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    min_sdk_version: "35",
+    header_libs: ["libprotobuf-cpp-lite"],
+    exported_include_dirs: ["src/protos"],
+    rustlibs: [
+        "libvehicle_hal_property_protos",
+        "libvsidl_v1_stdlib_proto_rs",
+        "libvsidl_v1_stdlib_diag_proto_rs",
+    ],
+    proto_flags: [
+        "-I external/protobuf/src",
+    ],
+}
+
+// Rust protobuf library for VSIDL v1 standard types.
+// Used at runtime and for defining messages with VSIDL annotations.
+rust_protobuf {
+    name: "libvsidl_v1_stdlib_proto_rs",
+    crate_name: "vsidl_v1_stdlib",
+    protos: [":sdv_vsidl_v1_stdlib_protos"],
+    source_stem: "vsidl_v1_stdlib_proto_source",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    min_sdk_version: "35",
+    header_libs: ["libprotobuf-cpp-lite"],
+    exported_include_dirs: ["src/protos"],
+    proto_flags: [
+        "-I external/protobuf/src",
+    ],
+}
+
+// Used at runtime by diagnostics mw-extension lib.
+rust_protobuf {
+    name: "libvsidl_v1_stdlib_diag_proto_rs",
+    crate_name: "vsidl_v1_stdlib_diag",
+    protos: [":sdv_vsidl_v1_diag_protos"],
+    source_stem: "vsidl_v1_diag_proto_source",
+    host_supported: true,
+    vendor_available: true,
+    product_available: true,
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    min_sdk_version: "35",
+    header_libs: ["libprotobuf-cpp-lite"],
+    exported_include_dirs: ["src/protos"],
+    proto_flags: [
+        "-I external/protobuf/src",
+    ],
+}
+
+// Not used by middleware. Allows C++ targets to use the same protobuf files as Rust middleware.
+cc_defaults {
+    name: "libvsidl_v1_stdlib_proto@cc_defaults",
+    srcs: [
+        ":sdv_vsidl_v1_stdlib_protos",
+    ],
+    proto: {
+        canonical_path_from_root: false, // Required for including generated .h
+        include_dirs: [
+            "system/software_defined_vehicle/vsidl/language/src/protos",
+        ],
+    },
+}
+
+// Not used by middleware. Allows Java targets to use the same protobuf files as Rust middleware.
+java_defaults {
+    name: "libvsidl_v1_stdlib_proto@java_defaults",
+    srcs: [
+        ":sdv_vsidl_v1_stdlib_protos",
+    ],
+    proto: {
+        include_dirs: [
+            "system/software_defined_vehicle/vsidl/language/src/protos",
+        ],
+    },
+}

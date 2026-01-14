@@ -1,0 +1,349 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+use super::{FindingCollector, FindingId};
+use crate::impl_context_condition_symtab;
+use heck::ToKebabCase;
+use sdv_comms_id_validator::service_unit_name_validation::{
+    validate_length, SERVICE_UNIT_NAME_MAX_LENGTH_BYTES,
+};
+use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
+use vsidl_v1::syntax::service_bundle::{Publisher, Server};
+use vsidl_v1::syntax::{Span, VsidlEntry};
+use vsidl_v1_common::constants::UNIQUE_CHANNEL;
+use vsidl_v1_common::name_to_fqn;
+use vsidl_v1_common::visitors::visitor::VsidlVisitor;
+use vsidl_v1_symbols::specific_symbols::proto_publication_symbol::ProtoPublicationSymbol;
+use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
+
+#[derive(Debug, Default)]
+pub struct ServiceUnitNameTooLong {
+    finding_collector: FindingCollector,
+    package: String,
+}
+impl_context_condition_symtab!(ServiceUnitNameTooLong);
+
+/// Checks that the name of a service unit is not exceeding the internal limit
+impl ServiceUnitNameTooLong {
+    fn check(&mut self, service_unit_name: String, node_type: &str, span: Option<Span>) {
+        let result = validate_length(&service_unit_name);
+
+        if result.is_err() {
+            self.finding_collector.error(
+                FindingId::ServiceUnitNameTooLong,
+                format!(
+                    "Service unit name for {node_type} '{service_unit_name}' exceeds {SERVICE_UNIT_NAME_MAX_LENGTH_BYTES} chars"
+                ),
+                vec![span],
+            );
+        }
+    }
+}
+
+impl VsidlVisitor for ServiceUnitNameTooLong {
+    fn start_visit_vsidl_entry(&mut self, node: &VsidlEntry) {
+        self.package = node.package.clone();
+    }
+
+    fn start_visit_publisher(&mut self, node: &Publisher) {
+        // if there's no service unit name and channels are not defined, length check is covered in check_publisher()
+        if node.service_unit_name.is_empty() && !node.channel.is_empty() {
+            // Validate generated name
+            let fqn = name_to_fqn(&node.message, &self.package);
+            for channel in &node.channel {
+                let generated_name =
+                    format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
+                self.check(generated_name, "publisher", node.span.clone().into_option());
+            }
+        } else {
+            // Validate user-defined name
+            self.check(
+                node.service_unit_name.clone(),
+                "publisher",
+                node.span.clone().into_option(),
+            );
+        }
+    }
+
+    fn start_visit_server(&mut self, node: &Server) {
+        if node.service_unit_name.is_empty() {
+            // Validate generated name
+            let generated_name =
+                name_to_fqn(&node.service, &self.package).replace('.', "-").to_kebab_case();
+            self.check(generated_name, "server", node.span.clone().into_option());
+        } else {
+            // Validate user-defined name
+            self.check(node.service_unit_name.clone(), "server", node.span.clone().into_option());
+        }
+    }
+
+    fn start_visit_diagnostics_event(&mut self, node: &Event) {
+        if node.service_unit_name.is_empty() {
+            // Check generated name
+            self.check(
+                format!(
+                    "com-sdv-google-diagnostics-event-event-{}",
+                    node.id.replace('.', "-").to_kebab_case()
+                ),
+                "diagnostics event",
+                None,
+            );
+        } else {
+            // Check user-defined name
+            self.check(node.service_unit_name.clone(), "diagnostics event", None);
+        }
+    }
+}
+
+impl SymbolTableChecker for ServiceUnitNameTooLong {
+    fn check_publisher(
+        &mut self,
+        symbol_table: &vsidl_v1_symbols::symbol_table::SymbolTable,
+        publisher: &vsidl_v1_symbols::specific_symbols::publisher_symbol::PublisherSymbol,
+    ) {
+        // User-defined names are checked in start_visit_publisher()
+        if !publisher.service_unit_name.is_empty() {
+            return;
+        }
+
+        // Explicit channels are checked in start_visit_publisher()
+        if !publisher.channel.is_empty() {
+            return;
+        }
+
+        // Get publication symbol
+        let proto_publication_symbols = publisher
+            .enclosing_scope(symbol_table)
+            .resolve_proto_publication(symbol_table, publisher.message.clone());
+        if proto_publication_symbols.is_empty() {
+            // This error is handled by the publication_type context condition
+            return;
+        }
+        let proto_publication_symbol: ProtoPublicationSymbol = proto_publication_symbols[0].clone();
+
+        let mut channels = proto_publication_symbol.channels(symbol_table);
+        if channels.is_empty() {
+            channels.push(UNIQUE_CHANNEL.to_string());
+        }
+
+        // Validate generated name
+        let fqn = name_to_fqn(&publisher.message, &publisher.package(symbol_table));
+        for channel in &channels {
+            let generated_name = format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
+            self.check(generated_name, "publisher", publisher.span());
+        }
+    }
+
+    fn check_subscriber(
+        &mut self,
+        symbol_table: &vsidl_v1_symbols::symbol_table::SymbolTable,
+        subscriber: &vsidl_v1_symbols::specific_symbols::subscriber_symbol::SubscriberSymbol,
+    ) {
+        // Get publication symbol
+        let proto_publication_symbols = subscriber
+            .enclosing_scope(symbol_table)
+            .resolve_proto_publication(symbol_table, subscriber.message.clone());
+        if proto_publication_symbols.is_empty() {
+            // This error is handled by the publication_type context condition
+            return;
+        }
+
+        // Validate user-defined name
+        let publication = subscriber.publication(symbol_table);
+        if !publication.publishers(symbol_table).is_empty() {
+            let publisher = publication.publishers(symbol_table)[0].clone();
+            if publication.is_single_pub() && !publisher.service_unit_name.is_empty() {
+                self.check(publisher.service_unit_name.clone(), "subscriber", subscriber.span());
+                return;
+            }
+        }
+
+        let proto_publication_symbol: ProtoPublicationSymbol = proto_publication_symbols[0].clone();
+        let mut channels = proto_publication_symbol.channels(symbol_table);
+        if channels.is_empty() {
+            channels.push(UNIQUE_CHANNEL.to_string());
+        }
+
+        // Validate generated name
+        let fqn = name_to_fqn(&subscriber.message, &subscriber.package(symbol_table));
+        for channel in &channels {
+            let generated_name = format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
+            self.check(generated_name, "subscriber", subscriber.span());
+        }
+    }
+
+    fn check_rpc_client(
+        &mut self,
+        symbol_table: &vsidl_v1_symbols::symbol_table::SymbolTable,
+        rpc_client: &vsidl_v1_symbols::specific_symbols::rpc_client_symbol::RpcClientSymbol,
+    ) {
+        // Validate user-defined name
+        let service = rpc_client.service(symbol_table);
+        if !service.servers(symbol_table).is_empty() {
+            let server = service.servers(symbol_table)[0].clone();
+            if server.has_user_defined_name() {
+                self.check(server.service_unit_name(symbol_table), "client", rpc_client.span());
+                return;
+            }
+        }
+
+        // Validate generated name
+        let fqn = name_to_fqn(&service.name(), &service.package(symbol_table));
+        let generated_name = fqn.replace('.', "-").to_kebab_case();
+        self.check(generated_name, "client", rpc_client.span());
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::context_condition::ContextCondition;
+    use crate::service_unit_name_too_long::ServiceUnitNameTooLong;
+    use crate::FindingSeverity;
+    use vsidl_v1_common::visitors::visitor::AstNode;
+    use vsidl_v1_common::Catalog;
+    use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
+    use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
+
+    #[test]
+    fn test_should_reject_long_user_defined_name() {
+        // Given: A catalog with a publisher that has two channels and a user-defined name
+        let mut catalog = Catalog::new();
+        catalog
+            .proto_descriptors
+            .extend([vsidl_v1_test_data::DESCRIPTOR_NAME_TOO_LONG_PROTO.clone()]);
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_USER_DEFINED_NAME_TOO_LONG.clone());
+
+        // When: Executing context condition
+        let mut coco = ServiceUnitNameTooLong::default();
+        coco.check_catalog(&catalog);
+
+        // Then: context condition should fail
+        assert!(coco.is_err());
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "ThisIsAVeryLongPublisherNameThatExceedsOurLimits012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "ThisIsAVeryLongRpcNameThatExceedsOurLimits012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"));
+    }
+
+    #[test]
+    fn test_should_reject_long_generated_name() {
+        // GIVEN A catalog with service units that will generate names that are too long
+        let mut catalog = Catalog::new();
+        catalog
+            .proto_descriptors
+            .extend([vsidl_v1_test_data::DESCRIPTOR_NAME_TOO_LONG_PROTO.clone()]);
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_GENERATED_NAME_TOO_LONG.clone());
+
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // WHEN Executing context condition
+        let mut coco = ServiceUnitNameTooLong::default();
+        coco.check_catalog(&catalog);
+        coco.check_symbol_table(linker.symbol_table());
+
+        // THEN context condition should fail
+        assert!(coco.is_err());
+
+        // THEN publisher with UNIQUE channel was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-unique-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-unique"));
+        // THEN publisher with explicit channels was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
+        // THEN publisher with implicit channels was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-two"));
+        // THEN subscriber with UNIQUE channel was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-unique-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-unique"));
+        // THEN subscriber with explicit channels was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
+        // THEN subscriber with implicit channels was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-two"));
+        // THEN RPC server was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-rpc-server-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789"));
+        // THEN RPC client was detected
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-rpc-client-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789"));
+    }
+
+    #[test]
+    fn test_should_reject_long_user_defined_name_in_diagnostics() {
+        // Given: A catalog with a publisher that has two channels and a user-defined name
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_USER_DEFINED_NAME_TOO_LONG_IN_DIAGNOSTICS.clone());
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // When: Executing CoCo
+        let mut coco = ServiceUnitNameTooLong::default();
+        coco.check_catalog(&catalog);
+        coco.check_symbol_table(linker.symbol_table());
+
+        // Then: CoCo should fail
+        assert!(coco.is_err());
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "ThisIsAVeryLongPublisherNameThatExceedsOurLimits012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"));
+    }
+
+    #[test]
+    fn test_should_ignore_publisher_with_invalid_type() {
+        // Given: A catalog with a service bundle that contains a publisher using an RPC type as publication type
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO.clone()]);
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_INVALID_PUBLICATION_TYPE_GENERATED_NAME.clone());
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+
+        // When: Executing CoCo
+        let mut check = ServiceUnitNameTooLong::default();
+        check.check_symbol_table(creator.symbol_table());
+
+        // Then: Should not have found errors
+        assert!(check.is_ok());
+    }
+
+    #[test]
+    fn test_should_accept_long_generated_name_with_short_user_defined_name() {
+        // GIVEN a catalog with service units that have too long generated name but user define short service unit name
+        let mut catalog = Catalog::new();
+        catalog
+            .proto_descriptors
+            .extend([vsidl_v1_test_data::DESCRIPTOR_NAME_TOO_LONG_PROTO.clone()]);
+        catalog.catalog_vsidl_files.push(
+            vsidl_v1_test_data::VSIDL_GENERATED_NAME_TOO_LONG_WITH_SHORT_USER_DEFINED_NAME.clone(),
+        );
+
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // WHEN Executing context condition
+        let mut check = ServiceUnitNameTooLong::default();
+        check.check_catalog(&catalog);
+        check.check_symbol_table(linker.symbol_table());
+
+        // THEN the result should be ok
+        assert!(check.is_ok());
+    }
+}

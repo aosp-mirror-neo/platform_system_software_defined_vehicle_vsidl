@@ -1,0 +1,38 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package sdv.test;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+import "sdv/vsidl/v1/annotations.proto";
+
+service DummyRpc {
+  rpc my_rpc(DummyRequest) returns (DummyResponse) {}
+  rpc method_with_well_known_types(google.protobuf.Any)
+      returns (google.protobuf.Empty) {}
+}
+
+message DummyRequest {
+  option (sdv.vsidl.v1.publication) = {
+    channels_enum : "sdv.test.BatteryChannels"
+    message_count : 8
+    model : SINGLE_PUB
+  };
+}
+message DummyResponse {}

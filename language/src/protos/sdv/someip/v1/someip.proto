@@ -1,0 +1,308 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Defines a schema for SOMEIP mapping in VSIDL.
+// WARNING: This is an experimental API and not expected to be stable or final.
+//          Content of the file might drastically change with further
+//          development iterations.
+syntax = "proto3";
+
+import "sdv/someip/v1/someip_type.proto";
+
+package sdv.someip.v1;
+
+message SomeIpMapping {
+  message UnitType {
+    // Package name of the bundle declaring the Unit Type
+    string package_name = 1;
+    // Service Bundle declaring the Unit Type
+    string service_bundle_name = 2;
+    // Unit Type name
+    string type_name = 3;
+  }
+
+  message SomeIpServiceMapping {
+    // Enum that specifies service discovery mode in relation to service minor
+    // version
+    enum SdVersionDrivenBehavior {
+      UNKNOWN = 0;
+      // In this mode, SOME/IP broker will only accept a service that has a
+      // matching minor version, UNLESS the minor version is set to '0xFFFF`, in
+      // which case any minor version will be accepted
+      EXACT_OR_ANY_MINOR_VERSION = 1;
+      // In this mode, SOME/IP broker will accept a service with a matching
+      // service ID and major version, and a minor version that is greater than
+      // or equal to the specified version.
+      MINIMUM_MINOR_VERSION = 2;
+    }
+
+    // SOME/IP service ID. Actual size is 16 bits.
+    uint32 someip_service_id = 1;
+    // Major version of the instance. Actual size is 8 bits
+    uint32 version_major = 2;
+    // Minor version of the instance
+    uint32 version_minor = 3;
+    // A SOME/IP service has multiple instances
+    repeated SomeIpInstanceMapping instance = 4;
+    // A SOME/IP service instance translates to multiple SDV service units.
+    // The following field(s) describes how to translate an instance of this
+    // service to SDV service units. The description is parametrized by service
+    // unit names. The SomeIpInstanceMapping is then used to give each instance
+    // a unique set of service units
+    repeated SomeIpInstanceImplementation instance_impl = 5;
+    // Expected matching behavior when discovering services. If unset, default
+    // value will be taken from the broker's configuration.
+    optional SdVersionDrivenBehavior sd_behavior = 6;
+  }
+
+  // SOME/IP service instance mapping
+  message SomeIpInstanceMapping {
+    // SOME/IP Instance ID
+    uint32 instance_id = 1;
+    // Service unit name parameterization.
+    // These are the service unit names that will be registered by the broker
+    // for this SOME/IP instance. These are referenced inside the
+    // SomeIpInstanceImplementation struct
+    map<uint32, string> sdv_service_unit_parameterization = 2;
+  }
+
+  message SomeIpInstanceImplementation {
+    // Mapping for RPCs
+    message RpcInterface {
+      message RequestResponseMethod {
+        // Name of related procedure on SDV side, scoped within Unit type.
+        string procedure = 1;
+        // Method ID on SOME/IP side.
+        uint32 method_id = 2;
+        // Mapping rule for a RPC request. May be omitted to represent methods
+        // that take no arguments.
+        optional SomeIpType.SomeIpStruct request_payload_mapping = 3;
+        // Mapping rule for a RPC response. May be omitted to represent void
+        // methods.
+        optional SomeIpType.SomeIpStruct response_payload_mapping = 4;
+      }
+      // SDV Unit Type corresponding to this RPC interface
+      UnitType sdv_unit_type = 1;
+      // Service unit name that will be created inside SOME/IP broker bundle for
+      // this interface instance. Refers to a map key from SomeIpInstanceMapping
+      // struct
+      uint32 service_unit = 2;
+      // RPC methods available on this service. Only Request/Response methods
+      // are described here, since Fire&Forget has no equivalent in SDV. To call
+      // F&F methods, they must be specified as translations of SDV topics
+      // through a SdvTypeMapping
+      repeated RequestResponseMethod method = 3;
+    }
+
+    // SOME/IP event mapping to SDV topics.
+    message Event {
+      message SimpleEvent {
+        enum MessageTranslationMode {
+          // The default translation mode. Uses reflection metadata to translate
+          // messages
+          REFLECTION = 0;
+          // DEPRECATED: The SOME/IP broker will not process messages in this
+          // mode. This mode configures the broker to use the dynamic library to
+          // translate the message. If translation using the dynamic library
+          // fails, the broker will fall back to using reflection
+          DYNAMIC_LIBRARY = 1 [ deprecated = true ];
+          // This mode configures the broker to skip translation of the message
+          // and forward it as raw bytes, to be translated at the subscriber
+          // side
+          INTERPRET_AS_BYTES = 2;
+        }
+        // SDV Unit Type corresponding to this event
+        UnitType sdv_unit_type = 1;
+        // Service unit name that will be created inside SOME/IP broker bundle
+        // for this event instance. Refers to a map key from
+        // SomeIpInstanceMapping struct
+        uint32 service_unit = 2;
+        // SOME/IP data format of the event. The fields specified in the
+        // definition MUST match the field names defined in the proto message
+        // corresponding to `sdv_unit_type`
+        SomeIpType.SomeIpStruct type_definition = 3;
+        // Message translation mode to be used for this event. If unspecified,
+        // default translation mode is used
+        optional MessageTranslationMode message_translation_mode = 4;
+      }
+      message GroupEventPart {
+        // SDV Unit Type corresponding to this group event part
+        UnitType sdv_unit_type = 1;
+        // Service unit name that will be created inside SOME/IP broker bundle
+        // for this event instance. Refers to a map key from
+        // SomeIpInstanceMapping struct
+        uint32 service_unit = 2;
+        // Specifies what fields to use from the GroupEvent type_definition to
+        // construct the SDV topic's type definition. Maps the incoming SOME/IP
+        // payload field names to the SDV payload field names. The map values
+        // must have a corresponding field name defined in the proto message
+        // corresponding to `sdv_unit_type`
+        map<string, string> field_name_mapping = 3;
+      }
+      message GroupEvent {
+        // SOME/IP data format of the event
+        SomeIpType.SomeIpStruct type_definition = 1;
+        // Description of the event parts
+        repeated GroupEventPart event_part = 2;
+      }
+      // SOME/IP group ID of the event (several events may share same group ID)
+      uint32 group_id = 1;
+      // SOME/IP event ID. Actual size is 16 bits
+      uint32 event_id = 2;
+      // The type of event being described. A SimpleEvent describes a simple 1:1
+      // mapping between a SOME/IP event and SDV topic. A GroupEvent describes
+      // 1:n mapping between a SOME/IP event and multiple SDV topics
+      oneof event_type {
+        SimpleEvent simple_event = 3;
+        GroupEvent group_event = 4;
+      }
+    }
+    // The type of interface offered by the SOME/IP service
+    oneof interface_type {
+      RpcInterface offered_interface = 1;
+      Event offered_event = 2;
+    }
+  }
+
+  message SdvTypeMapping {
+    // Identifier for a SDV Service Unit. When all fields are specified, this is
+    // a unique identifier for a SDV Service Unit. If the `vm_name` or
+    // `service_instance_name` are not specified, this might match multiple
+    // service units
+    message ServiceUnitId {
+      // Name of the VM where the bundle declaring the service unit lives
+      optional string vm_name = 1;
+      // Package name of the bundle declaring the service unit
+      string package_name = 2;
+      // Name of the bundle declaring the service unit
+      string service_bundle_name = 3;
+      // Name of the bundle instance declaring the service unit
+      optional string service_instance_name = 4;
+      // Service unit name
+      string service_unit_name = 5;
+    }
+    // SOME/IP identifier for a fire and forget method on a specific service
+    // instance. This is used in `SdvServiceUnitMapping`
+    message SomeIpFFMethod {
+      // SOME/IP service ID. Actual size is 16 bits.
+      uint32 service_id = 1;
+      // SOME/IP instance ID. Actual size is 16 bits.
+      uint32 instance_id = 2;
+      // Major version of the service. Actual size is 8 bits
+      uint32 version_major = 3;
+      // Minor version of the service
+      uint32 version_minor = 4;
+      // SOME/IP method ID. Actual size is 16 bits.
+      uint32 method_id = 5;
+    }
+    // A mapping for the SDV RPC Unit Type to corresponding SOME/IP RPC. It
+    // defines the structure of each method arguments and return data type in
+    // type_definition as well as relation between SDV method names and SOME/IP
+    // identifiers. Note that the individual instance to service unit mapping is
+    // defined separately using `SdvServiceUnitMapping`
+    message RpcInterface {
+      message Method {
+        // Name of related procedure on SDV side, scoped within Unit type.
+        string procedure = 1;
+        // Method ID on SOME/IP side.
+        uint32 method_id = 2;
+        // Mapping rule for a RPC request. May be omitted to represent methods
+        // that take no arguments.
+        optional SomeIpType.SomeIpStruct request_payload_mapping = 3;
+        // Mapping rule for a RPC response. May be omitted to represent void
+        // methods.
+        optional SomeIpType.SomeIpStruct response_payload_mapping = 4;
+      }
+      // RPC methods available on this service
+      repeated Method method = 1;
+    }
+    // A mapping for the SDV Topic Unit Type to corresponding SOME/IP Event or
+    // Fire-and-forget RPC. It defines the structure of the data type in
+    // type_definition as well as relation between SDV and SOME/IP identifiers.
+    // Note that the individual instance to service unit mapping is defined
+    // separately using `SdvServiceUnitMapping`
+    message Topic {
+      message SimpleTopicMapping {
+        // SOME/IP group ID of the event (several events may share same group
+        // ID)
+        uint32 group_id = 1;
+        // SOME/IP event ID. Actual size is 16 bits
+        uint32 event_id = 2;
+      }
+      message MultipubTopicInfo {
+        // Specifies the SOME/IP instance ID for the SOME/IP service that
+        // corresponds to the multipub topic
+        uint32 someip_instance_id = 1;
+      }
+      // SOME/IP data format of the event
+      SomeIpType.SomeIpStruct type_definition = 1;
+
+      oneof topic_mapping {
+        // How to map this topic to a SOME/IP event.
+        SimpleTopicMapping simple_mapping = 2;
+        // Indicates that the broker should call the `fire_and_forget_method`
+        // defined in `SdvServiceUnitMapping` when this topic has a new message,
+        // instead of translating the topic to a standard SOME/IP event. Default
+        // value is false.
+        bool someip_ff_methods = 3;
+      }
+      // When set, specifies that this topic is to be interpreted as a multi-pub
+      // topic. In this case, no `SdvServiceUnitMapping` are needed for the Unit
+      // Type mapping
+      optional MultipubTopicInfo multipub_topic_info = 4;
+    }
+    // Mapping from SDV Service Unit (implementation of the Unit Type) to a
+    // SOME/IP instance of the translated service ID. This mapping combines with
+    // the corresponding Topic and RPC Unit Type mapping and allows multiple
+    // instances of the same type only define shared information once.
+    message SdvServiceUnitMapping {
+      // Identifier for the service unit within SDV. If multiple units match
+      // this identifier for the specified Unit type, one is selected
+      // arbitrarily
+      ServiceUnitId service_unit_id = 1;
+      // SOME/IP Instance ID of the service that should be offered when the SDV
+      // service unit becomes available
+      uint32 instance_id = 2;
+      // List of FireAndForget methods that may be called if the Unit type being
+      // offered corresponds to a topic. To call these methods when the topic
+      // has data published to it, the `someip_ff_methods` flag must be set to
+      // true
+      repeated SomeIpFFMethod fire_and_forget_method = 3;
+    }
+
+    // Unit type being mapped
+    UnitType unit_type = 1;
+    // SOME/IP service ID. Actual size is 16 bits.
+    uint32 someip_service_id = 2;
+    // Major version of the service. Actual size is 8 bits
+    uint32 version_major = 3;
+    // Minor version of the service.
+    uint32 version_minor = 4;
+    // A Unit type can either correspond to a RPC interface or a DT topic
+    oneof interface_type {
+      RpcInterface offered_interface = 5;
+      Topic offered_topic = 6;
+    }
+    // Mappings for SDV service units that implement this Unit type. Ignored for
+    // Multipub topic Unit types
+    repeated SdvServiceUnitMapping service_unit_mapping = 7;
+  }
+  // A mapping can be for a SOME/IP service or an SDV Unit Type
+  oneof mapping_type {
+    SomeIpServiceMapping someip_service_mapping = 1;
+    SdvTypeMapping sdv_type_mapping = 2;
+  }
+}
