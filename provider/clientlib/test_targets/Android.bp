@@ -44,7 +44,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file",
@@ -75,7 +75,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file",
@@ -118,7 +118,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
@@ -151,7 +151,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
@@ -183,7 +183,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
@@ -215,7 +215,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
@@ -247,7 +247,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
@@ -279,7 +279,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
@@ -323,7 +323,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
@@ -356,7 +356,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
@@ -388,7 +388,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
@@ -420,7 +420,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
@@ -452,7 +452,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
@@ -484,7 +484,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
@@ -527,7 +527,7 @@ genrule {
         ":test_v1_catalog_files",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) ",
     out: [

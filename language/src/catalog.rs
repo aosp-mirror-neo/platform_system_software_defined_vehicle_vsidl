@@ -307,7 +307,7 @@ pub fn get_vsidl_syntax_default_path() -> anyhow::Result<PathBuf> {
     if let Some(android_build_top) = env::var_os("ANDROID_BUILD_TOP") {
         // User is running vsidlc
         Ok(PathBuf::from(android_build_top)
-            .join("system/software_defined_vehicle/core_services/vsidl/protos/"))
+            .join("system/software_defined_vehicle/vsidl/language/src/protos/"))
     } else {
         // a test is running vsidlc
         Ok(PathBuf::from("."))
@@ -810,7 +810,7 @@ mod test {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            temp_dir.path().join("system/software_defined_vehicle/core_services/vsidl/protos/")
+            temp_dir.path().join("system/software_defined_vehicle/vsidl/language/src/protos/")
         );
 
         // GIVEN the ANDROID_BUILD_TOP environment variable is unset

@@ -49,7 +49,7 @@ genrule \{
         ":{filegroup}",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path {catalog_path}" +
         " --output-path $(genDir) " +
 {{- for dependency in dependencies }}
@@ -101,7 +101,7 @@ genrule \{
         ":{filegroup}",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path {catalog_path}" +
         " --output-path $(genDir) " +
 {{- for dependency in dependencies }}
@@ -155,7 +155,7 @@ genrule \{
         ":{filegroup}",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path {catalog_path}" +
 {{- for dependency in dependencies }}
         " --dependency-catalog-path {dependency}" +
