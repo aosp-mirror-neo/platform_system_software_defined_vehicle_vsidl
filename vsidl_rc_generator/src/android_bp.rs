@@ -48,7 +48,7 @@ const ANDROID_BUILD_TOP: &str = "ANDROID_BUILD_TOP";
 /// This function uses the `ANDROID_BUILD_TOP` environment variable. As a fallback for
 /// testing environments (like sandboxes where `ANDROID_BUILD_TOP` might not be set),
 /// it assumes the needed files are present in the current working directory (`.`).
-/// (similar to get_vsidl_syntax_default_path() in core_services/vsidl/parser/src/catalog.rs)
+/// (similar to get_vsidl_syntax_default_path() in vsidl/language/src/catalog.rs)
 fn get_build_root() -> String {
     env::var(ANDROID_BUILD_TOP).unwrap_or_else(|_| ".".to_string())
 }

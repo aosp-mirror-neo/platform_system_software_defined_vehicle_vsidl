@@ -31,8 +31,8 @@ if not ANDROID_BUILD_TOP_ENV_VAR:
 
 ANDROID_BUILD_TOP = os.path.abspath(ANDROID_BUILD_TOP_ENV_VAR)
 VSIDLC_BASE_DIR = os.path.join(
-    ANDROID_BUILD_TOP, 'system', 'software_defined_vehicle', 'core_services', 'tools'
-    , 'vsidlc', 'src', 'tests')
+    ANDROID_BUILD_TOP, 'system', 'software_defined_vehicle', 'vsidl',
+    'vsidlc', 'src', 'tests')
 VSIDLC_GOLDEN_DIR = os.path.join(VSIDLC_BASE_DIR, 'latest')
 VSIDLC_CATALOGS_DIR = os.path.join(VSIDLC_BASE_DIR, 'catalogs')
 

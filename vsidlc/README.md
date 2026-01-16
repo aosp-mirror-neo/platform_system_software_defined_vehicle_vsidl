@@ -115,7 +115,7 @@ The following commands will:
 1.  Generate Rust code in the `./generated_rs` directory.
 
 ```bash
-cd $ANDROID_BUILD_TOP/system/software_defined_vehicle/core_services/samples/vsidl/stable/
+cd $ANDROID_BUILD_TOP/system/software_defined_vehicle/samples/vsidl/stable/
 
 vsidlc -c catalog/ -p -o .
 ```
@@ -142,9 +142,9 @@ be placed in separate directories.
 #### Execution Example
 
 ```bash
-croot system/software_defined_vehicle/core_services/vsidl/parser/tests/
+croot system/software_defined_vehicle/samples/vsidl/perf5/
 
-vsidlc -c nested_cross_dir_catalog/ -d dependency/,nested_dependency/ -o .
+vsidlc -c catalog/ -o . -d $ANDROID_BUILD_TOP/system/software_defined_vehicle/common/protos/com/sdv/google/test_messages -p
 ```
 
 ## Known Limitations

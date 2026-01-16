@@ -30,7 +30,7 @@ const GOLDEN_TEST_UPDATE_MESSAGE: &str = r#"
     [ACTION REQUIRED]
     To accept these changes, please run:
     ```
-    ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/core_services/tools/vsidlc/src/tests/latest/update_golden_catalog_generated_code.py
+    ${ANDROID_BUILD_TOP}/system/software_defined_vehicle/vsidl/vsidlc/src/tests/latest/update_golden_catalog_generated_code.py
     ```
 "#;
 
