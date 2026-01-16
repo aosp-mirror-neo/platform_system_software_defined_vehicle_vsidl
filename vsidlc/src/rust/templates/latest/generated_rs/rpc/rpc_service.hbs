@@ -1,0 +1,57 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{> copyright}}
+
+{{> do_not_edit_warning}}
+
+{{#if is_using_streaming}}
+use futures::Stream;
+use std::pin::Pin;
+{{/if}}
+
+pub mod internal {
+    {{> rpc/internal/mod}}
+}
+
+#[allow(non_snake_case, missing_docs)]
+#[async_trait::async_trait]
+/// {{service_name}} RPC server service trait
+pub trait Interface: Send + Sync {
+    {{#each methods}}
+    {{> rpc/interface/functions/method}}
+    {{/each}}
+
+    {{> rpc/interface/functions/init_server_options}}
+}
+
+/// ToTypeName implementation for the {{service_name}} service.
+impl sdv::mw::clientlib::ToTypeName for dyn Interface {
+    {{> rpc/impl_unit_type/unit_type}}
+}
+
+/// Client for {{service_name}} RPC service
+pub struct Client(Box<dyn sdv::mw::ClientTransport>);
+
+#[allow(non_snake_case, missing_docs)]
+impl Client {
+    {{#each methods}}
+    {{> rpc/client/functions/method}}
+    {{/each}}
+}
+
+impl sdv::mw::RpcClient for Client {
+    {{> rpc/impl_rpc_client/functions/new}}
+}

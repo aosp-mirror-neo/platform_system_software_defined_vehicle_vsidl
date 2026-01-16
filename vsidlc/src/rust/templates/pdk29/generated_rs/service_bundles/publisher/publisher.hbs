@@ -1,0 +1,45 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+/// Provides access to publications available to the service bundle
+pub mod publisher {
+
+/// Alias for backwards compatibility.
+pub use Channel as Variant;
+/// Lists channels per protobuf message of every publication available to the service bundle
+#[derive(Debug)]
+pub struct Channel<Proto> {
+    _proto: std::marker::PhantomData<Proto>,
+    /// Unique id of a channel
+    pub id: i32,
+    pub(super) service_unit: &'static str,
+}
+
+pub(super) trait Metadata {
+    const MESSAGE_SIZE: u32;
+    const MESSAGE_COUNT: u32;
+    const IS_MULTIPUB: bool;
+    fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+        sdv_proto_reflection_rs::message_metadata::MessageMetadata::default()
+    }
+}
+
+{{#each publications}}
+    {{> service_bundles/publisher/impl_metadata/impl register_reflection_metadata=../register_reflection_metadata}}
+
+    {{> service_bundles/publisher/impl_channel/impl}}
+
+{{/each}}
+}

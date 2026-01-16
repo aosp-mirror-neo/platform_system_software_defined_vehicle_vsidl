@@ -1,0 +1,25 @@
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package {
+    default_team: "trendy_team_automotive",
+    default_applicable_licenses: ["sdv_license"],
+}
+
+// This is used by golden tests to validate we are checking upper folder
+// in the catalog path to discover filegroups
+filegroup {
+    name: "filegroup_golden_test_catalog_single_filegroup_upperfolder",
+    srcs: ["catalog_single_filegroup_upperfolder/**/*.proto"],
+}

@@ -1,0 +1,40 @@
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package sdv.golden.rpc;
+
+import "google/protobuf/empty.proto";
+
+enum TireLocation {
+  UNKNOWN = 0;
+  FRONT_LEFT = 1;
+  FRONT_RIGHT = 2;
+  REAR_LEFT = 3;
+  REAR_RIGHT = 4;
+}
+
+message GetTireStatusRequest {
+  TireLocation tire = 1;
+}
+
+message GetTirePressureResponse {
+  TireLocation tire = 1;
+  float pressure = 2;
+}
+
+service TireStatus {
+  rpc GetTirePressure(GetTireStatusRequest) returns (GetTirePressureResponse) {}
+}

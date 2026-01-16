@@ -1,0 +1,30 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+
+/// Take the ownership of the publisher object
+/// Will return None if called more than once per publisher channel
+pub fn take_publisher<M: protobuf::Message + 'static>(
+    &mut self,
+    channel: &publisher::Channel<M>,
+) -> Option<sdv::mw::Publisher<M>> {
+    let guarded_publisher = *self
+            .publishers
+            .remove(&(std::any::TypeId::of::<M>(), channel.id))?
+            .downcast::<std::sync::Mutex<sdv::mw::Publisher<M>>>()
+            .unwrap();
+    Some(guarded_publisher.into_inner().unwrap())
+}
+

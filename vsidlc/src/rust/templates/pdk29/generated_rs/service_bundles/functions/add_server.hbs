@@ -1,0 +1,39 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+
+async fn add_server<T: UnitType + ?Sized + 'static + Send + Sync>(
+    &mut self,
+    unit_name: String,
+    methods: std::collections::HashMap<String, sdv::comms::rpc::RpcMethod>,
+    options: sdv::mw::ServerOptions,
+) -> sdv::status::SdvResult<()> {
+    let attributes = sdv::mw::ServerAttributes::builder()
+        .server_name(unit_name)
+        .type_name(
+            sdv::mw::TypeName::builder()
+                .package_name(T::PACKAGE)
+                .bundle_name(T::SERVICE_BUNDLE)
+                .type_name(T::TYPENAME)
+                .build()?,
+        )
+        .server_options(options)
+        .build()?;
+
+    let transport = self.comms.create_server_transport_all_methods(&attributes, methods).await?;
+    self.servers.push(transport.into());
+    Ok(())
+}
+

@@ -1,0 +1,29 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+/// Service bundle
+pub struct {{service_bundle_name}} {
+    {{#unless used_comms}}_{{/unless}}comms: std::sync::Arc<dyn sdv::mw::Communicate>,
+{{#if is_publisher}}
+    publishers: std::collections::HashMap<(std::any::TypeId, i32), Box<dyn std::any::Any + Send + Sync>>,
+{{/if}}
+{{#if is_server}}
+    servers: std::vec::Vec<std::sync::Arc<dyn sdv::mw::ServerTransport>>,
+{{/if}}
+{{#if has_diagnostics}}
+    /// Diagnostic capabilities of the service bundle.
+    pub diagnostics: Diagnostics,
+{{/if}}
+}

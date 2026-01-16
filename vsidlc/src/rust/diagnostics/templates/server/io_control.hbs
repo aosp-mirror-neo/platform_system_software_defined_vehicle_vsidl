@@ -1,0 +1,76 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{!-- The template is used in "../diagnostics.tpl" template. --}}
+struct IoControlServer {
+    {{#each this}}
+    {{this.handler_name}}: Arc<dyn IoControlHandler<{{this.message}}>>,
+    {{/each}}
+}
+
+#[async_trait::async_trait]
+impl IoControlService for IoControlServer {
+    async fn ReturnControlToEcu(&self,
+    _caller_id: sdv::comms::id::ServiceFqin,
+    request: &IoControlRequest) -> SdvResult<IoControlResponse> {
+        match request.id.as_str() {
+            {{#each this}}
+            "{{this.id}}" => {
+                Ok(self.{{this.handler_name}}.return_control_to_ecu_untyped(&request.mask).await)
+            },
+            {{/each}}
+            _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+        }
+    }
+
+    async fn ResetToDefault(&self,
+    _caller_id: sdv::comms::id::ServiceFqin,
+    request: &IoControlRequest) -> SdvResult<IoControlResponse> {
+        match request.id.as_str() {
+            {{#each this}}
+            "{{this.id}}" => {
+                Ok(self.{{this.handler_name}}.reset_to_default_untyped(&request.mask).await)
+            },
+            {{/each}}
+            _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+        }
+    }
+
+    async fn FreezeCurrentState(&self,
+    _caller_id: sdv::comms::id::ServiceFqin,
+    request: &IoControlRequest) -> SdvResult<IoControlResponse> {
+        match request.id.as_str() {
+            {{#each this}}
+            "{{this.id}}" => {
+                Ok(self.{{this.handler_name}}.freeze_current_state_untyped(&request.mask).await)
+            },
+            {{/each}}
+            _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+        }
+    }
+
+    async fn PerformShortTermAdjustment(&self,
+    _caller_id: sdv::comms::id::ServiceFqin,
+    request: &PerformShortTermAdjustmentRequest) -> SdvResult<IoControlResponse> {
+        match request.id.as_str() {
+            {{#each this}}
+            "{{this.id}}" => {
+                Ok(self.{{this.handler_name}}.short_term_adjustment_untyped(&request.adjusted_value, &request.mask).await)
+            },
+            {{/each}}
+            _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+        }
+    }
+}
