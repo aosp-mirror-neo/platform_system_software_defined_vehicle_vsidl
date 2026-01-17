@@ -182,7 +182,7 @@ mod tests {
         vsidl_file
             .write_all(
                 b"
-# proto-file: //system/software_defined_vehicle/core_services/vsidl/protos/sdv/vsidl/v1/syntax.proto
+# proto-file: //system/software_defined_vehicle/vsidl/language/src/protos/sdv/vsidl/v1/syntax.proto
 # proto-message: VsidlEntry
 
 package: \"sdv.test\"

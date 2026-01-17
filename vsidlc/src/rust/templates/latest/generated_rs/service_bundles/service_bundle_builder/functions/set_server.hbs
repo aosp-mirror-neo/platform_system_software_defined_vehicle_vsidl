@@ -1,0 +1,25 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{#each rpc_servers}}
+/// Sets the server implementation for the `{{snake_case this.user_defined_name}}` service.
+///
+/// # Arguments
+/// * `server` - An `Arc` containing the implementation of the `Interface` trait.
+pub fn set_server_{{snake_case this.user_defined_name}}(mut self, server: std::sync::Arc<dyn {{this.unit_type.crate_name}}::Interface>) -> Self {
+    self.server_{{snake_case this.user_defined_name}} = Some(server);
+    self
+}
+{{/each}} {{! rpc_servers}}

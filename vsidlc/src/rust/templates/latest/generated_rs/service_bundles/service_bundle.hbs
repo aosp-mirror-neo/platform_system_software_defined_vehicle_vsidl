@@ -1,0 +1,58 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{> copyright}}
+{{> do_not_edit_warning}}
+
+{{#if is_empty}}
+
+/// Service bundle
+pub struct {{service_bundle_name}} {}
+
+impl {{service_bundle_name}} {
+    /// Creates a new instance of the service bundle
+    pub fn new() -> sdv::status::SdvResult<Self> {
+        Ok(Self {})
+    }
+}
+
+{{else}}
+
+{{#if has_diagnostics}}
+pub mod diagnostics;
+use crate::diagnostics::Diagnostics;
+{{/if}}
+
+{{#if is_publisher}}
+{{> service_bundles/publisher/publisher}}
+{{/if}}
+
+{{#if is_subscriber}}
+{{> service_bundles/subscriber/subscriber}}
+{{/if}}
+
+{{> service_bundles/struct}}
+
+impl {{service_bundle_name}} {
+{{> service_bundles/functions/new}}
+{{> service_bundles/functions/service_bundle_builder}}
+
+{{#if is_publisher}}
+    {{> service_bundles/functions/take_publisher}}
+{{/if}}
+}
+
+{{> service_bundles/service_bundle_builder/builder}}
+{{/if}} {{! is_empty}}

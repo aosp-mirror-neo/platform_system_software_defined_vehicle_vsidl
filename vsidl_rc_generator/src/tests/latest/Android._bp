@@ -44,7 +44,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -76,7 +76,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -108,7 +108,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -140,7 +140,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -184,7 +184,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -218,7 +218,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -251,7 +251,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -284,7 +284,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -317,7 +317,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -350,7 +350,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
@@ -394,7 +394,7 @@ genrule {
         ":system_software_defined_vehicle_core_services_stable_test_tire_vsidl",
     ],
     cmd: "$(location vsidl_rc_generator) " +
-        " --vsidl-path  system/software_defined_vehicle/core_services/vsidl/protos" +
+        " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --output-path $(genDir) ",

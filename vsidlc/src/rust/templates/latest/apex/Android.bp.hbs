@@ -1,0 +1,82 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{> copyright}}
+
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+// Apex to store the {{package_name}} sample.
+apex {
+    name: "{{package_name}}",
+    native_shared_libs: [
+        {{#each service_bundle_names}}
+        "libsdv_lm_{{snake_case this}}",
+        {{/each}}
+    ],
+    // Security contexts to files in the APEX.
+    file_contexts: "file_contexts",
+    // Json manifest file describing meta info of this APEX bundle.
+    // The 'name' filed from this json is used for mounting point.
+    manifest: "apex_manifest.json",
+    // Control whether this module compiles for 32-bit, 64-bit, or both.
+    compile_multilib: "both",
+    prebuilts: [
+        // SDV service bundles manifest file.
+        "{{package_name}}.manifest",
+        // Linker configuration to enable loading library from apex.
+        "{{package_name}}.linker-config",
+        // ACLs policy file.
+        "{{package_name}}.acls.config",
+        // Orchestration configuration.
+        {{#each service_bundles}}
+        "{{../base_package_name}}.{{this.short_name}}.orch.config",
+        {{/each}}
+    ],
+    // Name of the apex_key module that provides the private key to sign the APEX bundle.
+    key: "{{package_name}}.apex_key",
+    // TODO(b/333868045): make it updatable when all SDV dependencies are ready.
+    updatable: false,
+    product_specific: true,
+}
+
+// The key for signing the apex.
+apex_key {
+    name: "{{package_name}}.apex_key",
+    public_key: "{{package_name}}.avbpubkey",
+    private_key: "{{package_name}}.pem",
+}
+
+// SDV manifest file with the metadata information about service bundles stored in the apex.
+prebuilt_etc {
+    name: "{{package_name}}.manifest",
+    // The source name of the manifest file.
+    src: "sdv_service_bundles_manifest.textproto",
+    // The name of the installed file shall be `sdv_service_bundles_manifest.textproto`.
+    filename: "sdv_service_bundles_manifest.textproto",
+    // Disable direct installation of the manifest to one of the partitions.
+    // The manifest will be used only inside of service bundles registry apexes.
+    installable: false,
+}
+
+// The linker config to allow libraries for the apex to be linkable.
+linker_config {
+    name: "{{package_name}}.linker-config",
+    src: "linker.config.json",
+    // Disable direct installation of the linker config to one of the partitions.
+    // The linker configuration will be used only inside of service bundles registry apexes.
+    installable: false,
+}

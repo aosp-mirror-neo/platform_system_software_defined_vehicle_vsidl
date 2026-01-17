@@ -1,0 +1,176 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+package sdv.proto.test.message.annotation;
+import "sdv/vsidl/v1/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/api.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/source_context.proto";
+import "google/protobuf/type.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "proto_message_submessage_same_target.proto";
+import "proto_message_submessage_diff_target.proto";
+
+message AnnotationSinglePubMessage {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : SINGLE_PUB
+  };
+
+  // repeated field with annotation
+  repeated int32 single = 1 [ (.sdv.vsidl.v1.repeated_field_max_count) = 5 ];
+
+  // unfixed size datatype with annotation
+  string datatype_string = 2 [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  bytes datatype_bytes = 3 [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+
+  // unfixed sized protobuf well known type with annotation
+  google.protobuf.Any protobuf_any = 4
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Api protobuf_api = 5
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.BytesValue protobuf_bytesvalue = 6
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Enum protobuf_enum = 7
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.EnumValue protobuf_enumvalue = 8
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Field protobuf_field = 9
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.FieldMask protobuf_fieldmask = 10
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Method protobuf_method = 11
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Mixin protobuf_mixin = 12
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Option protobuf_option = 13
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.SourceContext protobuf_sourcecontext = 14
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.StringValue protobuf_stringvalue = 15
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Struct protobuf_struct = 16
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Type protobuf_type = 17
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Value protobuf_value = 18
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.ListValue protobuf_listvalue = 19
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+
+  // repeated and unfixed size datatype with annotation
+  repeated string repeated_string = 20 [
+    (sdv.vsidl.v1.repeated_field_max_count) = 5,
+    (sdv.vsidl.v1.variable_type_max_size) = 20
+  ];
+
+  // variable with annotation inside of a nested message
+  message Nested {
+    repeated int32 nested_repeated_int = 1
+        [ (.sdv.vsidl.v1.repeated_field_max_count) = 5 ];
+    string nested_string = 2 [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  }
+  Nested nested = 21;
+
+  // sub message: same file
+  SameFileWithAnnotationMessage samefile = 22;
+
+  // sub message: same target
+  SameTargetWithAnnotationMessage sametarget = 23;
+
+  // sub message: different target
+  .sdv.proto.test.message.difftarget.DiffTargetWithAnnotationMessage
+      difftarget = 24;
+}
+
+message AnnotationMultiPubMessage {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : MULTI_PUB
+  };
+
+  // repeated field with annotation
+  repeated int32 multi = 1 [ (.sdv.vsidl.v1.repeated_field_max_count) = 7 ];
+
+  // unfixed size datatype with annotation
+  string datatype_string = 2 [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  bytes datatype_bytes = 3 [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+
+  // unfixed sized protobuf well known type with annotation
+  google.protobuf.Any protobuf_any = 4
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Api protobuf_api = 5
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.BytesValue protobuf_bytesvalue = 6
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Enum protobuf_enum = 7
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.EnumValue protobuf_enumvalue = 8
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Field protobuf_field = 9
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.FieldMask protobuf_fieldmask = 10
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Method protobuf_method = 11
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Mixin protobuf_mixin = 12
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Option protobuf_option = 13
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.SourceContext protobuf_sourcecontext = 14
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.StringValue protobuf_stringvalue = 15
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Struct protobuf_struct = 16
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Type protobuf_type = 17
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.Value protobuf_value = 18
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  google.protobuf.ListValue protobuf_listvalue = 19
+      [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+
+  // repeated and unfixed size datatype with annotation
+  repeated string repeated_string = 20 [
+    (sdv.vsidl.v1.repeated_field_max_count) = 5,
+    (sdv.vsidl.v1.variable_type_max_size) = 20
+  ];
+
+  // variable with annotation inside of a nested message
+  message Nested {
+    repeated int32 nested_repeated_int = 1
+        [ (.sdv.vsidl.v1.repeated_field_max_count) = 5 ];
+    string nested_string = 2 [ (.sdv.vsidl.v1.variable_type_max_size) = 6 ];
+  }
+  Nested nested = 21;
+
+  // sub message: same file
+  SameFileWithAnnotationMessage samefile = 22;
+
+  // sub message: same target
+  SameTargetWithAnnotationMessage sametarget = 23;
+
+  // sub message: different target
+  .sdv.proto.test.message.difftarget.DiffTargetWithAnnotationMessage
+      difftarget = 24;
+}
+
+message SameFileWithAnnotationMessage {
+  repeated int32 samefile = 1 [ (.sdv.vsidl.v1.repeated_field_max_count) = 5 ];
+}

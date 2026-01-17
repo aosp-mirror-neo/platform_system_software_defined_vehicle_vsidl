@@ -1,0 +1,52 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+
+async fn fill_publication_channels<M: UnitType + publisher::Metadata + ::protobuf::Message + 'static>(
+    &mut self,
+    channels: &[&publisher::Channel<M>]) -> sdv::status::SdvResult<()>
+{
+    for channel in channels {
+        let publish_handle = self.comms
+        .create_publish(
+            &sdv::mw::PublisherAttributes::builder()
+                .publication_name(channel.service_unit)
+                .type_name(
+                    sdv::mw::TypeName::builder()
+                        .package_name(M::PACKAGE)
+                        .bundle_name(M::SERVICE_BUNDLE)
+                        .type_name(M::TYPENAME)
+                        .build()?,
+                )
+                .metadata(
+                    sdv::mw::PublisherMetadata::builder()
+                        .message_size(M::MESSAGE_SIZE)
+                        .message_count(M::MESSAGE_COUNT)
+                        .is_multipub(M::IS_MULTIPUB)
+                        .message_metadata(M::get_message_metadata())
+                        .message_metadata_required({{register_reflection_metadata}})
+                        .build()?,
+                )
+                .build()?,
+        )
+        .await?;
+        self.publishers.insert(
+            (std::any::TypeId::of::<M>(), channel.id),
+            Box::new(std::sync::Mutex::new(sdv::mw::Publisher::<M>::new(publish_handle))),
+        );
+    }
+    Ok(())
+}
+

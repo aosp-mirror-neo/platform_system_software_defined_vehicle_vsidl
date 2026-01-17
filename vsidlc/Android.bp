@@ -1,0 +1,186 @@
+// Copyright (C) 2026 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package {
+    default_applicable_licenses: ["sdv_license"],
+    default_team: "trendy_team_automotive",
+}
+
+rust_defaults {
+    name: "vsidlc_defaults",
+    defaults: ["sdv@rust_defaults"],
+    rustlibs: [
+        "libhandlebars",
+        "libserde_json",
+        "libvsidlc_cli",
+        "libvsidl_v1_parser",
+        "libvsidl_v1_proto_rs",
+        "libanyhow",
+        "libchrono",
+        "libclap",
+        "libglob",
+        "libheck",
+        "librayon",
+        "libregex",
+        "libprotobuf",
+        "libprotobuf_parse",
+        "libindexmap",
+        "libsyn",
+        "libformatter",
+        "liblsp_server",
+        "liblsp_types",
+        "libpest",
+        "libtempfile",
+        "libregenerator_proto",
+        "libtokio",
+    ],
+    proc_macros: ["libserde_derive"],
+    compile_multilib: "first",
+}
+
+rust_library_host {
+    name: "libvsidlc_mod",
+    crate_name: "vsidlc_mod",
+    defaults: [
+        "vsidlc_defaults",
+    ],
+    crate_root: "src/lib.rs",
+    srcs: [
+        "**/*.hbs",
+    ],
+    rustlibs: [
+        "libprettyplease",
+    ],
+    // rust_binary_host Soong target are build for both build-host and target-host
+    // However, vsidlc is only supposed to be used on build host.
+    // The following flag disable cross arch build, which means if build-host and target-host
+    // have different architecture vsidlc will only be on build-host
+    // Note: This is required by libprettyplease.
+    host_cross_supported: false,
+    compile_multilib: "first",
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_vsidlc_mod_test",
+    crate_name: "vsidlc_mod_test",
+    defaults: [
+        "vsidlc_defaults",
+    ],
+    crate_root: "src/lib.rs",
+    srcs: [
+        "**/*.hbs",
+    ],
+    rustlibs: [
+        "libprettyplease",
+    ],
+    test_suites: [
+        "automotive-sdv-tests",
+        "sdv-host-unit-tests",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    // rust_binary_host Soong target are build for both build-host and target-host
+    // However, vsidlc is only supposed to be used on build host.
+    // The following flag disable cross arch build, which means if build-host and target-host
+    // have different architecture vsidlc will only be on build-host
+    // Note: This is required by libprettyplease.
+    host_cross_supported: false,
+    data: [
+        ":sdv_vsidl_v1_protos",
+    ],
+}
+
+rust_binary_host {
+    name: "vsidlc",
+    crate_name: "vsidlc",
+    defaults: ["sdv@rust_defaults"],
+    crate_root: "src/main.rs",
+    rustlibs: [
+        "libvsidlc_mod",
+        "libanyhow",
+        "libclap",
+        "libprettyplease",
+    ],
+    // rust_binary_host Soong target are build for both build-host and target-host
+    // However, vsidlc is only supposed to be used on build host.
+    // The following flag disable cross arch build, which means if build-host and target-host
+    // have different architecture vsidlc will only be on build-host
+    // Note: This is required by libprettyplease.
+    host_cross_supported: false,
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_vsidlc_golden_test_rs",
+    defaults: ["vsidlc_defaults"],
+    rustlibs: [
+        "libvsidlc_mod",
+        "libwalkdir",
+        "libprettyplease",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    test_suites: [
+        "automotive-sdv-tests",
+        "sdv-host-unit-tests",
+    ],
+    data: [
+        "src/tests/catalogs/**/*",
+        "src/tests/catalogs/Android.bp",
+        "src/tests/latest/**/*",
+        ":sdv_vsidl_v1_protos",
+    ],
+    srcs: [
+        "src/tests/latest/golden_tests.rs",
+    ],
+    // rust_test_host Soong target are build for both build-host and target-host
+    // However, vsidlc is only supposed to be used on build host.
+    // The following flag disable cross arch build, which means if build-host and target-host
+    // have different architecture vsidlc will only be on build-host
+    // Note: This is required by libprettyplease.
+    host_cross_supported: false,
+}
+
+rust_test_host {
+    name: "sdv_core_core_services_unit_vsidlc_pdk29_golden_test_rs",
+    defaults: ["vsidlc_defaults"],
+    rustlibs: [
+        "libvsidlc_mod",
+        "libwalkdir",
+        "libprettyplease",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    test_suites: [
+        "automotive-sdv-tests",
+        "sdv-host-unit-tests",
+    ],
+    data: [
+        "src/tests/catalogs/**/*",
+        "src/tests/catalogs/Android.bp",
+        "src/tests/pdk29/**/*",
+        ":sdv_vsidl_v1_protos",
+    ],
+    srcs: [
+        "src/tests/pdk29/golden_tests.rs",
+    ],
+    // rust_test_host Soong target are build for both build-host and target-host
+    // However, vsidlc is only supposed to be used on build host.
+    // The following flag disable cross arch build, which means if build-host and target-host
+    // have different architecture vsidlc will only be on build-host
+    // Note: This is required by libprettyplease.
+    host_cross_supported: false,
+}

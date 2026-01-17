@@ -1,0 +1,73 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+package sdv.proto.test.message.annotation;
+import "sdv/vsidl/v1/annotations.proto";
+import "proto_message_submessage_same_target.proto";
+import "proto_message_submessage_diff_target.proto";
+
+// self reference
+message LoopSinglePubMessageA {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : SINGLE_PUB
+  };
+
+  LoopSinglePubMessageA msg = 1;
+}
+
+// loop with nested message
+message LoopSinglePubMessageB {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : SINGLE_PUB
+  };
+
+  message Nested { LoopSinglePubMessageB msg = 1; }
+  Nested nested_msg = 1;
+}
+
+// loop with sub message in same file
+message LoopSinglePubMessageC {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : SINGLE_PUB
+  };
+  LoopSubMessage msg = 1;
+}
+
+message LoopSubMessage { LoopSinglePubMessageC msg = 1; }
+
+// loop with sub message in same target (3 messages loop)
+message LoopMultiPubMessageA {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : MULTI_PUB
+  };
+
+  SameTargetLoopMessage msg = 1;
+}
+
+// loop with sub message in different target (4 messages loop)
+message LoopMultiPubMessageB {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : MULTI_PUB
+  };
+
+  .sdv.proto.test.message.difftarget.DiffTargetLoopMessage msg = 1;
+}

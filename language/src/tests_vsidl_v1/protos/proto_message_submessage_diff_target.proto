@@ -1,0 +1,42 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+package sdv.proto.test.message.difftarget;
+import "sdv/vsidl/v1/annotations.proto";
+
+// for annotation error test
+message DiffTargetNoAnnotationMessage {
+  repeated int32 differenttargetmessage = 1;
+}
+
+// for annotation ok test
+message DiffTargetWithAnnotationMessage {
+  repeated int32 differenttarget_annotation_message = 1
+      [ (.sdv.vsidl.v1.repeated_field_max_count) = 5 ];
+}
+
+// for loop error test
+message DiffTargetLoopMessage { One one = 1; }
+
+// for loop error test
+message One { Two two = 2; }
+
+// for loop error test
+message Two { Three three = 1; }
+
+// for loop error test
+message Three { DiffTargetLoopMessage mssg = 1; }

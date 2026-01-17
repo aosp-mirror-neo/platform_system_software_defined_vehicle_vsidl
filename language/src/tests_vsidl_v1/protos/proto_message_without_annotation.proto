@@ -1,0 +1,134 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+package sdv.proto.test.message.annotation;
+import "sdv/vsidl/v1/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/api.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/source_context.proto";
+import "google/protobuf/type.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "proto_message_submessage_same_target.proto";
+import "proto_message_submessage_diff_target.proto";
+
+message NoAnnotationSinglePubMessage {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : SINGLE_PUB
+  };
+
+  // repeated field without annotation
+  repeated int32 repeated_int_single = 1;
+
+  // unfixed size datatype without annotation
+  string datatype_string_single = 2;
+  bytes datatype_bytes_single = 3;
+
+  // unfixed size protobuf well known type without annotation
+  google.protobuf.Any protobuf_any_single = 4;
+  google.protobuf.Api protobuf_api_single = 5;
+  google.protobuf.BytesValue protobuf_bytesvalue_single = 6;
+  google.protobuf.Enum protobuf_enum_single = 7;
+  google.protobuf.EnumValue protobuf_enumvalue_single = 8;
+  google.protobuf.Field protobuf_field_single = 9;
+  google.protobuf.FieldMask protobuf_fieldmask_single = 10;
+  google.protobuf.Method protobuf_method_single = 11;
+  google.protobuf.Mixin protobuf_mixin_single = 12;
+  google.protobuf.Option protobuf_option_single = 13;
+  google.protobuf.SourceContext protobuf_sourcecontext_single = 14;
+  google.protobuf.StringValue protobuf_stringvalue_single = 15;
+  google.protobuf.Struct protobuf_struct_single = 16;
+  google.protobuf.Type protobuf_type_single = 17;
+  google.protobuf.Value protobuf_value_single = 18;
+  google.protobuf.ListValue protobuf_listvalue_single = 19;
+
+  // repeated and unfixed size datatype without annotation
+  repeated string repeated_string_single = 20;
+
+  // variable without annotation inside of a nested message
+  message Nested {
+    repeated int32 nested_repeated_int_single = 1;
+    string nested_string_single = 2;
+  }
+  Nested nested = 21;
+
+  // sub message: same file
+  SameFileNoAnnotationMessage samefile = 22;
+
+  // sub message: same target
+  SameTargetNoAnnotationMessage sametarget = 23;
+
+  // sub message: different target
+  .sdv.proto.test.message.difftarget.DiffTargetNoAnnotationMessage difftarget =
+      24;
+}
+
+message NoAnnotationMultiPubMessage {
+  option (sdv.vsidl.v1.publication) = {
+    message_count : 8
+    model : MULTI_PUB
+  };
+
+  // repeated field without annotation
+  repeated int32 repeated_int_multi = 1;
+
+  // unfixed size datatype without annotation
+  string datatype_string_multi = 2;
+  bytes datatype_bytes_multi = 3;
+
+  // unfixed size protobuf well known type without annotation
+  google.protobuf.Any protobuf_any_multi = 4;
+  google.protobuf.Api protobuf_api_multi = 5;
+  google.protobuf.BytesValue protobuf_bytesvalue_multi = 6;
+  google.protobuf.Enum protobuf_enum_multi = 7;
+  google.protobuf.EnumValue protobuf_enumvalue_multi = 8;
+  google.protobuf.Field protobuf_field_multi = 9;
+  google.protobuf.FieldMask protobuf_fieldmask_multi = 10;
+  google.protobuf.Method protobuf_method_multi = 11;
+  google.protobuf.Mixin protobuf_mixin_multi = 12;
+  google.protobuf.Option protobuf_option_multi = 13;
+  google.protobuf.SourceContext protobuf_sourcecontext_multi = 14;
+  google.protobuf.StringValue protobuf_stringvalue_multi = 15;
+  google.protobuf.Struct protobuf_struct_multi = 16;
+  google.protobuf.Type protobuf_type_multi = 17;
+  google.protobuf.Value protobuf_value_multi = 18;
+  google.protobuf.ListValue protobuf_listvalue_multi = 19;
+
+  // repeated and unfixed size datatype without annotation
+  repeated string repeated_string_multi = 20;
+
+  // variable without annotation inside of a nested message
+  message Nested {
+    repeated int32 nested_repeated_int_multi = 1;
+    string nested_string_multi = 2;
+  }
+  Nested nested = 21;
+
+  // sub message: same file
+  SameFileNoAnnotationMessage samefile = 22;
+
+  // sub message: same target
+  SameTargetNoAnnotationMessage sametarget = 23;
+
+  // sub message: different target
+  .sdv.proto.test.message.difftarget.DiffTargetNoAnnotationMessage difftarget =
+      24;
+}
+
+message SameFileNoAnnotationMessage { repeated int32 samefile = 1; }

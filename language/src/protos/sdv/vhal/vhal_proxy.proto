@@ -1,0 +1,122 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// Defines a schema for VHAL property mapping in VSIDL.
+
+// WARNING: This is an experimental API and not expected to be stable or final.
+//          Content of the file might drastically change with further
+//          development iterations.
+
+syntax = "proto3";
+
+package sdv.vsidl;
+
+import "android/hardware/automotive/vehicle/VehicleAreaConfig.proto";
+import "android/hardware/automotive/vehicle/VehiclePropConfig.proto";
+
+message VhalMapping {
+  // Default value type.
+  message DefaultValue {
+    // Optional. This is used for properties of type VehiclePropertyType#STRING.
+    string string_value = 1;
+    // Optional. This is used for properties of type VehiclePropertyType#BYTES.
+    bytes bytes_value = 2;
+    // Optional. This is used for properties of types
+    // VehiclePropertyType#INT, VehiclePropertyType#INT_VEC and
+    // VehiclePropertyType#BOOLEAN.
+    repeated int32 int32_values = 3;
+    // Optional. This is used for properties of types VehiclePropertyType#INT64
+    // and VehiclePropertyType#INT64_VEC.
+    repeated int64 int64_values = 4;
+    // Optional. This is used for properties of types VehiclePropertyType#FLOAT
+    // and VehiclePropertyType#FLOAT_VEC.
+    repeated float float_values = 5;
+  }
+
+  // A vehicle property.
+  message VehicleProperty {
+    // Required. Vehicle Property configuration.
+    // Both system and vendor properties are allowed.
+    // DO NOT specify `area_configs`, the value of which is ignored.
+    android.hardware.automotive.vehicle.proto.VehiclePropConfig prop_config = 1;
+    // Optional. The default value for the property.
+    // If not specified, the property will be shown as unavailable
+    // until its value is provided by SDV.
+    DefaultValue default_value = 2;
+    // Optional. Default property area configuration for all areas.
+    // The configuration is applied to all areas unless being overwritten by
+    // area specific configuration. DO NOT specify `area_id`, the value of which
+    // is ignored.
+    android.hardware.automotive.vehicle.proto.VehicleAreaConfig
+        default_area_config = 3;
+  }
+
+  // The source of the data in SDV to be mapped to the vehicle property.
+  message DataSource {
+    enum SdvAction {
+      // Default.
+      // If unspecified, the action is `ACTION_SUBSCRIBE`.
+      ACTION_UNSPECIFIED = 0;
+      // Subscribes to the unit type and assign the value to property.
+      ACTION_SUBSCRIBE = 1;
+      // Publishes the property value to the unit type.
+      ACTION_PUBLISH = 2;
+    }
+    // Required. The unit type protobuf message prefixed with its package name.
+    // Example: "sdv.tire.TirePressure".
+    string unit_type = 1;
+    // Optional. The action to be performed on the unit type.
+    // Defaults to 'ACTION_SUBSCRIBE'.
+    SdvAction action = 2;
+    // Optional. The full path to the field to be mapped to the property.
+    // If not specified, all fields except the `status_field_path` are mapped to
+    // the property, which is specially useful for properties with type
+    // VehiclePropertyType#MIXED. Example: "temperature.unit.unit_name".
+    string field_path = 3;
+    // Optional. The full path to the bool field specifying the status of the
+    // data source. The vehicle property is set to 'UNAVAILABLE' if the status
+    // value is false.
+    string status_field_path = 4;
+  }
+
+  // A vehicle property area
+  // (https://source.android.com/docs/automotive/vhal/previous/properties#area-types).
+  message PropertyArea {
+    // Required. Vehicle property area configuration.
+    // Both system and vendor areas are allowed.
+    // Example: "Constants::DOOR_1_LEFT".
+    android.hardware.automotive.vehicle.proto.VehicleAreaConfig area_config = 1;
+    // Optional. The default value for this area.
+    // If specified, this overwrites the `default_value` of the property.
+    DefaultValue default_value = 2;
+  }
+
+  // A mapping from vehicle property area to SDV publication instance.
+  message AreaMapping {
+    // Required. The vehicle property area.
+    PropertyArea area = 1;
+    // Required. The enum value that represents an SDV publication instance.
+    // Example: "FRONT_LEFT".
+    string publication_instance = 2;
+  }
+
+  // Required. The vehicle property.
+  VehicleProperty property = 1;
+  // Required. The SDV source that is mapped to the vehicle property.
+  DataSource source = 2;
+  // Optional. A list of mappings from vehicle property area to SDV publication
+  // instance.
+  repeated AreaMapping area_mapping = 3;
+}

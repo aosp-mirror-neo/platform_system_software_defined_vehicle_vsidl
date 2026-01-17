@@ -1,0 +1,69 @@
+# Copyright (C) 2026 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# proto-file: //system/software_defined_vehicle/vsidl/language/src/protos/sdv/vsidl/v1/syntax.proto
+# proto-message: VsidlEntry
+
+package: "sdv.golden"
+
+service_bundle {
+    name: "AllServiceBundleFeatures"
+
+    publisher { message: "Pressure" channel: "ONE" }
+    publisher { message: "Pressure" channel: "TWO" }
+    subscriber { message: "Pressure" channel: "TWO" }
+
+    server { service: "DummyRpc" }
+    client { service: "DummyRpc" }
+
+    diagnostics_declaration {
+        data_item {
+            id: "data_item_id1"
+            message_name: "sdv.test.diagnostics.DataItemOne"
+            is_writable: true
+        }
+
+        io_control {
+            id: "io_control_data1"
+            message_name: "sdv.test.diagnostics.IoControllableData"
+        }
+
+        event {
+            id: "event1"
+            extended_data_message_name: "sdv.test.diagnostics.FirstEventExt"
+            fault_listener_mask: 0x3
+        }
+
+        routine {
+            id: "routine1"
+            start {
+                request: "sdv.test.diagnostics.RoutineRequestParameter"
+                response: "sdv.test.diagnostics.RoutineResponseParameter"
+            }
+            stop {
+                response: "Temperature"
+            }
+            result {
+                response: "Temperature"
+            }
+        }
+    }
+
+    build_cfg {
+        target_name: "all_service_bundle_feature_tested"
+        skip_codegen: false
+    }
+
+    register_reflection_metadata: true
+}

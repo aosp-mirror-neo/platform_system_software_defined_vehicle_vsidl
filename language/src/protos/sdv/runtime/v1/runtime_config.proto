@@ -1,0 +1,112 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// Defines messages derived from with VSIDL Catalog information that are needed
+// in runtime of SDV VMs.
+
+// WARNING: This is an experimental API and not expected to be stable or final.
+//          Content of the file might drastically change with further
+//          development iterations.
+
+syntax = "proto3";
+
+package sdv.runtime.v1;
+
+import "google/protobuf/descriptor.proto";
+import "sdv/someip/v1/someip.proto";
+
+// Runtime configuration that provides metadata about the included SDV Unit
+// Types
+message VsidlRuntimeConfig {
+  // SDV unit type mapping that includes the FQN of the Unit Type and relevant
+  // metadata. In the case of Unit Types corresponding to topics, the metadata
+  // includes the proto message name and size constraints. In the case of Unit
+  // Types corresponding to RPC interfaces, the metadata includes the provided
+  // methods and the message names of the method's argument and return types.
+  message UnitTypeDescriptorMapping {
+    // Package name of the bundle declaring the Unit Type
+    string package_name = 1;
+    // Service Bundle declaring the Unit Type
+    string service_bundle_name = 2;
+    // Unit Type name
+    string type_name = 3;
+    // Archetype of this UnitType and corresponding metadata
+    oneof archetype_metadata {
+      // Metadata for UnitTypes corresponding to DT topics
+      TopicMetadata topic_metadata = 4;
+      // Metadata for UnitTypes corresponding to RPC interfaces
+      RpcMetadata rpc_metadata = 5;
+    }
+  }
+
+  // Size constraints on a Topic's field. A value of 0 corresponds to the value
+  // being unset.
+  message FieldSizeConstraint {
+    // Max number of repeated fields allowed for the field.
+    uint32 repeated_max_count = 1;
+    // Max size of variable sized types (string, bytes) in bytes.
+    uint32 variable_type_max_size = 2;
+  }
+
+  // Metadata about SDV topic
+  message TopicMetadata {
+    // Full name of proto message corresponding to this topic
+    string message_name = 1;
+    // Precalculated maximum size of the topic's UnitType message given SDV size
+    // annotations.
+    uint32 message_size = 2;
+    // Size of message queue in DT
+    uint32 message_count = 3;
+    // Mapping from the topic's fields to size constraint on the field
+    map<string, FieldSizeConstraint> field_size_constraint = 4;
+  }
+
+  // Metadata about SDV RPC interface
+  message RpcMetadata {
+    // List of mappings for the methods of RPC interface
+    repeated RpcMethodMapping method_mapping = 1;
+  }
+
+  // Mapping for a RPC interface method that includes the method name, and
+  // message names for argument and return types
+  message RpcMethodMapping {
+    // Name of method, scoped within containing `UnitTypeDescriptorMapping`
+    string method_name = 1;
+    // Full name of message corresponding to method's argument type
+    string argument_message_name = 2;
+    // Full name of message corresponding to method's return type
+    string return_message_name = 3;
+  }
+
+  // Mapping for a SDV message that includes the message name, and the file name
+  // containing the message definition
+  message MessageDescriptorMapping {
+    string message_name = 1;
+    string file_name = 2;
+  }
+
+  // List of mappings for unit types
+  repeated UnitTypeDescriptorMapping unit_type_mapping = 1;
+  // List of mappings for protobuf messages
+  repeated MessageDescriptorMapping descriptor_mapping = 2;
+  // List of file descriptors
+  repeated google.protobuf.FileDescriptorProto file_descriptor_proto = 3;
+}
+
+// SOME/IP topics in the VSDIL files that should be used by the broker to
+// subscribe and publish to DT topics.
+message SomeipRuntimeConfig {
+  repeated sdv.someip.v1.SomeIpMapping some_ip_mapping = 1;
+}

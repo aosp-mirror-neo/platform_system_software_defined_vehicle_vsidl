@@ -1,0 +1,64 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{> copyright}}
+{{> do_not_edit_warning}}
+
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+{{#each rpc_libs}}
+{{#if ../genrule}}
+genrule {
+    name: "{{this.target_name}}_src",
+    tools: ["extract_catalog_zip"],
+    srcs: [":vsidlc_{{../catalog_module_name}}"],
+    out: ["lib.rs"],
+    cmd: "$(location extract_catalog_zip) $(in) --rpc {{this.service_bundle_package}} {{this.unit_type_name}}",
+}
+{{/if}}
+
+rust_library {
+    name: "{{this.target_name}}",
+    crate_name: "{{this.crate_name}}",
+    srcs: [
+        {{#if ../genrule}}
+        ":{{this.target_name}}_src",
+        {{else}}
+        "lib.rs",
+        {{/if}}
+    ],
+    rustlibs: [
+        "libsdv_rs",
+        {{#if this.is_streaming}}
+        "libfutures",
+        {{/if}}
+        {{#each this.dependencies}}
+        "{{this}}",
+        {{/each}}
+    ],
+    proc_macros: [
+        "libasync_trait",
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "//apex_available:anyapex",
+    ],
+    vendor_available: true,
+    product_available: true,
+    min_sdk_version: "35",
+}
+{{/each}}

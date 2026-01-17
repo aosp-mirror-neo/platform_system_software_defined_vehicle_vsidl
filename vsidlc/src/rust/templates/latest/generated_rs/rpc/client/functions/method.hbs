@@ -1,0 +1,77 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+{{~#if this.uses_client_streaming }}
+/// Calls the `{{this.name}}` client-streaming RPC method.
+///
+/// # Arguments
+/// * `request` - A pinned, boxed, dynamic `Stream` of `{{this.request.message_name}}` messages.
+///
+/// # Returns
+/// A `SdvResult` containing a `{{this.response.message_name}}` on success.
+///
+/// # Errors
+/// This function can return an error for the following reasons:
+/// * `SdvStatusCode::InvalidArgument`: If any message in the `request` stream fails to serialize.
+/// * `SdvStatusCode::Internal`: If the server's final response fails to deserialize.
+/// * Other errors may be forwarded from the underlying `ClientTransport::call_client_streaming_method`
+///   implementation for transport-level issues.
+pub async fn {{this.name}}(&self, request: Pin<Box<dyn Stream<Item = {{this.request.crate_name}}::{{this.request.file_name}}::{{this.request.message_name}}> + Send>>)
+    -> sdv::status::SdvResult<{{this.response.crate_name}}::{{this.response.file_name}}::{{this.response.message_name}}> {
+    sdv::mw::call_client_streaming_method(self.0.as_ref(), "{{this.name}}", request).await
+}
+{{~else~}}
+{{~#if this.uses_server_streaming }}
+/// Calls the `{{this.name}}` server-streaming RPC method.
+///
+/// # Arguments
+/// * `request` - A reference to the `{{this.request.message_name}}` message.
+///
+/// # Returns
+/// A `SdvResult` containing a pinned, boxed, dynamic `Stream` of `{{this.response.message_name}}`
+/// messages on success.
+///
+/// # Errors
+/// This function can return an error for the following reasons:
+/// * `SdvStatusCode::InvalidArgument`: If the initial `request` message fails to serialize.
+/// * `SdvStatusCode::Internal`: If a message in the returned `Stream` fails to deserialize.
+/// * Other errors may be forwarded from the underlying
+///   `ClientTransport::call_server_streaming_method` implementation for transport-level
+///   issues on the initial call, or within the returned stream.
+pub async fn {{this.name}}(&self, request: &{{this.request.crate_name}}::{{this.request.file_name}}::{{this.request.message_name}})
+    -> sdv::status::SdvResult<Pin<Box<dyn Stream<Item = sdv::status::SdvResult<{{this.response.crate_name}}::{{this.response.file_name}}::{{this.response.message_name}}>> + Send>>> {
+    sdv::mw::call_server_streaming_method(self.0.as_ref(), "{{this.name}}", request).await
+}
+{{~else~}}
+/// Calls the `{{this.name}}` unary RPC method.
+///
+/// # Arguments
+/// * `request` - A reference to the `{{this.request.message_name}}` message.
+///
+/// # Returns
+/// A `SdvResult` containing a `{{this.response.message_name}}` on success.
+///
+/// # Errors
+/// This function can return an error for the following reasons:
+/// * `SdvStatusCode::InvalidArgument`: If the `request` message fails to serialize.
+/// * `SdvStatusCode::Internal`: If the server's response fails to deserialize.
+/// * Other errors may be forwarded from the underlying `ClientTransport::call_method`
+///   implementation for transport-level issues.
+pub async fn {{this.name}}(&self, request: &{{this.request.crate_name}}::{{this.request.file_name}}::{{this.request.message_name}})
+    -> sdv::status::SdvResult<{{this.response.crate_name}}::{{this.response.file_name}}::{{this.response.message_name}}> {
+    sdv::mw::call_method(self.0.as_ref(), "{{this.name}}", request).await
+}
+{{~/if~}}
+{{~/if~}}

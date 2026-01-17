@@ -1,0 +1,46 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+package sdv.test.diagnostics;
+
+import "sdv/vsidl/v1/annotations.proto";
+import "sdv/diagnostics/v1/diagnostics.proto";
+
+message DataItemOne {
+  string skipped_string = 1 [
+    (sdv.diagnostics.v1.skip_for_diag) = true,
+    (sdv.vsidl.v1.variable_type_max_size) = 1000
+  ];
+  int32 code = 2 [ (sdv.diagnostics.v1.primitive_byte_size) = ONE ];
+  bool enabled = 3;
+  string name = 4 [ (sdv.vsidl.v1.variable_type_max_size) = 5 ];
+}
+
+message IoControllableData {}
+
+message RoutineRequestParameter {
+  string value = 1 [ (sdv.vsidl.v1.variable_type_max_size) = 10 ];
+}
+
+message RoutineResponseParameter {
+  string echo = 1 [ (sdv.vsidl.v1.variable_type_max_size) = 20 ];
+}
+
+message FirstEventExt { int32 status = 1; }
+
+message Empty {}

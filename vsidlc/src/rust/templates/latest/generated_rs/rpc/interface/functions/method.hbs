@@ -1,0 +1,32 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+async fn {{this.name}}(&self,
+        _caller_id: sdv::comms::id::ServiceFqin,
+        {{~#if this.uses_client_streaming }}
+        _request: Pin<Box<dyn Stream<Item = {{this.request.crate_name}}::{{this.request.file_name}}::{{this.request.message_name}}> + Send>>
+        {{~else~}}
+        _request: &{{this.request.crate_name}}::{{this.request.file_name}}::{{this.request.message_name}}
+        {{~/if~}}
+)
+{{~#if this.uses_server_streaming }}
+    -> sdv::status::SdvResult<Pin<Box<dyn Stream<Item = sdv::status::SdvResult<{{this.response.crate_name}}::{{this.response.file_name}}::{{this.response.message_name}}>> + Send>>> {
+    Err(sdv::status::SdvStatus::new(sdv::status::SdvStatusCode::Unimplemented))
+}
+{{~else~}}
+    -> sdv::status::SdvResult<{{this.response.crate_name}}::{{this.response.file_name}}::{{this.response.message_name}}> {
+    Err(sdv::status::SdvStatus::new(sdv::status::SdvStatusCode::Unimplemented))
+}
+{{~/if~}}
