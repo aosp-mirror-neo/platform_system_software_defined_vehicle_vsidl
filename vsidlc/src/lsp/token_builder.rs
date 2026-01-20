@@ -182,6 +182,7 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::service_bundle_register_reflection_metadata
         | Rule::publisher_message
         | Rule::publisher_channel
+        | Rule::publisher_capacity
         | Rule::publisher_service_unit_name
         | Rule::subscriber_message
         | Rule::subscriber_channel

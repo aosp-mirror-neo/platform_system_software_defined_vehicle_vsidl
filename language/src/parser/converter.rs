@@ -170,6 +170,11 @@ pub fn convert_to_publisher(pair: Pair<Rule>, file_path: &str) -> Publisher {
                 publisher.channel.push(unquote(inner.as_str()));
                 publisher.channel_span.push(proto_span(inner, file_path).unwrap());
             }
+            Rule::publisher_capacity => {
+                let inner = get_inner_pair(item.clone());
+                publisher.capacity = parse_string::<i64>(get_inner_str(item)).unwrap();
+                publisher.capacity_span = proto_span(inner, file_path);
+            }
             Rule::publisher_service_unit_name => {
                 let inner = get_inner_pair(item);
                 publisher.service_unit_name = unquote(inner.as_str());
