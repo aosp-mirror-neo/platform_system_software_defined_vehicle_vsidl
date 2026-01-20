@@ -33,9 +33,11 @@ genrule {
 rust_library {
     name: "libsdv_mw_rs_diagnostics_diagnostics_service",
     crate_name: "sdv_mw_rs_diagnostics_diagnostics_service",
+    crate_root: ":libsdv_mw_rs_diagnostics_diagnostics_service_rs{service_bundle.rs}",
     srcs: [
-        ":libsdv_mw_rs_diagnostics_diagnostics_service_rs{service_bundle.rs}",
+        ":libsdv_mw_rs_diagnostics_diagnostics_service_rs",
     ],
+    use_expansive_default_srcs: false,
     rustlibs: [
         "libprotobuf",
         "liblog_rust",
