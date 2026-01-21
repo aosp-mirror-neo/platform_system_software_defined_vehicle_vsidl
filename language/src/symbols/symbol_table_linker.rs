@@ -16,7 +16,7 @@
 
 use super::{
     symbol::SymbolKind,
-    symbol_table::{SymbolTable, SymbolTableState},
+    symbol_table::{SymbolTable, SymbolTableState, GLOBAL_SCOPE_ID},
     symbol_table_creator::SymbolTableCreator,
 };
 use std::collections::HashSet;
@@ -64,10 +64,17 @@ impl SymbolTableLinker {
     /// the symbol table's state is set to [SymbolTableState::Linked].
     pub fn execute(&mut self) {
         self.link_servers_to_rpc_services();
-        self.link_publishers_to_publications();
-        self.link_publications_to_channels_enum();
-        self.link_subscribers_to_publications();
+        if self.symbol_table.uses_pdk29() {
+            self.link_publishers_to_publications();
+            self.link_publications_to_channels_enum();
+            self.link_subscribers_to_publications();
+        }
+        self.link_publishers_to_messages();
+        self.link_subscribers_to_messages();
         self.link_clients_to_rpc_services();
+        self.link_publishers_to_channels();
+        self.link_channels_to_proto_messages();
+        self.link_subscribers_to_channels();
         self.symbol_table.set_state(SymbolTableState::Linked)
     }
 
@@ -190,7 +197,7 @@ impl SymbolTableLinker {
             .into_iter()
             .filter(|s| unlinked.contains(&s.id()))
         {
-            let publication_type = &publisher.message;
+            let publication_type = &publisher.ast_node.message;
             let enclosing_scope_id = &publisher.symbol.enclosing_scope;
 
             // Resolve the publication name
@@ -299,7 +306,7 @@ impl SymbolTableLinker {
             .into_iter()
             .filter(|s| unlinked.contains(&s.id()))
         {
-            let publication_type = &subscriber.message;
+            let publication_type = &subscriber.ast_node.message;
             let enclosing_scope_id = &subscriber.symbol.enclosing_scope;
 
             // Resolve the publication name
@@ -310,22 +317,251 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoPublication(_)))
                 .collect();
 
-            links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+            if !resolved_symbols.is_empty() {
+                links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+            }
         }
 
         // Create links
-        for (vsidl_subscriber_id, proto_publication_id) in links {
-            let vsidl_subscriber_symbol = self.symbol_table.get_symbol_mut(&vsidl_subscriber_id);
-            if let SymbolKind::Subscriber(vsidl_subscriber_symbol) =
-                &mut vsidl_subscriber_symbol.unwrap()
+        for (vsidl_subscriber, proto_publication) in links {
+            if let Some(vsidl_subscriber_symbol) =
+                self.symbol_table.get_subscriber_symbol_mut(&vsidl_subscriber)
             {
-                vsidl_subscriber_symbol.publication = Some(proto_publication_id.clone());
+                vsidl_subscriber_symbol.publication = Some(proto_publication.clone());
             }
-            let proto_publication_symbol = self.symbol_table.get_symbol_mut(&proto_publication_id);
-            if let SymbolKind::ProtoPublication(proto_publication_symbol) =
-                &mut proto_publication_symbol.unwrap()
+            if let Some(proto_publication_symbol) =
+                self.symbol_table.get_proto_publication_symbol_mut(&proto_publication)
             {
-                proto_publication_symbol.subscribers.push(vsidl_subscriber_id);
+                proto_publication_symbol.subscribers.push(vsidl_subscriber);
+            }
+        }
+    }
+
+    /// Links [PublisherSymbol]s to the corresponding [ProtoMessageSymbol]s they publish.
+    ///
+    /// It iterates through all publisher symbols, resolves the `message` name to a
+    /// Protobuf message symbol, and establishes a bi-directional link between them.
+    ///
+    /// # Panics
+    ///
+    /// * If the type name cannot be resolved to exactly one [ProtoMessageSymbol].
+    ///   (This case should ideally be caught by context conditions before linking).
+    fn link_publishers_to_messages(&mut self) {
+        // Find links
+        let mut links = HashSet::new();
+        let unlinked = self.symbol_table.get_unlinked_symbols();
+        for publisher in self
+            .symbol_table
+            .get_all_publisher_symbols()
+            .into_iter()
+            .filter(|s| unlinked.contains(&s.id()))
+        {
+            let message_type = &publisher.ast_node.message;
+            let enclosing_scope_id = &publisher.symbol.enclosing_scope;
+
+            // Resolve the message name
+            let resolved_symbols: Vec<_> = self
+                .symbol_table
+                .resolve(enclosing_scope_id, message_type, false)
+                .into_iter()
+                .filter(|symbol| matches!(symbol, SymbolKind::ProtoMessage(_)))
+                .collect();
+
+            links.insert((publisher.id().clone(), resolved_symbols[0].id().clone()));
+        }
+
+        // Create links
+        for (vsidl_publisher, proto_message) in links {
+            let vsidl_publisher_symbol = self.symbol_table.get_symbol_mut(&vsidl_publisher);
+            if let SymbolKind::Publisher(vsidl_publisher_symbol) =
+                &mut vsidl_publisher_symbol.unwrap()
+            {
+                vsidl_publisher_symbol.message = Some(proto_message.clone());
+            }
+        }
+    }
+
+    /// Links [SubscriberSymbol]s to the corresponding [ProtoMessageSymbol]s they subscribe to.
+    ///
+    /// It iterates through all subscriber symbols, resolves the `message` name to a
+    /// Protobuf message symbol, and establishes a bi-directional link between them.
+    ///
+    /// # Panics
+    ///
+    /// * If the type name cannot be resolved to exactly one [ProtoMessageSymbol].
+    ///   (This case should ideally be caught by context conditions before linking).
+    fn link_subscribers_to_messages(&mut self) {
+        // Find links
+        let mut links = HashSet::new();
+        let unlinked = self.symbol_table.get_unlinked_symbols();
+        for subscriber in self
+            .symbol_table
+            .get_all_subscriber_symbols()
+            .into_iter()
+            .filter(|s| unlinked.contains(&s.id()))
+        {
+            let message_type = &subscriber.ast_node.message;
+            let enclosing_scope_id = &subscriber.symbol.enclosing_scope;
+
+            // Resolve the message name
+            let resolved_symbols: Vec<_> = self
+                .symbol_table
+                .resolve(enclosing_scope_id, message_type, false)
+                .into_iter()
+                .filter(|symbol| matches!(symbol, SymbolKind::ProtoMessage(_)))
+                .collect();
+
+            if !resolved_symbols.is_empty() {
+                links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+            }
+        }
+
+        // Create links
+        for (vsidl_subscriber, proto_message) in links {
+            if let Some(vsidl_subscriber_symbol) =
+                self.symbol_table.get_subscriber_symbol_mut(&vsidl_subscriber)
+            {
+                vsidl_subscriber_symbol.message = Some(proto_message.clone());
+            }
+        }
+    }
+
+    /// Links [PublisherSymbol]s to the [ChannelSymbol]s they publish to.
+    fn link_publishers_to_channels(&mut self) {
+        // Find links
+        let mut links = HashSet::new();
+        let unlinked = self.symbol_table.get_unlinked_symbols();
+        for publisher in self
+            .symbol_table
+            .get_all_publisher_symbols()
+            .into_iter()
+            .filter(|s| unlinked.contains(&s.id()))
+        {
+            for channel_name in &publisher.ast_node.channel {
+                // Resolve the channel name in global scope
+                let resolved_symbols: Vec<_> = self
+                    .symbol_table
+                    .resolve(&GLOBAL_SCOPE_ID, channel_name, false)
+                    .into_iter()
+                    .filter(|symbol| matches!(symbol, SymbolKind::Channel(_)))
+                    .collect();
+
+                if !resolved_symbols.is_empty() {
+                    links.insert((publisher.id().clone(), resolved_symbols[0].id().clone()));
+                }
+            }
+        }
+
+        // Create links
+        for (publisher_id, channel_id) in links {
+            if let Some(SymbolKind::Publisher(publisher_symbol)) =
+                self.symbol_table.get_symbol_mut(&publisher_id)
+            {
+                if !publisher_symbol.channels.contains(&channel_id) {
+                    publisher_symbol.channels.push(channel_id.clone());
+                }
+            }
+            if let Some(channel_symbol) = self.symbol_table.get_channel_symbol_mut(&channel_id) {
+                if !channel_symbol.publishers.contains(&publisher_id) {
+                    channel_symbol.publishers.push(publisher_id.clone());
+                }
+            }
+        }
+    }
+
+    /// Links [ChannelSymbol]s to the [ProtoMessageSymbol] they carry.
+    fn link_channels_to_proto_messages(&mut self) {
+        let mut message_to_channels = HashSet::new();
+
+        // Iterate through all publishers to find all message-channel associations
+        for publisher in self.symbol_table.get_all_publisher_symbols() {
+            if let Some(message_id) = &publisher.message {
+                for channel_id in &publisher.channels {
+                    message_to_channels.insert((message_id.clone(), channel_id.clone()));
+                }
+            }
+        }
+
+        // Create links
+        for (proto_message_id, channel_id) in message_to_channels {
+            // Link Channel to Message
+            if let Some(channel_symbol) = self.symbol_table.get_channel_symbol_mut(&channel_id) {
+                if channel_symbol.message.is_none() {
+                    channel_symbol.message = Some(proto_message_id.clone());
+                } else if channel_symbol.message != Some(proto_message_id.clone()) {
+                    // This scenario, where the same channel name is used for different message types,
+                    // should ideally be caught by another context condition.
+                    eprintln!(
+                        "Warning: ChannelSymbol {:?} ({}) is already linked to message {:?}, ignoring link to {:?}",
+                        channel_id,
+                        channel_symbol.name(),
+                        channel_symbol.message,
+                        proto_message_id
+                    );
+                }
+            }
+
+            // Link Message to Channel
+            if let Some(message_symbol) =
+                self.symbol_table.get_proto_message_symbol_mut(&proto_message_id)
+            {
+                if !message_symbol.channels.contains(&channel_id) {
+                    message_symbol.channels.push(channel_id);
+                }
+            }
+        }
+    }
+
+    /// Links [SubscriberSymbol]s to the [ChannelSymbol]s they subscribe to.
+    ///
+    /// This function re-evaluates all subscriber symbols, not just unlinked ones.
+    /// This is necessary because ChannelSymbols are implicitly generated from Publishers
+    /// in VSIDL files. Unlike symbols derived from .proto files, ChannelSymbols
+    /// can be removed and recreated with new IDs during incremental file processing.
+    /// Therefore, existing subscribers may have stale Channel IDs that need to be updated.
+    fn link_subscribers_to_channels(&mut self) {
+        let mut links = HashSet::new();
+        // Iterate through ALL subscribers, as existing ones might need relinking to new ChannelSymbol instances.
+        for subscriber in self.symbol_table.get_all_subscriber_symbols().into_iter() {
+            for channel_name in &subscriber.channel {
+                // Resolve the channel name in global scope
+                let resolved_symbols: Vec<_> = self
+                    .symbol_table
+                    .resolve(&GLOBAL_SCOPE_ID, channel_name, false)
+                    .into_iter()
+                    .filter(|symbol| matches!(symbol, SymbolKind::Channel(_)))
+                    .collect();
+
+                if !resolved_symbols.is_empty() {
+                    links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+                }
+            }
+        }
+
+        // Clear old channel links for all subscribers involved in the new links.
+        // This is crucial to remove stale IDs from channels that might have been recreated.
+        let subscriber_ids_to_update: HashSet<_> = links.iter().map(|(s, _)| s).collect();
+        for subscriber_id in subscriber_ids_to_update {
+            if let Some(subscriber_symbol) =
+                self.symbol_table.get_subscriber_symbol_mut(subscriber_id)
+            {
+                subscriber_symbol.channels.clear();
+            }
+        }
+
+        // Create links
+        for (subscriber_id, channel_id) in links {
+            if let Some(subscriber_symbol) =
+                self.symbol_table.get_subscriber_symbol_mut(&subscriber_id)
+            {
+                if !subscriber_symbol.channels.contains(&channel_id) {
+                    subscriber_symbol.channels.push(channel_id.clone());
+                }
+            }
+            if let Some(channel_symbol) = self.symbol_table.get_channel_symbol_mut(&channel_id) {
+                if !channel_symbol.subscribers.contains(&subscriber_id) {
+                    channel_symbol.subscribers.push(subscriber_id.clone());
+                }
             }
         }
     }
@@ -433,7 +669,7 @@ mod tests {
                 &symbol_table.get_symbol(&publisher_symbol.publication.clone().unwrap()).unwrap()
             {
                 assert_eq!(
-                    publisher_symbol.message,
+                    publisher_symbol.ast_node.message,
                     proto_publication_symbol.name.clone().expect("Publication should have a name")
                 );
             }
@@ -503,15 +739,84 @@ mod tests {
                 &symbol_table.get_symbol(&subscriber_symbol.publication.clone().unwrap()).unwrap()
             {
                 assert_eq!(
-                    subscriber_symbol.message,
+                    subscriber_symbol.ast_node.message,
                     proto_publication_symbol.name.clone().expect("Publication should have a name")
                 );
                 assert!(proto_publication_symbol.subscribers.contains(&subscriber_symbol.id()));
             } else {
                 panic!(
                     "No proto publication symbol found for subscriber '{}'",
-                    subscriber_symbol.message
+                    subscriber_symbol.ast_node.message
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn test_link_channels_to_proto_messages() {
+        // GIVEN a symbol table from catalog
+        let creator = setup();
+
+        // WHEN linking (VSIDL) channels to (Proto) messages
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.link_publishers_to_messages(); // This is required before linking channels
+        linker.link_channels_to_proto_messages();
+        let symbol_table = linker.symbol_table;
+
+        // THEN each channel used in a publisher or subscriber shall have a corresponding message
+        let all_channel_symbols = symbol_table.get_all_channel_symbols();
+        assert!(!all_channel_symbols.is_empty());
+
+        let mut pubsub_channel_ids = std::collections::HashSet::new();
+        for pub_symbol in symbol_table.get_all_publisher_symbols() {
+            pubsub_channel_ids.extend(pub_symbol.channels.iter());
+        }
+        for sub_symbol in symbol_table.get_all_subscriber_symbols() {
+            pubsub_channel_ids.extend(sub_symbol.channels.iter());
+        }
+
+        for channel_symbol in all_channel_symbols {
+            if pubsub_channel_ids.contains(&channel_symbol.id()) {
+                assert!(
+                    channel_symbol.message.is_some(),
+                    "Channel {:?} linked to Pub/Sub should have a message",
+                    channel_symbol.id()
+                );
+                if let SymbolKind::ProtoMessage(proto_message_symbol) =
+                    &symbol_table.get_symbol(&channel_symbol.message.clone().unwrap()).unwrap()
+                {
+                    assert_eq!(
+                        proto_message_symbol.name.clone().expect("Message should have a name"),
+                        "Pressure"
+                    );
+                } else {
+                    panic!("channel_symbol.message is not a ProtoMessage");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_link_subscribers_to_channels() {
+        // GIVEN a symbol table from catalog
+        let creator = setup();
+
+        // WHEN linking (VSIDL) subscribers to (VSIDL) channels
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.link_subscribers_to_channels();
+        let symbol_table = linker.symbol_table;
+
+        // THEN each subscriber shall have a corresponding channel
+        let all_subscriber_symbols = symbol_table.get_all_subscriber_symbols();
+        assert!(!all_subscriber_symbols.is_empty());
+        for subscriber_symbol in all_subscriber_symbols {
+            // ServiceBundleTwo subscribes to channel "TWO" of "Pressure"
+            if subscriber_symbol.ast_node.message == "Pressure" {
+                assert!(!subscriber_symbol.channels.is_empty());
+                let channel_id = &subscriber_symbol.channels[0];
+                let channel_symbol = symbol_table.get_channel_symbol(channel_id).unwrap();
+                assert_eq!(channel_symbol.name(), "TWO");
+                assert!(channel_symbol.subscribers.contains(&subscriber_symbol.id()));
             }
         }
     }
@@ -581,6 +886,20 @@ mod tests {
         assert!(proto_publication_symbol_from_subscriber
             .subscribers
             .contains(&vsidl_subscriber_symbol.id()));
+
+        // THEN Check Channel to Publication link
+        let channel_one_symbol =
+            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "ONE").unwrap();
+        assert_eq!(
+            channel_one_symbol.message.as_ref().unwrap(),
+            vsidl_subscriber_symbol.message.as_ref().unwrap()
+        );
+
+        // THEN Check Subscriber to Channel link
+        let channel_two_symbol =
+            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "TWO").unwrap();
+        assert!(vsidl_subscriber_symbol.channels.contains(&channel_two_symbol.id()));
+        assert!(channel_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
     }
 
     #[test]
@@ -603,6 +922,26 @@ mod tests {
         // WHEN linking the symbol table
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
+
+        // THEN Check Channel to Message link
+        let symbol_table = linker.symbol_table.clone();
+        let proto_message_symbol_from_subscriber =
+            symbol_table.resolve_proto_message_fqn("sdv.test.Pressure")[0].clone();
+        let vsidl_subscriber_symbol =
+            symbol_table.resolve_subscriber_fqn("sdv.test.Pressure")[0].clone();
+
+        let channel_one_symbol =
+            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "ONE").unwrap();
+        assert_eq!(
+            channel_one_symbol.message.as_ref().unwrap(),
+            &proto_message_symbol_from_subscriber.id()
+        );
+
+        // THEN Check Subscriber to Channel link
+        let channel_two_symbol =
+            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "TWO").unwrap();
+        assert!(vsidl_subscriber_symbol.channels.contains(&channel_two_symbol.id()));
+        assert!(channel_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
 
         // WHEN removing a file from the symbol table
         let file_to_reprocess = vsidl_v1_test_data::VSIDL_BUNDLE_ONE_VALID.clone().0;
@@ -678,5 +1017,19 @@ mod tests {
         assert!(proto_publication_symbol_from_subscriber
             .subscribers
             .contains(&vsidl_subscriber_symbol.id()));
+
+        // THEN Check Channel to Message link
+        let channel_one_symbol =
+            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "ONE").unwrap();
+        assert_eq!(
+            channel_one_symbol.message.as_ref().unwrap(),
+            vsidl_subscriber_symbol.message.as_ref().unwrap()
+        );
+
+        // THEN Check Subscriber to Channel link
+        let channel_two_symbol =
+            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "TWO").unwrap();
+        assert!(vsidl_subscriber_symbol.channels.contains(&channel_two_symbol.id()));
+        assert!(channel_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
     }
 }

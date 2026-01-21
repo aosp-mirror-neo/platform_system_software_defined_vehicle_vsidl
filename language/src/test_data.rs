@@ -455,10 +455,20 @@ vsidl_file!(VSIDL_DEPRECATED_KEYWORDS, "tests_vsidl_v1/vsidl", "deprecated_keywo
 
 proto_file!(ALL_AST_NODE_TYPES_PROTO, sdv_vsidl_v1_test_protos_rs, all_ast_node_types);
 proto_file!(DESCRIPTOR_MESSAGE_PROTO, sdv_vsidl_v1_test_protos_rs, messages);
+proto_file!(
+    DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS,
+    sdv_vsidl_v1_test_protos_rs,
+    messages_no_annotations
+);
 proto_file!(DESCRIPTOR_UNKNOWN_OPTIONS, sdv_vsidl_v1_test_protos_rs, unknown_options);
 proto_file!(DESCRIPTOR_NAME_TOO_LONG_PROTO, sdv_vsidl_v1_test_protos_rs, name_too_long);
 proto_file!(DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO, sdv_vsidl_v1_test_protos_rs, another_dummy_rpc);
 proto_file!(DESCRIPTOR_DUMMY_RPC_PROTO, sdv_vsidl_v1_test_protos_rs, dummy_rpc);
+proto_file!(
+    DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS,
+    sdv_vsidl_v1_test_protos_rs,
+    dummy_rpc_no_annotations
+);
 proto_file!(
     DESCRIPTOR_DUMMY_RPC_WITH_DEPENDENCY_PROTO,
     sdv_vsidl_v1_test_protos_rs,
