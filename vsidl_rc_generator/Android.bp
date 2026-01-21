@@ -86,7 +86,7 @@ genrule {
 }
 
 rust_test_host {
-    name: "sdv_core_core_services_unit_vsidl_rc_generator_test",
+    name: "sdv_core_vsidl_unit_vsidl_rc_generator_test",
     defaults: ["vsidl_rc_defaults"],
     crate_root: "src/lib.rs",
     test_options: {
@@ -110,7 +110,7 @@ rust_test_host {
 }
 
 rust_test_host {
-    name: "sdv_core_core_services_unit_vsidl_rc_generator_golden_tests",
+    name: "sdv_core_vsidl_unit_vsidl_rc_generator_golden_tests",
     defaults: ["vsidl_rc_defaults"],
     rustlibs: [
         "libvsidl_rc_generator",

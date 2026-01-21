@@ -38,7 +38,7 @@ rust_library_host {
 }
 
 rust_test_host {
-    name: "sdv_core_core_services_unit_vsidlc_cli_test",
+    name: "sdv_core_vsidl_unit_vsidlc_cli_test",
     defaults: [
         "libvsidlc_cli_default",
         "sdv@rust_defaults",
