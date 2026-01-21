@@ -17,6 +17,7 @@
 use crate::lsp::catalog_context::CatalogContext;
 use crate::lsp::diagnostics::validate_and_publish_diagnostics;
 use crate::lsp::handlers::definition::go_to_definition;
+use crate::lsp::handlers::document_symbols::handle_document_symbols;
 use crate::lsp::handlers::folding::folding_ranges;
 use crate::lsp::handlers::formatting::format_document;
 use crate::lsp::handlers::hover::hover;
@@ -73,6 +74,7 @@ pub(crate) fn lsp_server_start(cli: Cli) -> anyhow::Result<()> {
             },
         )),
         folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
+        document_symbol_provider: Some(OneOf::Left(true)),
         ..ServerCapabilities::default()
     })?;
 
@@ -163,6 +165,7 @@ async fn handle_request(state: Arc<ServerState>, req: Request) {
         "textDocument/formatting" => handle_formatting(&state, req),
         "textDocument/semanticTokens/full" => handle_semantic_tokens(&state, req),
         "textDocument/foldingRange" => handle_folding_range(&state, req),
+        "textDocument/documentSymbol" => handle_document_symbol(&state, req),
         _ => {
             let error = ResponseError {
                 code: lsp_server::ErrorCode::MethodNotFound as i32,
@@ -235,6 +238,11 @@ fn handle_semantic_tokens(state: &ServerState, req: Request) -> Result<Option<se
 fn handle_folding_range(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: FoldingRangeParams = serde_json::from_value(req.params)?;
     folding_ranges(params, &state.file_provider)
+}
+
+fn handle_document_symbol(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
+    let params: DocumentSymbolParams = serde_json::from_value(req.params)?;
+    handle_document_symbols(params, &state.file_provider)
 }
 
 async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notification) {
