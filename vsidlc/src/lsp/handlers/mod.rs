@@ -15,6 +15,7 @@
  */
 
 pub(crate) mod definition;
+pub(crate) mod document_symbols;
 pub(crate) mod folding;
 pub(crate) mod formatting;
 pub(crate) mod hover;
