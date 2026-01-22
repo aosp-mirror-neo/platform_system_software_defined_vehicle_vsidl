@@ -35,7 +35,7 @@ use std::fmt::Display;
 use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
 use vsidl_v1::someip::SomeIpMapping;
 
-pub struct LocalProviderFromApexes {
+pub(crate) struct LocalProviderFromApexes {
     bundle_metadata: HashMap<ServiceFqbn<'static>, BundleMetadata>,
 }
 
