@@ -299,7 +299,7 @@ fn read_protobuf_files<F: FileProvider>(
 ///
 /// The [PathBuf] to the VSIDL syntax directory.
 pub fn get_vsidl_syntax_default_path() -> anyhow::Result<PathBuf> {
-    // Hack to enable sdv_core_core_services_unit_vsidlc_golden_test and future tests running in sandboxes.
+    // Hack to enable sdv_core_vsidl_unit_vsidlc_golden_test and future tests running in sandboxes.
     // When a user run vsidlc, the assumption for now is that ANDROID_BUILD_TOP should always be set. This allows the correct
     // retrieval of VSIDL syntax protos. However tests run into a sandbox, therefore, for now, we copy the syntax proto definition manually into the sanbox.
     // This function assumes that if ANDROID_BUILD_TOP is not set, a test is running and the syntax definition is

@@ -66,7 +66,7 @@ rust_library {
 }
 
 rust_test {
-    name: "sdv_core_core_services_unit_vsidl_provider_agent_api_test",
+    name: "sdv_core_vsidl_unit_vsidl_provider_agent_api_test",
     crate_name: "vsidl_provider_agent_api",
     defaults: ["vsidl_provider_agent_api@rust_defaults"],
     srcs: [

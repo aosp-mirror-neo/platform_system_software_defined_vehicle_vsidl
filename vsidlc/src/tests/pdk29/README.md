@@ -40,7 +40,7 @@ Valid changes to the golden files include:
 The tests are executed as part of the regular build process and can be run via:
 
 ```bash
-atest sdv_core_core_services_unit_vsidlc_pdk29_golden_test_rs
+atest sdv_core_vsidl_unit_vsidlc_pdk29_golden_test_rs
 ```
 
 The test runner is `golden_tests.rs`, which compares the output of `vsidlc` with

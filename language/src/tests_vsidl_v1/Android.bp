@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // empty Android.bp file to validate parent Android.bp traverse
-// is supported by VSIDLC by default - unit-test sdv_core_core_services_unit_libvsidl_v1_common_test
+// is supported by VSIDLC by default - unit-test sdv_core_vsidl_unit_libvsidl_v1_common_test
