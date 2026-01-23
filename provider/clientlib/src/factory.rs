@@ -27,7 +27,7 @@ use std::collections::HashSet;
 
 /// Abstract factory for VsidlProvider sub-implementations
 #[automock]
-pub trait Factory {
+pub(crate) trait Factory {
     /// Implementation fetching data from local VM system files.
     fn provider_from_files(
         &self,
@@ -60,7 +60,7 @@ pub trait Factory {
     ) -> Option<Box<dyn VsidlConfigProviderV1>>;
 }
 
-pub struct FactoryImpl;
+pub(crate) struct FactoryImpl;
 
 impl Factory for FactoryImpl {
     fn provider_from_agent(
