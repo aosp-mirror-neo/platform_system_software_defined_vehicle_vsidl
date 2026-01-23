@@ -14,6 +14,33 @@
 {
   "sdv_core_services_presubmit": [
     {
+      "name": "sdv_core_core_services_unit_libvsidl_v1_common_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_libvsidl_v1_context_conditions_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_libvsidl_v1_symbols_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_libvsidl_v1_parser_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidl_catalog_size_computation_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidl_common_test"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidlc_golden_test_rs"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidlc_pdk29_golden_test_rs"
+    },
+    {
+      "name": "sdv_core_core_services_unit_vsidlc_mod_test"
+    },
+    {
       "name": "sdv_core_core_services_unit_vsidl_provider_agent_api_test"
     },
     {
