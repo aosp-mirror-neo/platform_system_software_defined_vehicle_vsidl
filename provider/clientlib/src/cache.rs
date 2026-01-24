@@ -19,7 +19,7 @@ use protobuf::reflect::FileDescriptor;
 use std::marker::{Send, Sync};
 
 /// Trait for file descriptor caches used by the VsidlProvider
-pub trait VsidlFdCache: Sync + Send {
+pub(crate) trait VsidlFdCache: Sync + Send {
     /// Insert a new entry into the cache
     fn insert_into_cache(&self, file_name: String, file_descriptor: FileDescriptor);
     /// Get a file descriptor from the cache

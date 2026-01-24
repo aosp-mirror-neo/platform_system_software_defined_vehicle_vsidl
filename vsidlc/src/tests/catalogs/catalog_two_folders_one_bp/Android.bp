@@ -13,7 +13,7 @@
 // limitations under the License.
 
 package {
-    default_applicable_licenses: ["sdv_license"],
+    default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
 // Golden sample to cover scenario where there is one single top level catalog with multiple rust_protobuf libraries
