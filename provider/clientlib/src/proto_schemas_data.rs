@@ -17,11 +17,12 @@
 use crate::cache::VsidlFdCache;
 use crate::{file_utils::read_config_file, vsidl_provider_api::*};
 use dashmap::DashMap;
-use log::{error, warn};
+use log::warn;
 use protobuf::descriptor::FileDescriptorProto;
 use protobuf::reflect::FileDescriptor;
 use protobuf::reflect::MessageDescriptor;
 use sdv_comms::sd::UnitType;
+use sdv_status_rs::{SdvResult, SdvStatus, SdvStatusCode};
 use sdv_vsidl_common::{WELLKNOWN_PROTOS_TO_DESCRIPTOR, WELLKNOWN_TYPES_TO_DESCRIPTOR};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -160,7 +161,7 @@ impl ProtoSchemasData {
     pub fn get_message_descriptor(&self, message: &str) -> Option<MessageDescriptor> {
         let file_descriptor = if let Some(file_name) = self.proto_message_to_file_name.get(message)
         {
-            self.get_file_descriptor(file_name)?
+            self.get_file_descriptor(file_name).ok()?
         } else {
             // don't immediately return error, could be a well-known type
             WELLKNOWN_TYPES_TO_DESCRIPTOR.get(message)?.clone()
@@ -176,12 +177,14 @@ impl ProtoSchemasData {
     /// Since FileDescriptor objects are checked for equality using pointer comparison, one should not
     /// rely on MessageDescriptors created from different threads to be equal (However, each MessageDescriptor will always be
     /// valid for reflective access to proto messages)
-    fn get_file_descriptor(&self, file_name: &str) -> Option<FileDescriptor> {
+    fn get_file_descriptor(&self, file_name: &str) -> SdvResult<FileDescriptor> {
         if !self.file_descriptor_cache.contains_file_descriptor_with_key(file_name) {
             let Some(file_descriptor_proto) = self.file_name_to_file_descriptor.get(file_name)
             else {
-                error!("Could not find file descriptor proto for file {file_name:?}");
-                return None;
+                return SdvResult::Err(SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Could not find file descriptor proto for file {file_name:?}"),
+                ));
             };
             //TODO try to add a match with if guards instead of this
             let mut fd_dependencies: Vec<FileDescriptor> = Vec::new();
@@ -204,13 +207,15 @@ impl ProtoSchemasData {
             let Ok(file_descriptor) =
                 FileDescriptor::new_dynamic(file_descriptor_proto.clone(), &fd_dependencies)
             else {
-                error!("Unable to create file descriptor for file {file_name:?}");
-                return None;
+                return SdvResult::Err(SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Unable to create file descriptor for file {file_name:?}"),
+                ));
             };
             self.file_descriptor_cache.insert_into_cache(file_name.to_string(), file_descriptor);
         }
 
-        self.file_descriptor_cache.get_file_descriptor(file_name).ok()
+        self.file_descriptor_cache.get_file_descriptor(file_name)
     }
 
     /// Returns true if this data object contains no schema mappings.
