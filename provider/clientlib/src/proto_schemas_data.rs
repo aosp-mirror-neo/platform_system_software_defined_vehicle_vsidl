@@ -210,7 +210,7 @@ impl ProtoSchemasData {
             self.file_descriptor_cache.insert_into_cache(file_name.to_string(), file_descriptor);
         }
 
-        self.file_descriptor_cache.get_file_descriptor(file_name)
+        self.file_descriptor_cache.get_file_descriptor(file_name).ok()
     }
 
     /// Returns true if this data object contains no schema mappings.
