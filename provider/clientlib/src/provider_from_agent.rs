@@ -31,6 +31,8 @@ use sdv_comms::sd::UnitNameDiscoveryArgs;
 use sdv_comms::sd::UnitType;
 use sdv_comms::ContextRef;
 use sdv_status_rs::SdvResult;
+use sdv_status_rs::SdvStatus;
+use sdv_status_rs::SdvStatusCode;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::Display;
@@ -97,7 +99,7 @@ impl ProviderFromAgent {
     }
 
     // Sets up the RPC Client
-    async fn create_client(&self, server_vm_name: &str) -> Option<Client> {
+    async fn create_client(&self, server_vm_name: &str) -> SdvResult<Client> {
         let creation_future = async {
             let mut discovery_stream = ServiceDiscoveryManager::new(self.ctx)
                 .subscribe_service_unit_change_by_name(
@@ -109,8 +111,7 @@ impl ProviderFromAgent {
                         .build()
                         .unwrap(),
                 )
-                .await
-                .ok()?;
+                .await?;
 
             let discovery_result = loop {
                 let status = discovery_stream.next().await;
@@ -121,27 +122,20 @@ impl ProviderFromAgent {
 
             let server_identifier = discovery_result.get_unit_identifier();
 
-            match Client::create(self.ctx, server_identifier, &ClientOptions::default()).await {
-                Ok(result) => Some(result),
-                Err(e) => {
-                    warn!("Failed to create client: {e:?}");
-                    None
-                }
-            }
+            Client::create(self.ctx, server_identifier, &ClientOptions::default()).await
         };
 
         let timeout_duration = get_create_rpc_client_timeout(read);
-        match tokio::time::timeout(timeout_duration, creation_future).await {
-            Ok(client) => client,
-            Err(_) => {
-                warn!(
+        tokio::time::timeout(timeout_duration, creation_future).await.map_err(|_| {
+            SdvStatus::with_message(
+                SdvStatusCode::DeadlineExceeded,
+                format!(
                     "Timed out creating RPC client for {} after {} seconds",
                     server_vm_name,
                     timeout_duration.as_secs()
-                );
-                None
-            }
-        }
+                ),
+            )
+        })?
     }
 
     fn is_same_vm(&self, fqin: &ServiceFqin) -> bool {
@@ -174,7 +168,7 @@ impl ProviderFromAgent {
         }
 
         // try with a new client and insert if successful
-        let client = self.create_client(server_vm_name).await?;
+        let client = self.create_client(server_vm_name).await.ok()?;
         if let Ok(result) = do_try_get_data(&client).await {
             let old_client = self.client_cache.insert(server_vm_name.to_owned(), Arc::new(client));
 
