@@ -147,21 +147,25 @@ impl ProtoSchemasData {
         &self,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
+    ) -> SdvResult<RpcMethodDescriptor> {
         let rpc_unit_type_to_proto_messages = &self.rpc_unit_type_to_proto_messages;
 
         let Some(method_map) = rpc_unit_type_to_proto_messages.get(unit_type) else {
-            log::error!("Could not find message for RPC interface {unit_type}");
-            return None;
+            return Err(SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Could not find RPC interface {unit_type}"),
+            ));
         };
 
         let Some((input_message_name, output_message_name)) = method_map.get(method_name) else {
-            log::error!("Could not find method name {method_name} in {unit_type}");
-            return None;
+            return Err(SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Could not find method name {method_name} in {unit_type}"),
+            ));
         };
         let request_message = self.get_message_descriptor(input_message_name).ok();
         let response_message = self.get_message_descriptor(output_message_name).ok();
-        Some(RpcMethodDescriptor { request_message, response_message })
+        Ok(RpcMethodDescriptor { request_message, response_message })
     }
 
     pub fn get_message_descriptor(&self, message: &str) -> SdvResult<MessageDescriptor> {

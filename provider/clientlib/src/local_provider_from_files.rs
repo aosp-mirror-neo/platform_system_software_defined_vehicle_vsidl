@@ -184,7 +184,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
         unit_type: &UnitType,
         method_name: &str,
     ) -> Option<RpcMethodDescriptor> {
-        self.proto_schemas.get_rpc_method_descriptor(unit_type, method_name)
+        self.proto_schemas.get_rpc_method_descriptor(unit_type, method_name).ok()
     }
 
     async fn get_message_descriptor(
