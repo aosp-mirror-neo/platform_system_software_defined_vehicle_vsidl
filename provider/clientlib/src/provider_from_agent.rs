@@ -206,7 +206,8 @@ pub fn publication_descriptor_from_proto(
     Some(PublicationDescriptor {
         message_descriptor: api::message_descriptor_from_proto(
             proto.message_descriptor.into_option().as_ref()?,
-        )?,
+        )
+        .ok()?,
         size_metadata: SizeMetadata {
             message_size: proto.size_metadata.message_size,
             message_count: proto.size_metadata.message_count,
@@ -297,12 +298,12 @@ async fn try_get_rpc_method_descriptor_from_client(
             .request_message_descriptor
             .into_option()
             .as_ref()
-            .and_then(api::message_descriptor_from_proto),
+            .and_then(|p| api::message_descriptor_from_proto(p).ok()),
         response_message: response
             .response_message_descriptor
             .into_option()
             .as_ref()
-            .and_then(api::message_descriptor_from_proto),
+            .and_then(|p| api::message_descriptor_from_proto(p).ok()),
     }))
 }
 
@@ -329,7 +330,7 @@ async fn try_get_message_descriptor_from_client(
             .message_descriptor
             .into_option()
             .as_ref()
-            .and_then(api::message_descriptor_from_proto)),
+            .and_then(|p| api::message_descriptor_from_proto(p).ok())),
         Err(e) => {
             warn!("GetMessageDescriptorRequest Error {e:?}");
             Err(e)
