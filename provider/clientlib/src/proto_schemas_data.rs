@@ -130,11 +130,17 @@ impl ProtoSchemasData {
     pub fn get_publication_descriptor(
         &self,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
-        let (message, size_metadata) = self.topic_unit_type_to_proto_message.get(unit_type)?;
+    ) -> SdvResult<PublicationDescriptor> {
+        let (message, size_metadata) =
+            self.topic_unit_type_to_proto_message.get(unit_type).ok_or_else(|| {
+                SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("No topic unit type mapping found for {unit_type}"),
+                )
+            })?;
 
-        let message_descriptor = self.get_message_descriptor(message).ok()?;
-        Some(PublicationDescriptor { message_descriptor, size_metadata: size_metadata.clone() })
+        let message_descriptor = self.get_message_descriptor(message)?;
+        Ok(PublicationDescriptor { message_descriptor, size_metadata: size_metadata.clone() })
     }
 
     pub fn get_rpc_method_descriptor(

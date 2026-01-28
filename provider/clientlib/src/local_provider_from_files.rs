@@ -175,7 +175,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
         _source_fqin: &ServiceFqin,
         unit_type: &UnitType,
     ) -> Option<PublicationDescriptor> {
-        self.proto_schemas.get_publication_descriptor(unit_type)
+        self.proto_schemas.get_publication_descriptor(unit_type).ok()
     }
 
     async fn get_rpc_method_descriptor(

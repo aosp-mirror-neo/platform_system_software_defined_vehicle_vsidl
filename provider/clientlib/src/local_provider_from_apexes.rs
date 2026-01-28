@@ -348,7 +348,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromApexes {
     ) -> Option<PublicationDescriptor> {
         self.bundle_metadata
             .get(&source_fqin.into())
-            .and_then(|data| data.proto_schemas.get_publication_descriptor(unit_type))
+            .and_then(|data| data.proto_schemas.get_publication_descriptor(unit_type).ok())
     }
 
     async fn get_rpc_method_descriptor(
