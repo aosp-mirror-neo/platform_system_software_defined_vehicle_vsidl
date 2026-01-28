@@ -31,50 +31,46 @@ use std::time::SystemTime;
 use thiserror::Error;
 use vsidl_v1::{diagnostics_syntax::DiagnosticsDeclaration, someip::SomeIpMapping};
 
-use crate::vsidl_provider_api::{
-    PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProvider, VsidlConfigProviderV1,
-};
+use crate::vsidl_provider_api::{PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProvider};
 
 const VSIDL_CONFIG_DIR: &str = "/etc/vsidl_v1/vsidl_config";
 
-/// Create new instance of VsidlConfigProviderV1 implementation, with access to Diagnostics-related data.
+/// Create new instance of VsidlProvider, with access to Diagnostics-related data.
 ///
 /// To be used from Diagnostics agent.
-pub fn new_for_diagnostics_agent(ctx: ContextRef) -> impl VsidlConfigProviderV1 {
+pub fn new_for_diagnostics_agent(ctx: ContextRef) -> impl VsidlConfigProvider {
     new_for_diagnostics_agent_with_injection(FactoryImpl, ctx)
 }
 
 /// Create new instance of VsidlProvider, with access to data on local VM only.
 ///
 /// To be used from VSIDL provider agent.
-pub fn new_for_vsidl_provider_agent() -> impl VsidlConfigProviderV1 {
+pub fn new_for_vsidl_provider_agent() -> impl VsidlConfigProvider {
     new_for_vsidl_provider_agent_with_injection(FactoryImpl)
 }
 
 /// Create new instance of VsidlProvider, with access to SOME/IP-related data only.
 ///
 /// To be used from SOME/IP broker agent.
-pub fn new_for_someip_broker_agent() -> impl VsidlConfigProviderV1 {
+pub fn new_for_someip_broker_agent() -> impl VsidlConfigProvider {
     new_for_someip_broker_agent_with_injection(FactoryImpl)
 }
 
 /// Create new instance of VsidlProvider, with access to VSIDL schemas data only via the VSIDL provider agent only.
 ///
 /// To be used from Telemetry agent.
-pub fn new_for_telemetry_agent(ctx: ContextRef) -> impl VsidlConfigProviderV1 {
+pub fn new_for_telemetry_agent(ctx: ContextRef) -> impl VsidlConfigProvider {
     new_for_telemetry_agent_with_injection(FactoryImpl, ctx)
 }
 
 /// Create new instance of VsidlProvider, with access to all data via the VSIDL provider agent only.
 ///
 /// To be used from integration test for cross-VM VSIDL provider usage.
-pub fn new_for_integration_test(ctx: ContextRef) -> impl VsidlConfigProviderV1 {
+pub fn new_for_integration_test(ctx: ContextRef) -> impl VsidlConfigProvider {
     new_for_integration_test_with_injection(FactoryImpl, ctx)
 }
 
-fn new_for_vsidl_provider_agent_with_injection(
-    factory: impl Factory,
-) -> impl VsidlConfigProviderV1 {
+fn new_for_vsidl_provider_agent_with_injection(factory: impl Factory) -> impl VsidlConfigProvider {
     let data_types =
         HashSet::from([DataType::SomeIp, DataType::Diagnostics, DataType::VsidlSchemas]);
 
@@ -99,7 +95,7 @@ fn new_for_vsidl_provider_agent_with_injection(
 fn new_for_diagnostics_agent_with_injection(
     factory: impl Factory,
     ctx: ContextRef,
-) -> impl VsidlConfigProviderV1 {
+) -> impl VsidlConfigProvider {
     let mut providers = HashMap::new();
 
     factory
@@ -121,7 +117,7 @@ fn new_for_diagnostics_agent_with_injection(
     VsidlProviderV1 { data_sources, providers }
 }
 
-fn new_for_someip_broker_agent_with_injection(factory: impl Factory) -> impl VsidlConfigProviderV1 {
+fn new_for_someip_broker_agent_with_injection(factory: impl Factory) -> impl VsidlConfigProvider {
     let mut providers = HashMap::new();
 
     factory
@@ -142,7 +138,7 @@ fn new_for_someip_broker_agent_with_injection(factory: impl Factory) -> impl Vsi
 fn new_for_telemetry_agent_with_injection(
     factory: impl Factory,
     ctx: ContextRef,
-) -> impl VsidlConfigProviderV1 {
+) -> impl VsidlConfigProvider {
     let data_types = HashSet::from([DataType::VsidlSchemas]);
 
     let mut providers = HashMap::new();
@@ -160,7 +156,7 @@ fn new_for_telemetry_agent_with_injection(
 fn new_for_integration_test_with_injection(
     factory: impl Factory,
     ctx: ContextRef,
-) -> impl VsidlConfigProviderV1 {
+) -> impl VsidlConfigProvider {
     let data_types =
         HashSet::from([DataType::SomeIp, DataType::Diagnostics, DataType::VsidlSchemas]);
 
@@ -390,7 +386,10 @@ mod test {
     use crate::proto_schemas_data::ProtoSchemasData;
     use crate::types::DataType;
     use crate::vsidl_provider::VSIDL_CONFIG_DIR;
-    use crate::vsidl_provider_api::*;
+    use crate::vsidl_provider_api::{
+        MockVsidlConfigProvider, PublicationDescriptor, RpcMethodDescriptor, SizeMetadata,
+        VsidlConfigProvider,
+    };
 
     use mockall::predicate::eq as mock_eq;
     use mockall::Predicate;
@@ -398,7 +397,7 @@ mod test {
     use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
 
     use googletest::assert_that;
-    use googletest::prelude::eq;
+    use googletest::prelude::{eq, ok};
 
     fn fqin(test_name: &str) -> ServiceFqin {
         let fqin_str =
@@ -693,13 +692,20 @@ mod test {
             None,
         );
 
-        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_vsidl_provider_agent_with_injection(mock_factory));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&None));
-        assert_that!(vsidl_provider.get_diagnostics_declaration(&fqin).await, eq(&None));
+        assert_that!(
+            vsidl_provider.get_someip_mappings(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
+        assert_that!(
+            vsidl_provider.get_diagnostics_declaration(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -708,11 +714,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 
@@ -731,16 +737,17 @@ mod test {
             None,
         );
 
-        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_vsidl_provider_agent_with_injection(mock_factory));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&Some(vec![])));
+        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, ok(eq(&vec![])));
         assert_that!(
             vsidl_provider.get_diagnostics_declaration(&fqin).await,
-            eq(&Some(DiagnosticsDeclaration::default()))
+            ok(eq(&DiagnosticsDeclaration::default()))
         );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -749,11 +756,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 
@@ -781,16 +788,20 @@ mod test {
             }),
         );
 
-        let vsidl_provider = super::new_for_diagnostics_agent_with_injection(mock_factory, ctx);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_diagnostics_agent_with_injection(mock_factory, ctx));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&None));
+        assert_that!(
+            vsidl_provider.get_someip_mappings(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
         assert_that!(
             vsidl_provider.get_diagnostics_declaration(&fqin).await,
-            eq(&Some(DiagnosticsDeclaration::default()))
+            ok(eq(&DiagnosticsDeclaration::default()))
         );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -799,11 +810,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 
@@ -835,16 +846,20 @@ mod test {
             }),
         );
 
-        let vsidl_provider = super::new_for_diagnostics_agent_with_injection(mock_factory, ctx);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_diagnostics_agent_with_injection(mock_factory, ctx));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&None));
+        assert_that!(
+            vsidl_provider.get_someip_mappings(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
         assert_that!(
             vsidl_provider.get_diagnostics_declaration(&fqin).await,
-            eq(&Some(DiagnosticsDeclaration::default()))
+            ok(eq(&DiagnosticsDeclaration::default()))
         );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -853,11 +868,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 
@@ -884,13 +899,17 @@ mod test {
             None,
         );
 
-        let vsidl_provider = super::new_for_someip_broker_agent_with_injection(mock_factory);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_someip_broker_agent_with_injection(mock_factory));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&Some(vec![])));
-        assert_that!(vsidl_provider.get_diagnostics_declaration(&fqin).await, eq(&None));
+        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, ok(eq(&vec![])));
+        assert_that!(
+            vsidl_provider.get_diagnostics_declaration(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -899,11 +918,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 
@@ -927,13 +946,20 @@ mod test {
             None,
         );
 
-        let vsidl_provider = super::new_for_telemetry_agent_with_injection(mock_factory, ctx);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_telemetry_agent_with_injection(mock_factory, ctx));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&None));
-        assert_that!(vsidl_provider.get_diagnostics_declaration(&fqin).await, eq(&None));
+        assert_that!(
+            vsidl_provider.get_someip_mappings(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
+        assert_that!(
+            vsidl_provider.get_diagnostics_declaration(&fqin).await.unwrap_err().status_code(),
+            eq(SdvStatusCode::NotFound)
+        );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -942,11 +968,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 
@@ -970,16 +996,17 @@ mod test {
             None,
         );
 
-        let vsidl_provider = super::new_for_integration_test_with_injection(mock_factory, ctx);
+        let vsidl_provider: Box<dyn VsidlConfigProvider> =
+            Box::new(super::new_for_integration_test_with_injection(mock_factory, ctx));
 
-        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, eq(&Some(vec![])));
+        assert_that!(vsidl_provider.get_someip_mappings(&fqin).await, ok(eq(&vec![])));
         assert_that!(
             vsidl_provider.get_diagnostics_declaration(&fqin).await,
-            eq(&Some(DiagnosticsDeclaration::default()))
+            ok(eq(&DiagnosticsDeclaration::default()))
         );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
-            eq(&Some(PublicationDescriptor {
+            ok(eq(&PublicationDescriptor {
                 message_descriptor: MessageDescriptor::for_type::<Empty>(),
                 size_metadata: SizeMetadata::default()
             }))
@@ -988,11 +1015,11 @@ mod test {
             vsidl_provider
                 .get_rpc_method_descriptor(&fqin, &Default::default(), "test_method")
                 .await,
-            eq(&Some(RpcMethodDescriptor::default()))
+            ok(eq(&RpcMethodDescriptor::default()))
         );
         assert_that!(
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
-            eq(&Some(MessageDescriptor::for_type::<Empty>()))
+            ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
     }
 }
