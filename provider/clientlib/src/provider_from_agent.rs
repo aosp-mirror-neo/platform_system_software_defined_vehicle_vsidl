@@ -202,12 +202,16 @@ fn get_create_rpc_client_timeout(
 /// Deserialize PublicationDescriptor.
 pub fn publication_descriptor_from_proto(
     proto: PublicationDescriptorProto,
-) -> Option<PublicationDescriptor> {
-    Some(PublicationDescriptor {
+) -> SdvResult<PublicationDescriptor> {
+    Ok(PublicationDescriptor {
         message_descriptor: api::message_descriptor_from_proto(
-            proto.message_descriptor.into_option().as_ref()?,
-        )
-        .ok()?,
+            proto.message_descriptor.into_option().as_ref().ok_or_else(|| {
+                SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    "No message_descriptor found in PublicationDescriptorProto",
+                )
+            })?,
+        )?,
         size_metadata: SizeMetadata {
             message_size: proto.size_metadata.message_size,
             message_count: proto.size_metadata.message_count,
@@ -262,7 +266,7 @@ async fn try_get_publication_descriptor_from_client(
         return Ok(None);
     };
 
-    Ok(publication_descriptor_from_proto(publication_descriptor_proto))
+    Ok(publication_descriptor_from_proto(publication_descriptor_proto).ok())
 }
 
 async fn try_get_rpc_method_descriptor_from_client(
