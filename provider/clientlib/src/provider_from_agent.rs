@@ -146,16 +146,13 @@ impl ProviderFromAgent {
         self.use_for_local_vm || !self.is_same_vm(fqin)
     }
 
-    /// The outer SdvResult of do_try_get_data refers to the result of the client connection,
-    /// while the inner SdvResult refers to the result of the lib call on the server.
     async fn try_get_data<T, F>(
         &self,
         source_fqin: &ServiceFqin,
         do_try_get_data: F,
     ) -> SdvResult<T>
     where
-        for<'a> F:
-            Fn(&'a Client) -> Pin<Box<dyn Future<Output = SdvResult<SdvResult<T>>> + Send + 'a>>,
+        for<'a> F: Fn(&'a Client) -> Pin<Box<dyn Future<Output = SdvResult<T>> + Send + 'a>>,
     {
         if !self.use_for_fqin(source_fqin) {
             return SdvResult::Err(SdvStatus::with_message(
@@ -170,9 +167,9 @@ impl ProviderFromAgent {
         if let Some(client) =
             self.client_cache.get(server_vm_name).map(|client_ref| Arc::clone(client_ref.value()))
         {
-            if let Ok(result) = do_try_get_data(&client).await {
+            if let Ok(data) = do_try_get_data(&client).await {
                 info!("On vm:{}, reused Client for vm:{}", self.local_vm_name, server_vm_name);
-                return result;
+                return Ok(data);
             }
         }
 
@@ -247,8 +244,8 @@ async fn try_get_publication_descriptor_from_client(
     client: &Client,
     source_fqin: ServiceFqin,
     unit_type: UnitType,
-) -> SdvResult<SdvResult<PublicationDescriptor>> {
-    Ok(api::GetPublicationDescriptor::unary_call(
+) -> SdvResult<PublicationDescriptor> {
+    api::GetPublicationDescriptor::unary_call(
         client,
         GetPublicationDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -269,7 +266,7 @@ async fn try_get_publication_descriptor_from_client(
             format!("No publication descriptor received for unit_type: {unit_type}"),
         )
     })
-    .and_then(publication_descriptor_from_proto))
+    .and_then(publication_descriptor_from_proto)
 }
 
 async fn try_get_rpc_method_descriptor_from_client(
@@ -277,7 +274,7 @@ async fn try_get_rpc_method_descriptor_from_client(
     source_fqin: ServiceFqin,
     unit_type: UnitType,
     method_name: String,
-) -> SdvResult<SdvResult<RpcMethodDescriptor>> {
+) -> SdvResult<RpcMethodDescriptor> {
     let response = api::GetRpcMethodDescriptor::unary_call(
         client,
         GetRpcMethodDescriptorRequest {
@@ -293,7 +290,7 @@ async fn try_get_rpc_method_descriptor_from_client(
     )
     .await?;
 
-    Ok(Ok(RpcMethodDescriptor {
+    Ok(RpcMethodDescriptor {
         request_message: response
             .request_message_descriptor
             .into_option()
@@ -304,15 +301,15 @@ async fn try_get_rpc_method_descriptor_from_client(
             .into_option()
             .as_ref()
             .and_then(|p| api::message_descriptor_from_proto(p).ok()),
-    }))
+    })
 }
 
 async fn try_get_message_descriptor_from_client(
     client: &Client,
     source_fqin: ServiceFqin,
     message_name: String,
-) -> SdvResult<SdvResult<MessageDescriptor>> {
-    Ok(api::GetMessageDescriptor::unary_call(
+) -> SdvResult<MessageDescriptor> {
+    api::GetMessageDescriptor::unary_call(
         client,
         GetMessageDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -334,14 +331,14 @@ async fn try_get_message_descriptor_from_client(
             format!("No message_descriptor found for message: {message_name}"),
         )
     })
-    .and_then(api::message_descriptor_from_proto))
+    .and_then(api::message_descriptor_from_proto)
 }
 
 async fn try_get_diagnostics_declaration_from_client(
     client: &Client,
     fqin: ServiceFqin,
-) -> SdvResult<SdvResult<DiagnosticsDeclaration>> {
-    Ok(api::GetDiagnosticsDeclaration::unary_call(
+) -> SdvResult<DiagnosticsDeclaration> {
+    api::GetDiagnosticsDeclaration::unary_call(
         client,
         GetDiagnosticsDeclarationRequest {
             fqbn: MessageField::some(ServiceFqbn {
@@ -360,7 +357,7 @@ async fn try_get_diagnostics_declaration_from_client(
             SdvStatusCode::Internal,
             format!("'Ok' response with 'None' diagnostics declaration for fqin: {fqin:?}"),
         )
-    }))
+    })
 }
 
 #[async_trait::async_trait]
@@ -467,8 +464,8 @@ mod tests {
     use vsidl_provider_agent_api::message_descriptor_to_proto;
     use vsidl_provider_agent_api_test_protos::message::TestMessage;
 
-    async fn ignore_client(_client: &Client) -> SdvResult<SdvResult<String>> {
-        Ok(Ok("closure is called".to_owned()))
+    async fn ignore_client(_client: &Client) -> SdvResult<String> {
+        Ok("closure is called".to_owned())
     }
 
     #[tokio::test]
