@@ -371,7 +371,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromApexes {
 
         self.bundle_metadata
             .get(&source_fqin.into())
-            .and_then(|data| data.proto_schemas.get_message_descriptor(full_message_name))
+            .and_then(|data| data.proto_schemas.get_message_descriptor(full_message_name).ok())
     }
 
     async fn get_someip_mappings(&self, source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {

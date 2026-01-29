@@ -194,7 +194,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
     ) -> Option<MessageDescriptor> {
         let full_message_name = &format!(".{message_name}");
 
-        self.proto_schemas.get_message_descriptor(full_message_name)
+        self.proto_schemas.get_message_descriptor(full_message_name).ok()
     }
 
     async fn get_someip_mappings(&self, _source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {

@@ -133,7 +133,7 @@ impl ProtoSchemasData {
     ) -> Option<PublicationDescriptor> {
         let (message, size_metadata) = self.topic_unit_type_to_proto_message.get(unit_type)?;
 
-        let message_descriptor = self.get_message_descriptor(message)?;
+        let message_descriptor = self.get_message_descriptor(message).ok()?;
         Some(PublicationDescriptor { message_descriptor, size_metadata: size_metadata.clone() })
     }
 
@@ -153,21 +153,30 @@ impl ProtoSchemasData {
             log::error!("Could not find method name {method_name} in {unit_type}");
             return None;
         };
-        let request_message = self.get_message_descriptor(input_message_name);
-        let response_message = self.get_message_descriptor(output_message_name);
+        let request_message = self.get_message_descriptor(input_message_name).ok();
+        let response_message = self.get_message_descriptor(output_message_name).ok();
         Some(RpcMethodDescriptor { request_message, response_message })
     }
 
-    pub fn get_message_descriptor(&self, message: &str) -> Option<MessageDescriptor> {
+    pub fn get_message_descriptor(&self, message: &str) -> SdvResult<MessageDescriptor> {
         let file_descriptor = if let Some(file_name) = self.proto_message_to_file_name.get(message)
         {
-            self.get_file_descriptor(file_name).ok()?
+            self.get_file_descriptor(file_name)?
         } else {
             // don't immediately return error, could be a well-known type
-            WELLKNOWN_TYPES_TO_DESCRIPTOR.get(message)?.clone()
+            WELLKNOWN_TYPES_TO_DESCRIPTOR
+                .get(message)
+                .ok_or(SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Could not find message {message:?} in well known types"),
+                ))?
+                .clone()
         };
 
-        file_descriptor.message_by_full_name(message)
+        file_descriptor.message_by_full_name(message).ok_or(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("Could not find message {message:?} in file descriptor"),
+        ))
     }
 
     /// Gets a file descriptor for the given file_name, or creates if it does not exist in the cache.
