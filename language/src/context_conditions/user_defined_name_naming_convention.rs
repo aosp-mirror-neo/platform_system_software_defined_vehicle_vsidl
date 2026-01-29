@@ -35,40 +35,40 @@ impl UserDefinedNameNamingConvention {
     fn check_name(&mut self, service_unit_name: &String) {
         // The name must start with a letter [a-z]
         let result = validate_first_char(service_unit_name);
-        if result.is_err() {
+        if let Err(err) = result {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionFirstChar,
-                format!("Service unit name '{}' {}", service_unit_name, result.unwrap_err()),
+                format!("Service unit name '{}' {}", service_unit_name, err),
                 Vec::new(),
             );
         }
 
         // All characters must be lowercase alphanumeric or a hyphen [a-z0-9\-]
         let result = validate_valid_chars(service_unit_name);
-        if result.is_err() {
+        if let Err(err) = result {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionCharset,
-                format!("Service unit name '{}' {}", service_unit_name, result.unwrap_err()),
+                format!("Service unit name '{}' {}", service_unit_name, err),
                 Vec::new(),
             );
         }
 
         // Hyphens in the name must not appear consecutively more than once
         let result = validate_consecutive_hyphens(service_unit_name);
-        if result.is_err() {
+        if let Err(err) = result {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionConsecutiveHyphen,
-                format!("Service unit name '{}' {}", service_unit_name, result.unwrap_err()),
+                format!("Service unit name '{}' {}", service_unit_name, err),
                 Vec::new(),
             );
         }
 
         // The name must not end with a hyphen
         let result = validate_last_char(service_unit_name);
-        if result.is_err() {
+        if let Err(err) = result {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionLastChar,
-                format!("Service unit name '{}' {}", service_unit_name, result.unwrap_err()),
+                format!("Service unit name '{}' {}", service_unit_name, err),
                 Vec::new(),
             );
         }

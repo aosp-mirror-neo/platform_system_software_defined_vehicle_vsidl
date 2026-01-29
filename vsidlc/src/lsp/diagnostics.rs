@@ -55,6 +55,7 @@ struct DiagnosticSession<'a> {
     cli: VsidlcCommonCli,
 }
 
+#[allow(clippy::unnecessary_unwrap)]
 impl<'a> DiagnosticSession<'a> {
     fn new(
         context: &'a mut CatalogContext,
