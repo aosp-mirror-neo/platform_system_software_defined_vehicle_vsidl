@@ -41,6 +41,14 @@ impl<'borrowed_lt> ServiceFqbn<'borrowed_lt> {
             bundle_name: Cow::Owned(metadata.name.clone()),
         })
     }
+
+    pub(crate) fn package_name(&self) -> &str {
+        &self.package_name
+    }
+
+    pub(crate) fn bundle_name(&self) -> &str {
+        &self.bundle_name
+    }
 }
 
 impl<'a> fmt::Display for ServiceFqbn<'a> {
