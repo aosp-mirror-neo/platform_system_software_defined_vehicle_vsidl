@@ -41,10 +41,12 @@ impl VsidlFdCache for DashMap<String, FileDescriptor> {
     }
 
     fn get_file_descriptor(&self, key: &str) -> SdvResult<FileDescriptor> {
-        self.get(key).map(|map_ref| map_ref.value().clone()).ok_or(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!("Unable to fetch file descriptor for file {key:?}"),
-        ))
+        self.get(key).map(|map_ref| map_ref.value().clone()).ok_or_else(|| {
+            SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Unable to fetch file descriptor for file {key:?}"),
+            )
+        })
     }
 
     fn contains_file_descriptor_with_key(&self, key: &str) -> bool {

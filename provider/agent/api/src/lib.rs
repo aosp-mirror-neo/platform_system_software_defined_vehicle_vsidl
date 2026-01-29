@@ -204,15 +204,15 @@ pub fn message_descriptor_from_proto(
     let file_descriptors = &proto.file_descriptors;
 
     if let Some(file_descriptor) = WELLKNOWN_TYPES_TO_DESCRIPTOR.get(&proto.message_name) {
-        return file_descriptor.message_by_full_name(&proto.message_name).ok_or(
+        return file_descriptor.message_by_full_name(&proto.message_name).ok_or_else(|| {
             SdvStatus::with_message(
                 SdvStatusCode::NotFound,
                 format!(
                     "Failed to retrieve message descriptor from file descriptor for {}",
                     proto.message_name
                 ),
-            ),
-        );
+            )
+        });
     }
 
     let fds = FileDescriptor::new_dynamic_fds(
