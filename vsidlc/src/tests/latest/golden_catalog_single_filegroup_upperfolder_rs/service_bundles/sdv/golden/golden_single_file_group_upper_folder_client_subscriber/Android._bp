@@ -1,4 +1,4 @@
-// Copyright (C) 2025 The Android Open Source Project
+// Copyright (C) 2026 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ package {
 rust_library {
     name: "libsdv_mw_rs_sdv_golden_golden_single_file_group_upper_folder_client_subscriber",
     crate_name: "sdv_mw_rs_sdv_golden_golden_single_file_group_upper_folder_client_subscriber",
+    crate_root: "service_bundle.rs",
     srcs: [
         "service_bundle.rs",
     ],
+    use_expansive_default_srcs: false,
     rustlibs: [
         "libprotobuf",
         "liblog_rust",
