@@ -39,13 +39,22 @@ genrule {
 rust_library {
     name: "libsdv_mw_rs_{{crate_name}}",
     crate_name: "sdv_mw_rs_{{crate_name}}",
+    {{#if genrule}}
+    crate_root: ":libsdv_mw_rs_{{crate_name}}_rs{service_bundle.rs}",
+    {{else}}
+    crate_root: "service_bundle.rs",
+    {{/if}}
     srcs: [
         {{#if genrule}}
-        ":libsdv_mw_rs_{{crate_name}}_rs{service_bundle.rs}",
+        ":libsdv_mw_rs_{{crate_name}}_rs",
         {{else}}
         "service_bundle.rs",
+        {{#if has_diagnostics}}
+        "diagnostics.rs",
+        {{/if}}
         {{/if}}
     ],
+    use_expansive_default_srcs: false,
     rustlibs: [
         "libprotobuf",
         "liblog_rust",
