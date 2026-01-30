@@ -45,7 +45,126 @@ impl LocalProviderFromFiles {
 
 impl Display for LocalProviderFromFiles {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "proto_schemas: {:?}", self.proto_schemas)
+        writeln!(f, "Proto Schemas:")?;
+        writeln!(
+            f,
+            "  Topics: {} unit types",
+            self.proto_schemas.topic_unit_type_to_proto_message.len()
+        )?;
+        for (unit_type, (message_name, size_metadata)) in
+            &self.proto_schemas.topic_unit_type_to_proto_message
+        {
+            writeln!(
+          f,
+          "    - Package: {}, Bundle: {}, Type: {} → {}, size {}, count: {}, constraints: {:?}",
+          unit_type.get_sdv_package_name(),
+          unit_type.get_service_bundle_name(),
+          unit_type.get_unit_type_name(),
+          message_name,
+          size_metadata.message_size,
+          size_metadata.message_count,
+          size_metadata.field_size_constraints
+      )?;
+        }
+        writeln!(
+            f,
+            "  RPCs: {} unit types",
+            self.proto_schemas.rpc_unit_type_to_proto_messages.len()
+        )?;
+        for (unit_type, methods) in &self.proto_schemas.rpc_unit_type_to_proto_messages {
+            writeln!(
+                f,
+                "    - Package: {}, Bundle: {}, Type: {} ({} methods)",
+                unit_type.get_sdv_package_name(),
+                unit_type.get_service_bundle_name(),
+                unit_type.get_unit_type_name(),
+                methods.len()
+            )?;
+            for (method_name, (request_msg, response_msg)) in methods {
+                writeln!(
+                    f,
+                    "      - {} (request: {}, response: {})",
+                    method_name, request_msg, response_msg
+                )?;
+            }
+        }
+        writeln!(f, "  proto messages: {}", self.proto_schemas.proto_message_to_file_name.len())?;
+        for (message_name, file_name) in &self.proto_schemas.proto_message_to_file_name {
+            writeln!(f, "    - {} → {}", message_name, file_name)?;
+        }
+        writeln!(f, "  File names: {}", self.proto_schemas.file_name_to_file_descriptor.len())?;
+        for (file_name, file_descriptor_proto) in &self.proto_schemas.file_name_to_file_descriptor {
+            writeln!(f, "    - File: {}", file_name)?;
+            writeln!(f, "      Package: {:?}", file_descriptor_proto.package)?;
+            writeln!(f, "      Syntax: {:?}", file_descriptor_proto.syntax)?;
+            writeln!(f, "      Dependencies: {}", file_descriptor_proto.dependency.len())?;
+            for dep in &file_descriptor_proto.dependency {
+                writeln!(f, "        - {}", dep)?;
+            }
+            writeln!(
+                f,
+                "      Public dependencies: {:?}",
+                file_descriptor_proto.public_dependency
+            )?;
+            writeln!(f, "      Weak dependencies: {:?}", file_descriptor_proto.weak_dependency)?;
+            writeln!(f, "      Message types: {}", file_descriptor_proto.message_type.len())?;
+            for msg in &file_descriptor_proto.message_type {
+                writeln!(f, "        - Message: {}", msg.name())?;
+                writeln!(f, "          Fields: {}", msg.field.len())?;
+                for field in &msg.field {
+                    writeln!(
+                        f,
+                        "            - {} (#{}, type: {:?}, label: {:?})",
+                        field.name(),
+                        field.number(),
+                        field.type_(),
+                        field.label()
+                    )?;
+                }
+                writeln!(f, "          Nested types: {}", msg.nested_type.len())?;
+                for nested in &msg.nested_type {
+                    writeln!(f, "            - {}", nested.name())?;
+                }
+                writeln!(f, "          Nested enums: {}", msg.enum_type.len())?;
+                for nested_enum in &msg.enum_type {
+                    writeln!(f, "            - {}", nested_enum.name())?;
+                }
+                writeln!(f, "          Oneofs: {}", msg.oneof_decl.len())?;
+                for oneof in &msg.oneof_decl {
+                    writeln!(f, "            - {}", oneof.name())?;
+                }
+                writeln!(f, "          Extensions: {}", msg.extension.len())?;
+                writeln!(f, "          Extension ranges: {}", msg.extension_range.len())?;
+                writeln!(f, "          Reserved ranges: {}", msg.reserved_range.len())?;
+                writeln!(f, "          Reserved names: {:?}", msg.reserved_name)?;
+            }
+            writeln!(f, "      Enum types: {}", file_descriptor_proto.enum_type.len())?;
+            for enum_type in &file_descriptor_proto.enum_type {
+                writeln!(f, "        - {}", enum_type.name())?;
+            }
+            writeln!(f, "      Services: {}", file_descriptor_proto.service.len())?;
+            for service in &file_descriptor_proto.service {
+                writeln!(f, "        - {}", service.name())?;
+            }
+            writeln!(f, "      Extensions: {}", file_descriptor_proto.extension.len())?;
+        }
+
+        writeln!(f, "  File Descriptors: {}", self.proto_schemas.file_descriptor_cache.len())?;
+        for ref_multi in &self.proto_schemas.file_descriptor_cache {
+            writeln!(
+                f,
+                "    - Name: {}, Package: {}, Services: {}, Syntax: {:?}",
+                ref_multi.key(),
+                ref_multi.value().package(),
+                ref_multi.value().services().count(),
+                ref_multi.value().syntax()
+            )?;
+            writeln!(f, "      Messages:")?;
+            for message in ref_multi.value().messages() {
+                writeln!(f, "        - {}", message.full_name())?;
+            }
+        }
+        Ok(())
     }
 }
 

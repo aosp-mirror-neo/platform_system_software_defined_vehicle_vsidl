@@ -194,9 +194,20 @@ struct VsidlProviderV1 {
 
 impl Display for VsidlProviderV1 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.providers
-            .iter()
-            .try_for_each(|(data_source, provider)| write!(f, "{data_source:?}: {provider}"))
+        for (data_source, provider) in &self.providers {
+            match data_source {
+                DataSource::Files => {
+                    writeln!(f, "Files Provider: {}", provider)?;
+                }
+                DataSource::Apexes => {
+                    writeln!(f, "Apexes Provider: {}", provider)?;
+                }
+                DataSource::Agent => {
+                    writeln!(f, "Agent Provider: {}", provider)?;
+                }
+            }
+        }
+        Ok(())
     }
 }
 
