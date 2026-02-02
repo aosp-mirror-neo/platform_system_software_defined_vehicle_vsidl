@@ -37,6 +37,10 @@ pub use printing_utils::print_list_of_element;
 mod multiple_rpc_servers;
 pub use multiple_rpc_servers::MultipleRpcServersForSameInterface;
 
+// Warn if catalog is empty or contains only empty .vsidl files
+mod empty_catalog;
+pub use empty_catalog::EmptyCatalog;
+
 // ERRORS
 
 // It is forbidden to have multiple publishers for the same multipub type in the same service bundle
