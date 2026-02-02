@@ -1,4 +1,4 @@
-// Copyright (C) 2025 The Android Open Source Project
+// Copyright (C) 2026 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,9 +32,11 @@ genrule {
 rust_library {
     name: "libsdv_mw_rs_sdv_golden_golden_tire_sensors_reader",
     crate_name: "sdv_mw_rs_sdv_golden_golden_tire_sensors_reader",
+    crate_root: ":libsdv_mw_rs_sdv_golden_golden_tire_sensors_reader_rs{service_bundle.rs}",
     srcs: [
-        ":libsdv_mw_rs_sdv_golden_golden_tire_sensors_reader_rs{service_bundle.rs}",
+        ":libsdv_mw_rs_sdv_golden_golden_tire_sensors_reader_rs",
     ],
+    use_expansive_default_srcs: false,
     rustlibs: [
         "libprotobuf",
         "liblog_rust",
