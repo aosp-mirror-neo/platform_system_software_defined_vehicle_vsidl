@@ -55,6 +55,17 @@ impl Finding {
         stream.set_color(ColorSpec::new().set_bold(true))?;
         writeln!(stream, "{}", self.message)?;
         let _ = print_spans(file_provider, stream, &self.spans);
+        stream.reset()?;
+        stream.set_color(ColorSpec::new().set_bold(true))?;
+        let severity = match self.severity {
+            FindingSeverity::Error | FindingSeverity::Fatal => "error",
+            FindingSeverity::Warn => "warning",
+        };
+        writeln!(
+            stream,
+            "For more information about this {}, try 'vsidlc --explain {}'",
+            severity, self.id
+        )?;
         stream.reset()
     }
 }
