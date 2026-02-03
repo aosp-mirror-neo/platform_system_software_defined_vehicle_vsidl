@@ -278,8 +278,8 @@ async fn try_get_rpc_method_descriptor_from_client(
     source_fqin: ServiceFqin,
     unit_type: UnitType,
     method_name: String,
-) -> SdvResult<Option<RpcMethodDescriptor>> {
-    let response = match api::GetRpcMethodDescriptor::unary_call(
+) -> SdvResult<SdvResult<RpcMethodDescriptor>> {
+    let response = api::GetRpcMethodDescriptor::unary_call(
         client,
         GetRpcMethodDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -292,16 +292,9 @@ async fn try_get_rpc_method_descriptor_from_client(
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => response,
-        Err(e) => {
-            warn!("GetRpcMethodDescriptor Error {e:?}");
-            return Err(e);
-        }
-    };
+    .await?;
 
-    Ok(Some(RpcMethodDescriptor {
+    Ok(Ok(RpcMethodDescriptor {
         request_message: response
             .request_message_descriptor
             .into_option()
@@ -403,15 +396,12 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         };
 
         self.try_get_data(source_fqin, |client| {
-            Box::pin(
-                try_get_rpc_method_descriptor_from_client(
-                    client,
-                    source_fqin.clone(),
-                    unit_type.clone(),
-                    method_name.to_owned(),
-                )
-                .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
-            )
+            Box::pin(try_get_rpc_method_descriptor_from_client(
+                client,
+                source_fqin.clone(),
+                unit_type.clone(),
+                method_name.to_owned(),
+            ))
         })
         .await
         .ok()
