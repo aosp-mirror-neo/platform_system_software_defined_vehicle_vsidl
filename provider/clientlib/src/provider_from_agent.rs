@@ -18,6 +18,7 @@ use crate::types::DataType;
 use crate::vsidl_provider_api::*;
 use dashmap::DashMap;
 use futures::Future;
+use futures::FutureExt;
 use futures::StreamExt;
 use log::{info, warn};
 use protobuf::reflect::MessageDescriptor;
@@ -146,13 +147,22 @@ impl ProviderFromAgent {
         self.use_for_local_vm || !self.is_same_vm(fqin)
     }
 
-    async fn try_get_data<T, F>(&self, source_fqin: &ServiceFqin, do_try_get_data: F) -> Option<T>
+    /// The outer SdvResult of do_try_get_data refers to the result of the client connection,
+    /// while the inner SdvResult refers to the result of the lib call on the server.
+    async fn try_get_data<T, F>(
+        &self,
+        source_fqin: &ServiceFqin,
+        do_try_get_data: F,
+    ) -> SdvResult<T>
     where
         for<'a> F:
-            Fn(&'a Client) -> Pin<Box<dyn Future<Output = SdvResult<Option<T>>> + Send + 'a>>,
+            Fn(&'a Client) -> Pin<Box<dyn Future<Output = SdvResult<SdvResult<T>>> + Send + 'a>>,
     {
         if !self.use_for_fqin(source_fqin) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::InvalidArgument,
+                format!("Provider from agent should not be used for {source_fqin:?}"),
+            ));
         }
 
         let server_vm_name = source_fqin.get_sdv_vm_name();
@@ -168,17 +178,16 @@ impl ProviderFromAgent {
         }
 
         // try with a new client and insert if successful
-        let client = self.create_client(server_vm_name).await.ok()?;
-        if let Ok(result) = do_try_get_data(&client).await {
+        let client = self.create_client(server_vm_name).await?;
+        let result = do_try_get_data(&client).await;
+        if result.is_ok() {
             let old_client = self.client_cache.insert(server_vm_name.to_owned(), Arc::new(client));
 
             if old_client.is_some() {
                 info!("On vm:{}, replaced Client for vm:{}", self.local_vm_name, server_vm_name);
             }
-            return result;
         }
-
-        None
+        result
     }
 }
 
@@ -379,13 +388,17 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         };
 
         self.try_get_data(source_fqin, |client| {
-            Box::pin(try_get_publication_descriptor_from_client(
-                client,
-                source_fqin.clone(),
-                unit_type.clone(),
-            ))
+            Box::pin(
+                try_get_publication_descriptor_from_client(
+                    client,
+                    source_fqin.clone(),
+                    unit_type.clone(),
+                )
+                .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
+            )
         })
         .await
+        .ok()
     }
 
     async fn get_rpc_method_descriptor(
@@ -399,14 +412,18 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         };
 
         self.try_get_data(source_fqin, |client| {
-            Box::pin(try_get_rpc_method_descriptor_from_client(
-                client,
-                source_fqin.clone(),
-                unit_type.clone(),
-                method_name.to_owned(),
-            ))
+            Box::pin(
+                try_get_rpc_method_descriptor_from_client(
+                    client,
+                    source_fqin.clone(),
+                    unit_type.clone(),
+                    method_name.to_owned(),
+                )
+                .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
+            )
         })
         .await
+        .ok()
     }
 
     async fn get_message_descriptor(
@@ -419,13 +436,17 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         };
 
         self.try_get_data(source_fqin, |client| {
-            Box::pin(try_get_message_descriptor_from_client(
-                client,
-                source_fqin.clone(),
-                message_name.to_owned(),
-            ))
+            Box::pin(
+                try_get_message_descriptor_from_client(
+                    client,
+                    source_fqin.clone(),
+                    message_name.to_owned(),
+                )
+                .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
+            )
         })
         .await
+        .ok()
     }
 
     async fn get_someip_mappings(&self, _source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {
@@ -445,9 +466,13 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
             return None;
         };
         self.try_get_data(fqin, |client| {
-            Box::pin(try_get_diagnostics_declaration_from_client(client, fqin.clone()))
+            Box::pin(
+                try_get_diagnostics_declaration_from_client(client, fqin.clone())
+                    .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
+            )
         })
         .await
+        .ok()
     }
 }
 
@@ -467,8 +492,8 @@ mod tests {
     use vsidl_provider_agent_api::message_descriptor_to_proto;
     use vsidl_provider_agent_api_test_protos::message::TestMessage;
 
-    async fn ignore_client(_client: &Client) -> SdvResult<Option<String>> {
-        Ok(Some("closure is called".to_owned()))
+    async fn ignore_client(_client: &Client) -> SdvResult<SdvResult<String>> {
+        Ok(Ok("closure is called".to_owned()))
     }
 
     #[tokio::test]
@@ -492,10 +517,14 @@ mod tests {
         // do not create a cache entry if we are on the same vm
         let res = remote_provider_from_agent
             .try_get_data(&fqin1, |client| {
-                Box::pin(try_get_diagnostics_declaration_from_client(client, fqin1.clone()))
+                Box::pin(
+                    try_get_diagnostics_declaration_from_client(client, fqin1.clone()).map(|res| {
+                        res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))
+                    }),
+                )
             })
             .await;
-        assert!(res.is_none());
+        assert!(res.is_err());
 
         let fqin2 = ServiceFqin::from_str("instance2:com.sdv.google.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
@@ -506,7 +535,7 @@ mod tests {
         let res = remote_provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_none());
+        assert!(res.is_err());
 
         // create an entry for a remote client (note, it doesn't matter that the actual client is for instance1 for this test)
         remote_provider_from_agent.client_cache.insert(
@@ -520,7 +549,7 @@ mod tests {
         let res = remote_provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_some());
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
@@ -544,7 +573,7 @@ mod tests {
         let res = provider_from_agent
             .try_get_data(&fqin1, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_some());
+        assert!(res.is_ok());
 
         let fqin2 = ServiceFqin::from_str("instance2:com.sdv.google.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
@@ -555,7 +584,7 @@ mod tests {
         let res = provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_none());
+        assert!(res.is_err());
 
         // create an entry for a remote client (note, it doesn't matter that the actual client is for instance1 for this test)
         provider_from_agent.client_cache.insert(
@@ -569,7 +598,7 @@ mod tests {
         let res = provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_some());
+        assert!(res.is_ok());
     }
 
     #[googletest::test]
