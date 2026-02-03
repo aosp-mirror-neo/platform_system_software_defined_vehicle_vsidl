@@ -248,8 +248,8 @@ async fn try_get_publication_descriptor_from_client(
     client: &Client,
     source_fqin: ServiceFqin,
     unit_type: UnitType,
-) -> SdvResult<Option<PublicationDescriptor>> {
-    let response = match api::GetPublicationDescriptor::unary_call(
+) -> SdvResult<SdvResult<PublicationDescriptor>> {
+    Ok(api::GetPublicationDescriptor::unary_call(
         client,
         GetPublicationDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -261,21 +261,16 @@ async fn try_get_publication_descriptor_from_client(
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => response,
-        Err(e) => {
-            warn!("GetPublicationDescriptor Error {e:?}");
-            return Err(e);
-        }
-    };
-
-    let Some(publication_descriptor_proto) = response.publication_descriptor.into_option() else {
-        warn!("No publication descriptor received");
-        return Ok(None);
-    };
-
-    Ok(publication_descriptor_from_proto(publication_descriptor_proto).ok())
+    .await?
+    .publication_descriptor
+    .into_option()
+    .ok_or_else(|| {
+        SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            format!("No publication descriptor received for unit_type: {unit_type}"),
+        )
+    })
+    .and_then(publication_descriptor_from_proto))
 }
 
 async fn try_get_rpc_method_descriptor_from_client(
@@ -387,14 +382,11 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         };
 
         self.try_get_data(source_fqin, |client| {
-            Box::pin(
-                try_get_publication_descriptor_from_client(
-                    client,
-                    source_fqin.clone(),
-                    unit_type.clone(),
-                )
-                .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
-            )
+            Box::pin(try_get_publication_descriptor_from_client(
+                client,
+                source_fqin.clone(),
+                unit_type.clone(),
+            ))
         })
         .await
         .ok()
