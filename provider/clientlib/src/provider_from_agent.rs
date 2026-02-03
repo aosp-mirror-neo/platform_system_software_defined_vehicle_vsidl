@@ -18,7 +18,6 @@ use crate::types::DataType;
 use crate::vsidl_provider_api::*;
 use dashmap::DashMap;
 use futures::Future;
-use futures::FutureExt;
 use futures::StreamExt;
 use log::{info, warn};
 use protobuf::reflect::MessageDescriptor;
@@ -341,8 +340,8 @@ async fn try_get_message_descriptor_from_client(
 async fn try_get_diagnostics_declaration_from_client(
     client: &Client,
     fqin: ServiceFqin,
-) -> SdvResult<Option<DiagnosticsDeclaration>> {
-    match api::GetDiagnosticsDeclaration::unary_call(
+) -> SdvResult<SdvResult<DiagnosticsDeclaration>> {
+    Ok(api::GetDiagnosticsDeclaration::unary_call(
         client,
         GetDiagnosticsDeclarationRequest {
             fqbn: MessageField::some(ServiceFqbn {
@@ -353,14 +352,15 @@ async fn try_get_diagnostics_declaration_from_client(
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => Ok(response.declaration.into_option()),
-        Err(e) => {
-            warn!("GetDiagnosticsDeclarationRequest Error {e:?}");
-            Err(e)
-        }
-    }
+    .await?
+    .declaration
+    .into_option()
+    .ok_or_else(|| {
+        SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            format!("'Ok' response with 'None' diagnostics declaration for fqin: {fqin:?}"),
+        )
+    }))
 }
 
 #[async_trait::async_trait]
@@ -444,10 +444,7 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
             return None;
         };
         self.try_get_data(fqin, |client| {
-            Box::pin(
-                try_get_diagnostics_declaration_from_client(client, fqin.clone())
-                    .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
-            )
+            Box::pin(try_get_diagnostics_declaration_from_client(client, fqin.clone()))
         })
         .await
         .ok()
@@ -495,11 +492,7 @@ mod tests {
         // do not create a cache entry if we are on the same vm
         let res = remote_provider_from_agent
             .try_get_data(&fqin1, |client| {
-                Box::pin(
-                    try_get_diagnostics_declaration_from_client(client, fqin1.clone()).map(|res| {
-                        res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))
-                    }),
-                )
+                Box::pin(try_get_diagnostics_declaration_from_client(client, fqin1.clone()))
             })
             .await;
         assert!(res.is_err());
