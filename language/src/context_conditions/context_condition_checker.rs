@@ -324,6 +324,7 @@ impl Default for ContextConditionChecker {
                 SymbolTableState::NotCreated,
                 Box::new(AndroidBpFields::default()),
             )
+            .add_context_condition(SymbolTableState::NotCreated, Box::new(EmptyCatalog::default()))
             .add_context_condition(
                 SymbolTableState::NotCreated,
                 Box::new(AndroidBpFilegroups::default()),
