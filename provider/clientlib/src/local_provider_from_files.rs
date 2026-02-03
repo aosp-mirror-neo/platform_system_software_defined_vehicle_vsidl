@@ -17,10 +17,12 @@ use crate::file_utils::directory_files;
 use crate::proto_schemas_data::ProtoSchemasData;
 use crate::types::DataType;
 use crate::vsidl_provider_api::*;
-use log::warn;
 use protobuf::reflect::MessageDescriptor;
+use sdv::status::SdvResult;
 use sdv_comms::id::ServiceFqin;
 use sdv_comms::sd::UnitType;
+use sdv_status_rs::SdvStatus;
+use sdv_status_rs::SdvStatusCode;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::Display;
@@ -169,13 +171,13 @@ impl Display for LocalProviderFromFiles {
 }
 
 #[async_trait::async_trait]
-impl VsidlConfigProviderV1 for LocalProviderFromFiles {
+impl VsidlConfigProvider for LocalProviderFromFiles {
     async fn get_publication_descriptor(
         &self,
         _source_fqin: &ServiceFqin,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
-        self.proto_schemas.get_publication_descriptor(unit_type).ok()
+    ) -> SdvResult<PublicationDescriptor> {
+        self.proto_schemas.get_publication_descriptor(unit_type)
     }
 
     async fn get_rpc_method_descriptor(
@@ -183,31 +185,38 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
         _source_fqin: &ServiceFqin,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
-        self.proto_schemas.get_rpc_method_descriptor(unit_type, method_name).ok()
+    ) -> SdvResult<RpcMethodDescriptor> {
+        self.proto_schemas.get_rpc_method_descriptor(unit_type, method_name)
     }
 
     async fn get_message_descriptor(
         &self,
         _source_fqin: &ServiceFqin,
         message_name: &str,
-    ) -> Option<MessageDescriptor> {
+    ) -> SdvResult<MessageDescriptor> {
         let full_message_name = &format!(".{message_name}");
 
-        self.proto_schemas.get_message_descriptor(full_message_name).ok()
+        self.proto_schemas.get_message_descriptor(full_message_name)
     }
 
-    async fn get_someip_mappings(&self, _source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {
-        warn!("Unexpected call to get someip mappings from file source");
-        None
+    async fn get_someip_mappings(
+        &self,
+        _source_fqin: &ServiceFqin,
+    ) -> SdvResult<Vec<SomeIpMapping>> {
+        Err(SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            "Unexpected call to get someip mappings from file source",
+        ))
     }
 
     async fn get_diagnostics_declaration(
         &self,
         _fqin: &ServiceFqin,
-    ) -> Option<DiagnosticsDeclaration> {
-        warn!("Unexpected call to get diagnostics declaration from file source");
-        None
+    ) -> SdvResult<DiagnosticsDeclaration> {
+        Err(SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            "Unexpected call to get diagnostics declaration from file source",
+        ))
     }
 }
 
