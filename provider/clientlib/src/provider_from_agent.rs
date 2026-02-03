@@ -324,8 +324,8 @@ async fn try_get_message_descriptor_from_client(
     client: &Client,
     source_fqin: ServiceFqin,
     message_name: String,
-) -> SdvResult<Option<MessageDescriptor>> {
-    match api::GetMessageDescriptor::unary_call(
+) -> SdvResult<SdvResult<MessageDescriptor>> {
+    Ok(api::GetMessageDescriptor::unary_call(
         client,
         GetMessageDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -333,22 +333,21 @@ async fn try_get_message_descriptor_from_client(
                 bundle: source_fqin.get_service_bundle_name().to_string(),
                 ..Default::default()
             }),
-            message_name,
+            message_name: message_name.clone(),
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => Ok(response
-            .message_descriptor
-            .into_option()
-            .as_ref()
-            .and_then(|p| api::message_descriptor_from_proto(p).ok())),
-        Err(e) => {
-            warn!("GetMessageDescriptorRequest Error {e:?}");
-            Err(e)
-        }
-    }
+    .await?
+    .message_descriptor
+    .into_option()
+    .as_ref()
+    .ok_or_else(|| {
+        SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            format!("No message_descriptor found for message: {message_name}"),
+        )
+    })
+    .and_then(api::message_descriptor_from_proto))
 }
 
 async fn try_get_diagnostics_declaration_from_client(
@@ -436,14 +435,11 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         };
 
         self.try_get_data(source_fqin, |client| {
-            Box::pin(
-                try_get_message_descriptor_from_client(
-                    client,
-                    source_fqin.clone(),
-                    message_name.to_owned(),
-                )
-                .map(|res| res.map(|opt| opt.ok_or(SdvStatus::new(SdvStatusCode::Internal)))),
-            )
+            Box::pin(try_get_message_descriptor_from_client(
+                client,
+                source_fqin.clone(),
+                message_name.to_owned(),
+            ))
         })
         .await
         .ok()
