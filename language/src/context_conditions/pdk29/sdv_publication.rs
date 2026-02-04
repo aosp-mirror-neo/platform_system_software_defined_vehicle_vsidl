@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use super::{impl_context_condition_symtab, FindingCollector, FindingId};
+use crate::{impl_context_condition_symtab, FindingCollector, FindingId};
 use vsidl_v1_common::name_to_fqn;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::symbol::SymbolKind;
@@ -122,7 +122,7 @@ impl SymbolTableChecker for SdvPublication {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::sdv_publication::SdvPublication;
+    use crate::pdk29::SdvPublication;
     use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;

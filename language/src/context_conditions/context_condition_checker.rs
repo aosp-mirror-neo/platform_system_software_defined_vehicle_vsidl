@@ -293,11 +293,6 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::Linked,
-            Box::new(PublicationMultipubMisuse::default()),
-        )
-        .add_context_condition(SymbolTableState::Linked, Box::new(PublicationUnused::default()))
-        .add_context_condition(
-            SymbolTableState::Linked,
             Box::new(RpcClientRequiresRpcServer::default()),
         )
         .add_context_condition(
@@ -308,6 +303,127 @@ impl ContextConditionChecker {
             SymbolTableState::Linked,
             Box::new(VsidlRedundantExplicitChannelListing::default()),
         );
+    }
+
+    /// Enables CoCos for the latest version.
+    pub fn enable_latest(&mut self) {
+        self.add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(ServiceUnitNameTooLong::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(PublicationType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(SubscriberType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(ProtoMessageExceedsMaxSize::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(ProtoMessageRequireAnnotationType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(ServiceUnitNameTooLong::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(ServiceUnitNameDuplicate::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(SubscriberRequiresPublisher::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(UniqueUserDefinedServiceUnitNamesPerType::default()),
+        );
+    }
+
+    /// Enables CoCos for PDK29.
+    pub fn enable_pdk29(&mut self) {
+        // NotCreated
+        self.add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(pdk29::ProtoMessageRequireAnnotationType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(pdk29::ServiceUnitNameTooLong::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(pdk29::SdvPublication::default()), // Checks proto options
+        );
+
+        // CreatedNotLinked
+        self.add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(pdk29::ProtoMessageExceedsMaxSize::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(pdk29::PublicationType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(pdk29::PublisherChannel::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(pdk29::SdvPublication::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(pdk29::SubscriberType::default()),
+        );
+
+        // Linked
+        self.add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::MultiplePublishersSameMultipubTopicPerBundle::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::ServiceUnitNameDuplicate::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::ServiceUnitNameTooLong::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::SubscriberRequiresPublisher::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::UniqueUserDefinedServiceUnitNamesPerType::default()),
+        );
+
+        // Warnings - only add if print_warnings is true
+        if self.print_warnings {
+            self.add_context_condition(
+                SymbolTableState::Linked,
+                Box::new(pdk29::PublicationMultipubMisuse::default()),
+            )
+            .add_context_condition(
+                SymbolTableState::Linked,
+                Box::new(pdk29::PublicationUnused::default()),
+            )
+            .add_context_condition(
+                SymbolTableState::Linked,
+                Box::new(pdk29::VsidlRedundantExplicitChannelListing::default()),
+            )
+            .add_context_condition(
+                SymbolTableState::Linked,
+                Box::new(pdk29::VsidlUnnecessaryFullyQualifiedName::default()),
+            );
+        }
     }
 }
 
@@ -339,18 +455,10 @@ impl Default for ContextConditionChecker {
             )
             // Proto metadata and structure checks
             .add_context_condition(SymbolTableState::NotCreated, Box::new(ProtoMetadata::default()))
-            .add_context_condition(
-                SymbolTableState::NotCreated,
-                Box::new(SdvPublication::default()), // Checks proto options
-            )
             // Naming and uniqueness checks (AST level)
             .add_context_condition(
                 SymbolTableState::NotCreated,
                 Box::new(ServiceBundleNamingConvention::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::NotCreated,
-                Box::new(ServiceUnitNameTooLong::default()), // Initial length check
             )
             .add_context_condition(
                 SymbolTableState::NotCreated,
@@ -384,24 +492,7 @@ impl Default for ContextConditionChecker {
             // Conditions requiring a created but not linked symbol table
             .add_context_condition(
                 SymbolTableState::CreatedNotLinked,
-                Box::new(PublicationType::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::CreatedNotLinked,
-                Box::new(PublisherChannel::default()),
-            )
-            // ServiceUnitNameTooLong is running in NotCreated state as well because it checks both AST and symbol table.
-            .add_context_condition(
-                SymbolTableState::CreatedNotLinked,
-                Box::new(SdvPublication::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::CreatedNotLinked,
                 Box::new(ServiceBundleFqnDuplicate::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::CreatedNotLinked,
-                Box::new(SubscriberType::default()),
             )
             .add_context_condition(
                 SymbolTableState::CreatedNotLinked,
@@ -412,34 +503,8 @@ impl Default for ContextConditionChecker {
                 Box::new(RpcServerType::default()),
             )
             .add_context_condition(
-                SymbolTableState::CreatedNotLinked,
-                Box::new(ProtoMessageExceedsMaxSize::default()),
-            )
-            // Conditions requiring a linked symbol table
-            .add_context_condition(
                 SymbolTableState::Linked,
                 Box::new(NoUserDefinedNamesForMultiChannelPublishers::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(MultiplePublishersSameMultipubTopicPerBundle::default()),
-            )
-            // ServiceUnitNameTooLong is running in NotCreated state as well because it checks both AST and symbol table.
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(ServiceUnitNameTooLong::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(ServiceUnitNameDuplicate::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(SubscriberRequiresPublisher::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(UniqueUserDefinedServiceUnitNamesPerType::default()),
             )
             .add_context_condition(
                 SymbolTableState::Linked,

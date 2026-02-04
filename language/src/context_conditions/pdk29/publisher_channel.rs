@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
+use crate::{FindingCollector, FindingId};
 use std::collections::{HashMap, HashSet};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_common::UNIQUE_CHANNEL;
@@ -152,7 +152,7 @@ impl SymbolTableChecker for PublisherChannel {
 #[cfg(test)]
 mod tests {
     use crate::context_condition::ContextCondition;
-    use crate::publisher_channel::PublisherChannel;
+    use crate::pdk29::PublisherChannel;
     use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;
