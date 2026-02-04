@@ -156,7 +156,7 @@ impl ProviderFromAgent {
     {
         if !self.use_for_fqin(source_fqin) {
             return SdvResult::Err(SdvStatus::with_message(
-                SdvStatusCode::InvalidArgument,
+                SdvStatusCode::Internal,
                 format!("Provider from agent should not be used for {source_fqin:?}"),
             ));
         }
@@ -361,14 +361,17 @@ async fn try_get_diagnostics_declaration_from_client(
 }
 
 #[async_trait::async_trait]
-impl VsidlConfigProviderV1 for ProviderFromAgent {
+impl VsidlConfigProvider for ProviderFromAgent {
     async fn get_publication_descriptor(
         &self,
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
+    ) -> SdvResult<PublicationDescriptor> {
         if !self.data_types.contains(&DataType::VsidlSchemas) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide VsidlSchemas",
+            ));
         };
 
         self.try_get_data(source_fqin, |client| {
@@ -379,7 +382,6 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
             ))
         })
         .await
-        .ok()
     }
 
     async fn get_rpc_method_descriptor(
@@ -387,9 +389,12 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
+    ) -> SdvResult<RpcMethodDescriptor> {
         if !self.data_types.contains(&DataType::VsidlSchemas) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide VsidlSchemas",
+            ));
         };
 
         self.try_get_data(source_fqin, |client| {
@@ -401,16 +406,18 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
             ))
         })
         .await
-        .ok()
     }
 
     async fn get_message_descriptor(
         &self,
         source_fqin: &ServiceFqin,
         message_name: &str,
-    ) -> Option<MessageDescriptor> {
+    ) -> SdvResult<MessageDescriptor> {
         if !self.data_types.contains(&DataType::VsidlSchemas) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide VsidlSchemas",
+            ));
         };
 
         self.try_get_data(source_fqin, |client| {
@@ -421,30 +428,39 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
             ))
         })
         .await
-        .ok()
     }
 
-    async fn get_someip_mappings(&self, _source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {
+    async fn get_someip_mappings(
+        &self,
+        _source_fqin: &ServiceFqin,
+    ) -> SdvResult<Vec<SomeIpMapping>> {
         if !self.data_types.contains(&DataType::SomeIp) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide SomeIp",
+            ));
         };
 
-        warn!("Unexpected call to get someip mappings from remote VM");
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            "ProviderFromAgent does not support SomeIp data",
+        ))
     }
 
     async fn get_diagnostics_declaration(
         &self,
         fqin: &ServiceFqin,
-    ) -> Option<DiagnosticsDeclaration> {
+    ) -> SdvResult<DiagnosticsDeclaration> {
         if !self.data_types.contains(&DataType::Diagnostics) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide Diagnostics",
+            ));
         };
         self.try_get_data(fqin, |client| {
             Box::pin(try_get_diagnostics_declaration_from_client(client, fqin.clone()))
         })
         .await
-        .ok()
     }
 }
 
