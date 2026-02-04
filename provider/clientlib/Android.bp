@@ -44,9 +44,11 @@ rust_defaults {
         "libvsidl_provider_agent_api",
         "libvsidl_provider_agent_protos",
         "libsdv_dump",
+        "libstrum",
     ],
     proc_macros: [
         "libasync_trait",
+        "libstrum_macros",
     ],
     ld_flags: ["-Wl,--no-as-needed"],
 }
