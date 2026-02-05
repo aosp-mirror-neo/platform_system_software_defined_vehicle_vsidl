@@ -175,7 +175,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
         _source_fqin: &ServiceFqin,
         unit_type: &UnitType,
     ) -> Option<PublicationDescriptor> {
-        self.proto_schemas.get_publication_descriptor(unit_type)
+        self.proto_schemas.get_publication_descriptor(unit_type).ok()
     }
 
     async fn get_rpc_method_descriptor(
@@ -184,7 +184,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
         unit_type: &UnitType,
         method_name: &str,
     ) -> Option<RpcMethodDescriptor> {
-        self.proto_schemas.get_rpc_method_descriptor(unit_type, method_name)
+        self.proto_schemas.get_rpc_method_descriptor(unit_type, method_name).ok()
     }
 
     async fn get_message_descriptor(
@@ -194,7 +194,7 @@ impl VsidlConfigProviderV1 for LocalProviderFromFiles {
     ) -> Option<MessageDescriptor> {
         let full_message_name = &format!(".{message_name}");
 
-        self.proto_schemas.get_message_descriptor(full_message_name)
+        self.proto_schemas.get_message_descriptor(full_message_name).ok()
     }
 
     async fn get_someip_mappings(&self, _source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {

@@ -198,33 +198,42 @@ fn push_with_recursive_dependencies(
 }
 
 /// Deserialize MessageDescriptor.
-pub fn message_descriptor_from_proto(proto: &MessageDescriptorProto) -> Option<MessageDescriptor> {
+pub fn message_descriptor_from_proto(
+    proto: &MessageDescriptorProto,
+) -> SdvResult<MessageDescriptor> {
     let file_descriptors = &proto.file_descriptors;
 
     if let Some(file_descriptor) = WELLKNOWN_TYPES_TO_DESCRIPTOR.get(&proto.message_name) {
-        return file_descriptor.message_by_full_name(&proto.message_name);
+        return file_descriptor.message_by_full_name(&proto.message_name).ok_or(
+            SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!(
+                    "Failed to retrieve message descriptor from file descriptor for {}",
+                    proto.message_name
+                ),
+            ),
+        );
     }
 
-    let fds = match FileDescriptor::new_dynamic_fds(
+    let fds = FileDescriptor::new_dynamic_fds(
         file_descriptors.clone(),
         &WELLKNOWN_PROTOS_TO_DESCRIPTOR.values().cloned().collect::<Vec<_>>(),
-    ) {
-        Ok(fds) => fds,
-        Err(e) => {
-            warn!("Failed new_dynamic_fds: {e:?}");
-            return None;
-        }
-    };
+    )
+    .map_err(|e| {
+        SdvStatus::with_message(SdvStatusCode::NotFound, format!("Failed new_dynamic_fds: {e:?}",))
+    })?;
 
     for file_descriptor in fds {
         if let Some(message_descriptor) = file_descriptor.message_by_full_name(&proto.message_name)
         {
-            return Some(message_descriptor);
+            return Ok(message_descriptor);
         }
     }
 
-    warn!("Message descriptor not found for message name {}", proto.message_name);
-    None
+    Err(SdvStatus::with_message(
+        SdvStatusCode::NotFound,
+        format!("Message descriptor not found for message name {}", proto.message_name,),
+    ))
 }
 
 /// Deserialize UnitType.
@@ -250,7 +259,7 @@ pub fn unit_type_to_proto(unit_type: &UnitType) -> UnitTypeProto {
 mod tests {
     use super::*;
     use googletest::assert_that;
-    use googletest::matchers::{eq, none};
+    use googletest::matchers::eq;
     use protobuf::well_known_types::timestamp::Timestamp;
     use protobuf::MessageDyn;
     use vsidl_provider_agent_api_test_protos::message::TestMessage;
@@ -341,7 +350,7 @@ mod tests {
 
         let message_descriptor = message_descriptor_from_proto(&message_descriptor_proto);
 
-        assert_that!(message_descriptor, none());
+        assert!(message_descriptor.is_err());
     }
 
     #[googletest::test]
@@ -354,7 +363,7 @@ mod tests {
 
         let message_descriptor = message_descriptor_from_proto(&message_descriptor_proto);
 
-        assert_that!(message_descriptor, none());
+        assert!(message_descriptor.is_err());
     }
 
     #[googletest::test]

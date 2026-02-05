@@ -16,6 +16,7 @@
 
 use dashmap::DashMap;
 use protobuf::reflect::FileDescriptor;
+use sdv_status_rs::{SdvResult, SdvStatus, SdvStatusCode};
 use std::marker::{Send, Sync};
 
 /// Trait for file descriptor caches used by the VsidlProvider
@@ -23,7 +24,7 @@ pub(crate) trait VsidlFdCache: Sync + Send {
     /// Insert a new entry into the cache
     fn insert_into_cache(&self, file_name: String, file_descriptor: FileDescriptor);
     /// Get a file descriptor from the cache
-    fn get_file_descriptor(&self, key: &str) -> Option<FileDescriptor>;
+    fn get_file_descriptor(&self, key: &str) -> SdvResult<FileDescriptor>;
     /// Return a boolean representing the presence of the file descriptor
     fn contains_file_descriptor_with_key(&self, key: &str) -> bool;
 }
@@ -39,12 +40,11 @@ impl VsidlFdCache for DashMap<String, FileDescriptor> {
         self.insert(file_name, file_descriptor);
     }
 
-    fn get_file_descriptor(&self, key: &str) -> Option<FileDescriptor> {
-        let map_entry = self.get(key).map(|map_ref| map_ref.value().clone());
-        if map_entry.is_none() {
-            log::error!("Unable to fetch file descriptor for file {key:?}");
-        }
-        map_entry
+    fn get_file_descriptor(&self, key: &str) -> SdvResult<FileDescriptor> {
+        self.get(key).map(|map_ref| map_ref.value().clone()).ok_or(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("Unable to fetch file descriptor for file {key:?}"),
+        ))
     }
 
     fn contains_file_descriptor_with_key(&self, key: &str) -> bool {
@@ -91,11 +91,11 @@ mod test {
         assert_eq!(retrieved_fd, fd);
     }
 
-    fn test_cache_missing_key_returns_none<T: VsidlFdCache>(cache: T) {
+    fn test_cache_missing_key_returns_err<T: VsidlFdCache>(cache: T) {
         let key = "missing.proto";
 
         let result = cache.get_file_descriptor(key);
-        assert!(result.is_none());
+        assert!(result.is_err());
     }
 
     #[test]
@@ -104,8 +104,8 @@ mod test {
     }
 
     #[test]
-    fn test_dashmap_cache_get_for_missing_key_returns_none() {
-        test_cache_missing_key_returns_none(DashMap::new());
+    fn test_dashmap_cache_get_for_missing_key_returns_err() {
+        test_cache_missing_key_returns_err(DashMap::new());
     }
 
     #[test]
