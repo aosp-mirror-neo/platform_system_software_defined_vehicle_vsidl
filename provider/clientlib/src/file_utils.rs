@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-use crate::vsidl_provider::VsidlProviderErrorV1;
 use protobuf::Message;
+use sdv::status::SdvResult;
+use sdv_status_rs::SdvStatus;
+use sdv_status_rs::SdvStatusCode;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -31,14 +33,16 @@ pub fn directory_files(directory_name: &str) -> impl Iterator<Item = PathBuf> {
         .map(|entry| entry.into_path())
 }
 
-pub fn read_config_file<T: protobuf::Message, P: AsRef<Path>>(
-    file_name: P,
-) -> Result<T, VsidlProviderErrorV1> {
-    let config = File::open(&file_name)?;
+pub fn read_config_file<T: protobuf::Message, P: AsRef<Path>>(file_name: P) -> SdvResult<T> {
+    let config =
+        File::open(&file_name).map_err(|e| SdvStatus::with_cause(SdvStatusCode::Internal, e))?;
     let mut reader = BufReader::new(config);
     if let Ok(message) = Message::parse_from_reader(&mut reader) {
         Ok(message)
     } else {
-        Err(VsidlProviderErrorV1::ConfigParseError(file_name.as_ref().display().to_string()))
+        Err(SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            "Config Parse Error of file: {file_name:?}",
+        ))
     }
 }

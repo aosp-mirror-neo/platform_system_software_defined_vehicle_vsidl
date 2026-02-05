@@ -25,10 +25,7 @@ use sdv_status_rs::SdvStatusCode;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::Display;
-use std::io::Error as IoError;
-use std::string::String;
 use std::time::SystemTime;
-use thiserror::Error;
 use vsidl_v1::{diagnostics_syntax::DiagnosticsDeclaration, someip::SomeIpMapping};
 
 use crate::vsidl_provider_api::{PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProvider};
@@ -172,17 +169,6 @@ fn new_for_integration_test_with_injection(
     data_sources.insert(DataType::SomeIp, vec![DataSource::Agent]);
 
     VsidlProviderV1 { data_sources, providers }
-}
-
-/// Vsidl Provider errors
-#[derive(Error, Debug)]
-pub(crate) enum VsidlProviderErrorV1 {
-    /// Configuration file not found error
-    #[error("Configuration file not found")]
-    ConfigNotFound(#[from] IoError),
-    /// Parsing error while reading configuration file
-    #[error("Configuration file {0} could not be parsed")]
-    ConfigParseError(String),
 }
 
 /// Implementation of VsidlConfigProvider
