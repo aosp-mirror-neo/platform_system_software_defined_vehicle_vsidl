@@ -29,7 +29,7 @@ use thiserror::Error;
 use vsidl_v1::{diagnostics_syntax::DiagnosticsDeclaration, someip::SomeIpMapping};
 
 use crate::vsidl_provider_api::{
-    PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProviderV1,
+    PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProvider, VsidlConfigProviderV1,
 };
 
 const VSIDL_CONFIG_DIR: &str = "/etc/vsidl_v1/vsidl_config";
@@ -189,7 +189,7 @@ pub(crate) enum VsidlProviderErrorV1 {
 /// Implementation of VsidlConfigProvider
 struct VsidlProviderV1 {
     data_sources: HashMap<DataType, Vec<DataSource>>,
-    providers: HashMap<DataSource, Box<dyn VsidlConfigProviderV1>>,
+    providers: HashMap<DataSource, Box<dyn VsidlConfigProvider>>,
 }
 
 impl Display for VsidlProviderV1 {
@@ -219,7 +219,7 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
 
         for data_source in data_sources {
             let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_someip_mappings(source_fqin).await,
+                Some(provider) => provider.get_someip_mappings(source_fqin).await.ok(),
                 None => None,
             };
 
@@ -240,7 +240,7 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
 
         for data_source in data_sources {
             let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_diagnostics_declaration(fqin).await,
+                Some(provider) => provider.get_diagnostics_declaration(fqin).await.ok(),
                 None => None,
             };
 
@@ -268,7 +268,9 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
 
         for data_source in data_sources {
             let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_publication_descriptor(source_fqin, unit_type).await,
+                Some(provider) => {
+                    provider.get_publication_descriptor(source_fqin, unit_type).await.ok()
+                }
                 None => None,
             };
 
@@ -291,9 +293,10 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
 
         for data_source in data_sources {
             let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => {
-                    provider.get_rpc_method_descriptor(source_fqin, unit_type, method_name).await
-                }
+                Some(provider) => provider
+                    .get_rpc_method_descriptor(source_fqin, unit_type, method_name)
+                    .await
+                    .ok(),
                 None => None,
             };
 
@@ -315,7 +318,7 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
 
         for data_source in data_sources {
             let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_message_descriptor(source_fqin, message).await,
+                Some(provider) => provider.get_message_descriptor(source_fqin, message).await.ok(),
                 None => None,
             };
 
@@ -334,6 +337,8 @@ mod test {
     use protobuf::well_known_types::empty::Empty;
     use sdv_comms::id::ServiceFqin;
     use sdv_comms::ContextRef;
+    use sdv_status_rs::SdvStatus;
+    use sdv_status_rs::SdvStatusCode;
     use std::collections::{HashMap, HashSet};
     use std::iter::once;
     use std::str::FromStr;
@@ -367,10 +372,10 @@ mod test {
     }
 
     fn mock_factory(
-        provider_from_files: Option<Box<dyn VsidlConfigProviderV1>>,
-        provider_from_apexes: Option<Box<dyn VsidlConfigProviderV1>>,
-        provider_from_agent: Option<Box<dyn VsidlConfigProviderV1>>,
-        provider_from_remote_agent: Option<Box<dyn VsidlConfigProviderV1>>,
+        provider_from_files: Option<Box<dyn VsidlConfigProvider>>,
+        provider_from_apexes: Option<Box<dyn VsidlConfigProvider>>,
+        provider_from_agent: Option<Box<dyn VsidlConfigProvider>>,
+        provider_from_remote_agent: Option<Box<dyn VsidlConfigProvider>>,
     ) -> MockFactory {
         let mut mock_factory = MockFactory::new();
 
@@ -397,59 +402,59 @@ mod test {
         mock_factory
     }
 
-    fn empty_provider(
+    pub(crate) fn empty_provider(
         interactions: impl Fn(DataType) -> usize,
-    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
-        let mut mock_provider = MockVsidlConfigProviderV1::new();
+    ) -> Option<Box<dyn VsidlConfigProvider>> {
+        let mut mock_provider = MockVsidlConfigProvider::new();
 
         mock_provider
             .expect_get_someip_mappings()
             .times(interactions(DataType::SomeIp))
-            .returning(|_| None);
+            .returning(|_| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_diagnostics_declaration()
             .times(interactions(DataType::Diagnostics))
-            .returning(|_| None);
+            .returning(|_| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_publication_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _| None);
+            .returning(|_, _| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_rpc_method_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _, _| None);
+            .returning(|_, _, _| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_message_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _| None);
+            .returning(|_, _| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         Some(Box::new(mock_provider))
     }
 
-    fn non_empty_provider(
+    pub(crate) fn non_empty_provider(
         interactions: impl Fn(DataType) -> usize,
-    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
-        let mut mock_provider = MockVsidlConfigProviderV1::new();
+    ) -> Option<Box<dyn VsidlConfigProvider>> {
+        let mut mock_provider = MockVsidlConfigProvider::new();
 
         mock_provider
             .expect_get_someip_mappings()
             .times(interactions(DataType::SomeIp))
-            .returning(|_| Some(vec![]));
+            .returning(|_| Ok(vec![]));
 
         mock_provider
             .expect_get_diagnostics_declaration()
             .times(interactions(DataType::Diagnostics))
-            .returning(|_| Some(DiagnosticsDeclaration::default()));
+            .returning(|_| Ok(DiagnosticsDeclaration::default()));
 
         mock_provider
             .expect_get_publication_descriptor()
             .times(interactions(DataType::VsidlSchemas))
             .returning(|_, _| {
-                Some(PublicationDescriptor {
+                Ok(PublicationDescriptor {
                     message_descriptor: MessageDescriptor::for_type::<Empty>(),
                     size_metadata: SizeMetadata::default(),
                 })
@@ -458,12 +463,12 @@ mod test {
         mock_provider
             .expect_get_rpc_method_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _, _| Some(RpcMethodDescriptor::default()));
+            .returning(|_, _, _| Ok(RpcMethodDescriptor::default()));
 
         mock_provider
             .expect_get_message_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _| Some(MessageDescriptor::for_type::<Empty>()));
+            .returning(|_, _| Ok(MessageDescriptor::for_type::<Empty>()));
 
         Some(Box::new(mock_provider))
     }
