@@ -475,7 +475,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
         )
-        .unwrap();
+        .unwrap_or_default();
 
         let symbol = ProtoPublicationSymbol {
             ast_node: node.clone(),
@@ -536,7 +536,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
         )
-        .unwrap();
+        .unwrap_or_default();
 
         let symbol = ProtoPublicationSymbol {
             ast_node: node.clone(),

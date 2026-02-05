@@ -350,10 +350,6 @@ impl ContextConditionChecker {
         // NotCreated
         self.add_context_condition(
             SymbolTableState::NotCreated,
-            Box::new(pdk29::ProtoMessageRequireAnnotationType::default()),
-        )
-        .add_context_condition(
-            SymbolTableState::NotCreated,
             Box::new(pdk29::ServiceUnitNameTooLong::default()),
         )
         .add_context_condition(
@@ -387,6 +383,10 @@ impl ContextConditionChecker {
         self.add_context_condition(
             SymbolTableState::Linked,
             Box::new(pdk29::MultiplePublishersSameMultipubTopicPerBundle::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::ProtoMessageRequireAnnotationType::default()),
         )
         .add_context_condition(
             SymbolTableState::Linked,
@@ -480,10 +480,6 @@ impl Default for ContextConditionChecker {
                 SymbolTableState::NotCreated,
                 Box::new(UserDefinedTargetNameConvention::default()), // Checks rust_library naming convention
             )
-            .add_context_condition(
-                SymbolTableState::NotCreated,
-                Box::new(ProtoMessageRequireAnnotationType::default()), // Check proto message annotation
-            )
             .add_context_condition(SymbolTableState::NotCreated, Box::new(RpcStreaming::default()))
             .add_context_condition(
                 SymbolTableState::NotCreated,
@@ -502,6 +498,7 @@ impl Default for ContextConditionChecker {
                 SymbolTableState::CreatedNotLinked,
                 Box::new(RpcServerType::default()),
             )
+            // Conditions requiring a linked symbol table
             .add_context_condition(
                 SymbolTableState::Linked,
                 Box::new(NoUserDefinedNamesForMultiChannelPublishers::default()),

@@ -54,7 +54,7 @@ impl SymbolTableChecker for UniqueUserDefinedServiceUnitNamesPerType {
     }
 
     fn check_publisher(&mut self, symbol_table: &SymbolTable, publisher: &PublisherSymbol) {
-        let publication_type_name = publisher.publication(symbol_table).full_name(symbol_table);
+        let publication_type_name = publisher.message(symbol_table).full_name(symbol_table);
 
         for channel_name in publisher.channels(symbol_table) {
             let publisher_name = publisher.service_unit_name(symbol_table, &channel_name);

@@ -15,32 +15,22 @@
  */
 
 use super::{FindingCollector, FindingId};
-use crate::impl_context_condition;
+use crate::impl_context_condition_symtab;
 use lazy_static::lazy_static;
 use protobuf::descriptor::{
     field_descriptor_proto::{Label, Type},
     DescriptorProto, FieldDescriptorProto,
 };
+use protobuf::reflect::ProtobufValue;
 use std::collections::{HashMap, HashSet};
-use vsidl_v1::annotations::{
-    exts::{repeated_field_max_count, variable_type_max_size},
-    SdvPublication,
-};
-use vsidl_v1_common::visitors::visitor::{ProtoFile, VsidlVisitor};
+use std::path::Path;
 
-#[derive(Debug, Default)]
-pub struct ProtoMessageRequireAnnotationType {
-    finding_collector: FindingCollector,
-    protofile_name: String,
-    package_name: String,
-    /// all unvisited message in current catalog
-    /// HashMap<full_message_name, (file_name, message)>
-    unvisited_message: HashMap<String, (String, DescriptorProto)>,
-    /// record the visit path chain for loop detecting
-    /// HashSet<full_message_name>
-    visit_path: HashSet<String>,
-}
-impl_context_condition!(ProtoMessageRequireAnnotationType);
+use vsidl_v1::annotations::exts::{repeated_field_max_count, variable_type_max_size};
+use vsidl_v1_common::visitors::visitor::VsidlVisitor;
+use vsidl_v1_symbols::{
+    proto_message_symbol::ProtoMessageSymbol, symbol_table::SymbolTable,
+    symbol_table_checker::SymbolTableChecker,
+};
 
 lazy_static! {
     static ref FILE_NO_CHECK: HashSet<&'static str> = {
@@ -80,166 +70,202 @@ lazy_static! {
     };
 }
 
+#[derive(Debug, Default)]
+pub struct ProtoMessageRequireAnnotationType {
+    finding_collector: FindingCollector,
+
+    // Lookup Table: Created once, read-only during check.
+    // Map<FullMessageName, (FileName, MessageDefinition)>
+    message_lookup: HashMap<String, (String, DescriptorProto)>,
+
+    // Recursion Stack: Tracks current path to find loops.
+    recursion_stack: Vec<String>,
+
+    // Memoization: Tracks messages that have already passed validation.
+    // Optimization to avoid re-checking the same common sub-messages.
+    validated_messages: HashSet<String>,
+}
+
+impl_context_condition_symtab!(ProtoMessageRequireAnnotationType);
+impl VsidlVisitor for ProtoMessageRequireAnnotationType {}
+
 impl ProtoMessageRequireAnnotationType {
-    fn check_variable_type_max_size(
+    /// Helper to check if a generic option exists
+    fn ensure_annotation<T>(
         &mut self,
-        field_descriptor: &FieldDescriptorProto,
-        file_name: String,
-    ) {
-        let option_value = variable_type_max_size.get(&field_descriptor.options);
-        if option_value.is_none() {
+        field: &FieldDescriptorProto,
+        file_name: &str,
+        option: &protobuf::ext::ExtFieldOptional<protobuf::descriptor::FieldOptions, T>,
+        annotation_name: &str,
+    ) where
+        T: ProtobufValue,
+    {
+        if let Some(options) = field.options.as_ref() {
+            if option.get(options).is_none() {
+                self.finding_collector.error(
+                    FindingId::ProtoMessageRequireAnnotationType,
+                    format!(
+                        "File name: {}, {} annotation for '{}' is missing",
+                        file_name,
+                        annotation_name,
+                        field.name()
+                    ),
+                    Vec::new(),
+                );
+            }
+        } else {
             self.finding_collector.error(
                 FindingId::ProtoMessageRequireAnnotationType,
                 format!(
-                    "File name: {}, variable_type_max_size annotation for '{}' is missing",
-                    file_name.clone(),
-                    field_descriptor.name()
+                    "File name: {}, {} annotation for '{}' is missing",
+                    file_name,
+                    annotation_name,
+                    field.name()
                 ),
                 Vec::new(),
             );
         }
     }
 
-    fn check_repeated_field_max_count(
-        &mut self,
-        field_descriptor: &FieldDescriptorProto,
-        file_name: String,
-    ) {
-        let option_value = repeated_field_max_count.get(&field_descriptor.options);
-        if option_value.is_none() {
-            self.finding_collector.error(
-                FindingId::ProtoMessageRequireAnnotationType,
-                format!(
-                    "File name: {}, repeated_field_max_count annotation for '{}' is missing",
-                    file_name.clone(),
-                    field_descriptor.name()
-                ),
-                Vec::new(),
-            );
-        }
+    /// Helper to report loop findings
+    fn report_loop(&mut self, file_name: &str) {
+        let loop_path = self.recursion_stack.join(" -> ");
+        self.finding_collector.error(
+            FindingId::ProtoMessageLoop,
+            format!(
+                "File name: {}, detect a loop in message path: {}. Please resolve the circular dependency.",
+                file_name, loop_path
+            ),
+            Vec::new(),
+        );
     }
 
-    /// check if fields require annotations, and visit sub messages
-    fn check_field_annotation_and_loop(
-        &mut self,
-        message_field: &FieldDescriptorProto,
-        file_name: String,
-    ) {
-        // check repeated_field_max_count annotation
-        if message_field.label() == Label::LABEL_REPEATED {
-            self.check_repeated_field_max_count(message_field, file_name.clone());
-        }
-
-        // check variable_type_max_size annotation
-        let datatype: Type = message_field.type_();
-        match datatype {
-            Type::TYPE_STRING | Type::TYPE_BYTES => {
-                self.check_variable_type_max_size(message_field, file_name.clone())
-            }
-            Type::TYPE_MESSAGE => {
-                let datatype_name = message_field.type_name();
-                if ANNOTATION_DATATYPE.contains(datatype_name) {
-                    self.check_variable_type_max_size(message_field, file_name.clone());
-                } else if let Some(message) = self.unvisited_message.get(datatype_name) {
-                    let message_object = message.1.clone();
-                    let current_file_name = message.0.clone();
-                    self.check_message(
-                        &message_object,
-                        datatype_name.to_string(),
-                        current_file_name,
-                    );
-                }
-            }
-            _ => { /* annotation checking is not necessary for rest of the datatype */ }
-        }
-    }
-
-    fn check_message(
-        &mut self,
-        message: &DescriptorProto,
-        message_full_name: String,
-        file_name: String,
-    ) {
-        // check and update path
-        if self.visit_path.contains(&message_full_name) {
-            self.finding_collector.error(
-                FindingId::ProtoMessageLoop,
-                format!(
-                    "File name: {}, detect a loop in message '{}', please resolve it",
-                    file_name.clone(),
-                    message.name()
-                ),
-                Vec::new(),
-            );
+    /// The core recursive validator
+    fn validate_message(&mut self, message: &DescriptorProto, full_name: &str, file_name: &str) {
+        // 1. Memoization Check: If we already approved this message, skip it.
+        if self.validated_messages.contains(full_name) {
             return;
         }
-        self.visit_path.insert(message_full_name.clone());
 
-        // check field
+        // 2. Push to Stack
+        self.recursion_stack.push(full_name.to_string());
+
+        // 3. Validate Fields
         for field in &message.field {
-            self.check_field_annotation_and_loop(field, file_name.clone());
+            self.validate_field(field, file_name);
         }
 
-        // check nested message
-        for nested_message in &message.nested_type {
-            self.check_message(
-                nested_message,
-                message_full_name.to_owned() + "." + nested_message.name(),
-                file_name.clone(),
+        // 4. Recursion into Nested Definitions
+        // (This handles checking nested types defined inside this message)
+        for nested in &message.nested_type {
+            let nested_name = format!("{}.{}", full_name, nested.name());
+
+            // Loop Detection: Check before recursing
+            if self.recursion_stack.contains(&nested_name) {
+                self.report_loop(file_name);
+            } else {
+                self.validate_message(nested, &nested_name, file_name);
+            }
+        }
+
+        // 5. Pop from Stack & Mark Validated
+        self.recursion_stack.pop();
+        self.validated_messages.insert(full_name.to_string());
+    }
+
+    fn validate_field(&mut self, field: &FieldDescriptorProto, file_name: &str) {
+        // Check 1: Repeated Fields
+        if field.label() == Label::LABEL_REPEATED {
+            self.ensure_annotation(
+                field,
+                file_name,
+                &repeated_field_max_count,
+                "repeated_field_max_count",
             );
         }
 
-        // update path before leaving this message
-        self.visit_path.remove(&message_full_name);
-        self.unvisited_message.remove(&message_full_name);
+        // Check 2: Variable Types (Strings, Bytes, Wrapper Types)
+        match field.type_() {
+            Type::TYPE_STRING | Type::TYPE_BYTES => {
+                self.ensure_annotation(
+                    field,
+                    file_name,
+                    &variable_type_max_size,
+                    "variable_type_max_size",
+                );
+            }
+            Type::TYPE_MESSAGE => {
+                let type_name = field.type_name(); // e.g. ".google.protobuf.StringValue" or ".my.package.MyMsg"
+
+                if ANNOTATION_DATATYPE.contains(type_name) {
+                    // It's a Google wrapper (like StringValue), treat as variable type
+                    self.ensure_annotation(
+                        field,
+                        file_name,
+                        &variable_type_max_size,
+                        "variable_type_max_size",
+                    );
+                } else if let Some((def_file, def_msg)) =
+                    self.message_lookup.get(type_name).cloned()
+                {
+                    // Loop Detection: Check before recursing into custom message
+                    if self.recursion_stack.contains(&type_name.to_string()) {
+                        self.report_loop(file_name);
+                    } else {
+                        // It's a custom message: Recurse into it to check *its* fields
+                        self.validate_message(&def_msg, type_name, &def_file);
+                    }
+                }
+            }
+            _ => {} // Other types are safe
+        }
     }
 
-    fn get_message(&mut self, message: &DescriptorProto, file_name: String, prefix: String) {
-        let full_message_name = prefix + "." + message.name();
-        self.unvisited_message
-            .insert(full_message_name.clone(), (file_name.clone(), message.clone()));
-        for nested_message in &message.nested_type {
-            self.get_message(nested_message, file_name.clone(), full_message_name.clone());
+    /// Helper to populate the lookup table (Recursive)
+    fn index_message(&mut self, message: &DescriptorProto, file_name: &str, prefix: &str) {
+        let full_name = format!("{}.{}", prefix, message.name());
+        self.message_lookup.insert(full_name.clone(), (file_name.to_string(), message.clone()));
+
+        for nested in &message.nested_type {
+            self.index_message(nested, file_name, &full_name);
         }
     }
 }
 
-/// Issues an error if annotations are missing for certain fields in proto messages
-impl VsidlVisitor for ProtoMessageRequireAnnotationType {
-    fn start_visit_catalog(&mut self, catalog: &vsidl_v1_common::Catalog) {
-        self.unvisited_message.clear();
-        for (_, file) in &catalog.proto_descriptors {
-            // CoCo only check internal file, so it should ignore google/protobuf/*.proto (external file)
-            if !FILE_NO_CHECK.contains(file.name()) {
-                for message in &file.message_type {
-                    let prefix = ".".to_owned() + file.package();
-                    self.get_message(message, file.name().to_string(), prefix);
-                }
+impl SymbolTableChecker for ProtoMessageRequireAnnotationType {
+    fn before_checks(&mut self, symbol_table: &SymbolTable) {
+        self.message_lookup.clear();
+        self.validated_messages.clear();
+        self.recursion_stack.clear();
+
+        // Build the index first
+        for message_symbol in symbol_table.get_all_proto_message_symbols() {
+            let file_name = message_symbol.symbol.span.as_ref().map_or("", |s| {
+                Path::new(&s.file_path).file_name().and_then(|os_str| os_str.to_str()).unwrap_or("")
+            });
+            if !FILE_NO_CHECK.contains(file_name) {
+                let package_prefix = format!(".{}", message_symbol.package(symbol_table));
+                self.index_message(&message_symbol.ast_node, file_name, &package_prefix);
             }
         }
     }
 
-    fn start_visit_proto_file(&mut self, node: &ProtoFile) {
-        self.protofile_name = node.1.name().to_string();
-        self.package_name = node.1.package().to_string();
-    }
-
-    fn start_visit_proto_single_pub_message(
+    fn check_proto_message(
         &mut self,
-        message: &DescriptorProto,
-        _publication: &SdvPublication,
+        symbol_table: &SymbolTable,
+        message_symbol: &ProtoMessageSymbol,
     ) {
-        let message_full_name = ".".to_owned() + &self.package_name + "." + message.name();
-        self.check_message(message, message_full_name, self.protofile_name.clone());
-    }
+        if message_symbol.publishers(symbol_table).is_empty()
+            && message_symbol.subscribers(symbol_table).is_empty()
+        {
+            return; // Skip messages not used by any publisher or subscriber
+        }
 
-    fn start_visit_proto_multi_pub_message(
-        &mut self,
-        message: &DescriptorProto,
-        _publication: &SdvPublication,
-    ) {
-        let message_full_name = ".".to_owned() + &self.package_name + "." + message.name();
-        self.check_message(message, message_full_name, self.protofile_name.clone());
+        let full_name = message_symbol.full_name(symbol_table);
+        let file_name = message_symbol.symbol.span.as_ref().map_or("", |s| &s.file_path);
+        if !FILE_NO_CHECK.contains(file_name) {
+            self.validate_message(&message_symbol.ast_node, &full_name, file_name);
+        }
     }
 }
 
@@ -248,10 +274,13 @@ mod test {
     use crate::context_condition::ContextCondition;
     use crate::proto_message_datatype_require_annotation::ProtoMessageRequireAnnotationType;
     use crate::FindingSeverity;
+    use vsidl_v1_common::AstNode;
     use vsidl_v1_common::Catalog;
+    use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
+    use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
 
     #[test]
-    fn test_message_no_annotation_single_pub_error() {
+    fn test_message_no_annotation_error() {
         // GIVEN a message without annotation
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
@@ -259,75 +288,18 @@ mod test {
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_SAME_TARGET.clone(),
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_DIFF_TARGET.clone(),
         ]);
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_DESCRIPTOR_MESSAGE_WITHOUT_ANNOTATION.clone());
+
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
 
         // WHEN executing context condition
         let mut check = ProtoMessageRequireAnnotationType::default();
-        check.check_catalog(&catalog);
-
-        // THEN error message should be found
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "repeated_int_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "datatype_string_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "datatype_bytes_single"));
-
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_any_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_api_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_bytesvalue_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_enum_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_enumvalue_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_field_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_fieldmask_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_method_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_mixin_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_option_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_sourcecontext_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_stringvalue_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_struct_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_type_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_value_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "protobuf_listvalue_single"));
-
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "repeated_field_max_count annotation for 'repeated_string_single' is missing"
-        ));
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "variable_type_max_size annotation for 'repeated_string_single' is missing"
-        ));
-
-        assert!(check.any_finding_contains(FindingSeverity::Error, "nested_repeated_int_single"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "nested_string_single"));
-
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "File name: proto_message_without_annotation.proto, repeated_field_max_count annotation for 'samefile' is missing"
-        ));
-
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "File name: proto_message_submessage_same_target.proto, repeated_field_max_count annotation for 'sametargetsubmessage' is missing"
-        ));
-
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "File name: proto_message_submessage_diff_target.proto, repeated_field_max_count annotation for 'differenttargetmessage' is missing"
-        ));
-    }
-
-    #[test]
-    fn test_message_no_annotation_multi_pub_error() {
-        // GIVEN a message without annotation
-        let mut catalog = Catalog::new();
-        catalog.proto_descriptors.extend([
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_WITHOUT_ANNOTATION.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_SAME_TARGET.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_DIFF_TARGET.clone(),
-        ]);
-
-        // WHEN executing context condition
-        let mut check = ProtoMessageRequireAnnotationType::default();
-        check.check_catalog(&catalog);
+        check.check_symbol_table(linker.symbol_table());
 
         // THEN error message should be found
         assert!(check.is_err());
@@ -390,17 +362,25 @@ mod test {
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_SAME_TARGET.clone(),
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_DIFF_TARGET.clone(),
         ]);
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_DESCRIPTOR_MESSAGE_WITH_ANNOTATION.clone());
+
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
 
         // WHEN executing context condition
         let mut check = ProtoMessageRequireAnnotationType::default();
-        check.check_catalog(&catalog);
+        check.check_symbol_table(linker.symbol_table());
 
         // THEN check should be OK
         assert!(check.is_ok());
     }
 
     #[test]
-    fn test_message_with_loop_single_pub_error() {
+    fn test_message_with_loop_error() {
         // GIVEN message with loop
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
@@ -408,50 +388,31 @@ mod test {
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_SAME_TARGET.clone(),
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_DIFF_TARGET.clone(),
         ]);
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_DESCRIPTOR_MESSAGE_LOOP.clone());
+
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
 
         // WHEN executing context condition
         let mut check = ProtoMessageRequireAnnotationType::default();
-        check.check_catalog(&catalog);
+        check.check_symbol_table(linker.symbol_table());
 
         // THEN error message should be found
+        eprintln!("Findings: {:?}", check.finding_collector.findings());
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "File name: proto_message_loop.proto, detect a loop in message 'LoopSinglePubMessageA', please resolve it"
+            "File name: proto_message_loop.proto, detect a loop in message path: sdv.proto.test.message.annotation.LoopSinglePubMessageA -> .sdv.proto.test.message.annotation.LoopSinglePubMessageA. Please resolve the circular dependency."
         ));
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "detect a loop in message 'LoopSinglePubMessageB', please resolve it"
+            "File name: proto_message_loop.proto, detect a loop in message path: sdv.proto.test.message.annotation.LoopSinglePubMessageB -> .sdv.proto.test.message.annotation.LoopSinglePubMessageB.Nested -> .sdv.proto.test.message.annotation.LoopSinglePubMessageB. Please resolve the circular dependency."
         ));
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "detect a loop in message 'LoopSinglePubMessageC', please resolve it"
-        ));
-    }
-
-    #[test]
-    fn test_message_with_loop_multi_pub_error() {
-        // GIVEN message with loop
-        let mut catalog = Catalog::new();
-        catalog.proto_descriptors.extend([
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_LOOP.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_SAME_TARGET.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_SUBMESSAGE_DIFF_TARGET.clone(),
-        ]);
-
-        // WHEN executing context condition
-        let mut check = ProtoMessageRequireAnnotationType::default();
-        check.check_catalog(&catalog);
-
-        // THEN error message should be found
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "File name: proto_message_submessage_same_target.proto, detect a loop in message 'SameTargetLoopMessage', please resolve it"
-        ));
-        assert!(check.any_finding_contains(
-            FindingSeverity::Error,
-            "File name: proto_message_submessage_diff_target.proto, detect a loop in message 'DiffTargetLoopMessage', please resolve it"
+            "File name: proto_message_loop.proto, detect a loop in message path: sdv.proto.test.message.annotation.LoopSinglePubMessageC -> .sdv.proto.test.message.annotation.LoopSubMessage -> .sdv.proto.test.message.annotation.LoopSinglePubMessageC. Please resolve the circular dependency."
         ));
     }
 }

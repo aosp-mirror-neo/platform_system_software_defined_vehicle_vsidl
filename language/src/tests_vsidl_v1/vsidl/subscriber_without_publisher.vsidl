@@ -21,8 +21,4 @@ service_bundle {
 
     # ERROR: There's no publisher for this subscriber
     subscriber { message: "Pressure" }
-
-    unit_type {
-        type: "Pressure"
-    }
 }

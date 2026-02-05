@@ -245,7 +245,9 @@ mod test {
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_NAME_TOO_LONG_PROTO.clone()]);
-        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_GENERATED_NAME_TOO_LONG.clone());
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_GENERATED_NAME_TOO_LONG_PDK29.clone());
 
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);

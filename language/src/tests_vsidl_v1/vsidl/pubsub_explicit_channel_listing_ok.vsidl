@@ -16,12 +16,19 @@
 
 package: "sdv.test"
 
+# Valid example. No service bundle contains publishers / subscribers for all possible channels.
 service_bundle {
   name: "PublishingBundle"
 
   publisher {
     message: "TirePressure"
     channel: "FRONT_LEFT"
+    capacity: 8
+  }
+
+  subscriber {
+    message: "TirePressure"
+    channel: "FRONT_RIGHT"
   }
 }
 
@@ -31,5 +38,11 @@ service_bundle {
   subscriber {
     message: "TirePressure"
     channel: "FRONT_LEFT"
+  }
+
+  publisher {
+    message: "TirePressure"
+    channel: "FRONT_RIGHT"
+    capacity: 8
   }
 }

@@ -231,7 +231,7 @@ mod tests {
         catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
         catalog
             .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+            .push(vsidl_v1_test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL_PDK29.clone());
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
 
@@ -240,6 +240,7 @@ mod tests {
         check.check_symbol_table(creator.symbol_table());
 
         // THEN Should not have found any errors
+        check.finding_collector.print_findings();
         assert!(check.is_ok());
     }
 

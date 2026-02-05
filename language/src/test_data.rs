@@ -205,6 +205,11 @@ vsidl_file!(
 );
 vsidl_file!(VSIDL_GENERATED_NAME_TOO_LONG, "tests_vsidl_v1/vsidl", "generated_name_too_long.vsidl");
 vsidl_file!(
+    VSIDL_GENERATED_NAME_TOO_LONG_PDK29,
+    "tests_vsidl_v1/vsidl",
+    "generated_name_too_long_pdk29.vsidl"
+);
+vsidl_file!(
     VSIDL_GENERATED_NAME_TOO_LONG_WITH_SHORT_USER_DEFINED_NAME,
     "tests_vsidl_v1/vsidl",
     "generated_name_too_long_with_short_user_defined_name.vsidl"
@@ -303,6 +308,11 @@ vsidl_file!(
     VSIDL_PUBLISHER_WITHOUT_CHANNEL,
     "tests_vsidl_v1/vsidl",
     "publisher_without_channel.vsidl"
+);
+vsidl_file!(
+    VSIDL_PUBLISHER_WITHOUT_CHANNEL_PDK29,
+    "tests_vsidl_v1/vsidl",
+    "publisher_without_channel_pdk29.vsidl"
 );
 vsidl_file!(
     VSIDL_SUBSCRIBER_WITHOUT_CHANNEL,
@@ -446,6 +456,18 @@ vsidl_file!(
 );
 vsidl_file!(VSIDL_PUBLICATION_MULTIPUB, "tests_vsidl_v1/vsidl", "publication_multipub.vsidl");
 vsidl_file!(VSIDL_DEPRECATED_KEYWORDS, "tests_vsidl_v1/vsidl", "deprecated_keywords.vsidl");
+vsidl_file!(VSIDL_TIRE_PRESSURE_PUBLISHER, "tests_vsidl_v1/vsidl", "tire_pressure_channel.vsidl");
+vsidl_file!(VSIDL_DESCRIPTOR_MESSAGE_LOOP, "tests_vsidl_v1/vsidl", "proto_message_loop.vsidl");
+vsidl_file!(
+    VSIDL_DESCRIPTOR_MESSAGE_WITH_ANNOTATION,
+    "tests_vsidl_v1/vsidl",
+    "proto_message_with_annotation.vsidl"
+);
+vsidl_file!(
+    VSIDL_DESCRIPTOR_MESSAGE_WITHOUT_ANNOTATION,
+    "tests_vsidl_v1/vsidl",
+    "proto_message_without_annotation.vsidl"
+);
 
 /*
     PROTOBUF FILE DESCRIPTORS

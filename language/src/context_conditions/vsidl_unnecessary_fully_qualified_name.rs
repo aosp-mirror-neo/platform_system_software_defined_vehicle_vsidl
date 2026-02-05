@@ -68,7 +68,7 @@ impl SymbolTableChecker for VsidlUnnecessaryFullyQualifiedName {
         self.check_and_warn(
             &publisher.package(symbol_table),
             &publisher.ast_node.message,
-            &publisher.publication(symbol_table).full_name(symbol_table),
+            &publisher.message(symbol_table).full_name(symbol_table),
             "Publisher message",
             publisher.message_span.clone().into_option(),
         );
@@ -78,7 +78,7 @@ impl SymbolTableChecker for VsidlUnnecessaryFullyQualifiedName {
         self.check_and_warn(
             &subscriber.package(symbol_table),
             &subscriber.ast_node.message,
-            &subscriber.publication(symbol_table).full_name(symbol_table),
+            &subscriber.message(symbol_table).full_name(symbol_table),
             "Subscriber message",
             subscriber.message_span.clone().into_option(),
         );

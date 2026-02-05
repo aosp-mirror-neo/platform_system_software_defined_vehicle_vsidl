@@ -21,12 +21,11 @@ use sdv_comms_id_validator::service_unit_name_validation::{
     validate_length, SERVICE_UNIT_NAME_MAX_LENGTH_BYTES,
 };
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
-use vsidl_v1::syntax::service_bundle::{Publisher, Server};
+use vsidl_v1::syntax::service_bundle::{Publisher, Server, Subscriber};
 use vsidl_v1::syntax::{Span, VsidlEntry};
-use vsidl_v1_common::constants::UNIQUE_CHANNEL;
 use vsidl_v1_common::name_to_fqn;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
-use vsidl_v1_symbols::specific_symbols::proto_publication_symbol::ProtoPublicationSymbol;
+use vsidl_v1_symbols::specific_symbols::proto_message_symbol::ProtoMessageSymbol;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
 
 #[derive(Debug, Default)]
@@ -62,10 +61,8 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
         // if there's no service unit name and channels are not defined, length check is covered in check_publisher()
         if node.service_unit_name.is_empty() && !node.channel.is_empty() {
             // Validate generated name
-            let fqn = name_to_fqn(&node.message, &self.package);
             for channel in &node.channel {
-                let generated_name =
-                    format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
+                let generated_name = channel.to_string().to_kebab_case();
                 self.check(generated_name, "publisher", node.span.clone().into_option());
             }
         } else {
@@ -75,6 +72,17 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
                 "publisher",
                 node.span.clone().into_option(),
             );
+        }
+    }
+
+    fn start_visit_subscriber(&mut self, node: &Subscriber) {
+        // if there are no explicit channels, length check is covered in check_subscriber()
+        if !node.channel.is_empty() {
+            // Validate generated name
+            for channel in &node.channel {
+                let generated_name = channel.to_string().to_kebab_case();
+                self.check(generated_name, "subscriber", node.span.clone().into_option());
+            }
         }
     }
 
@@ -124,25 +132,20 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
             return;
         }
 
-        // Get publication symbol
-        let proto_publication_symbols = publisher
+        // Get message symbol
+        let proto_message_symbols = publisher
             .enclosing_scope(symbol_table)
-            .resolve_proto_publication(symbol_table, publisher.message.clone());
-        if proto_publication_symbols.is_empty() {
+            .resolve_proto_message(symbol_table, publisher.message.clone());
+        if proto_message_symbols.is_empty() {
             // This error is handled by the publication_type context condition
             return;
         }
-        let proto_publication_symbol: ProtoPublicationSymbol = proto_publication_symbols[0].clone();
-
-        let mut channels = proto_publication_symbol.channels(symbol_table);
-        if channels.is_empty() {
-            channels.push(UNIQUE_CHANNEL.to_string());
-        }
+        let proto_message_symbol: ProtoMessageSymbol = proto_message_symbols[0].clone();
+        let channels = proto_message_symbol.channels(symbol_table);
 
         // Validate generated name
-        let fqn = name_to_fqn(&publisher.message, &publisher.package(symbol_table));
         for channel in &channels {
-            let generated_name = format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
+            let generated_name = channel.name().to_kebab_case();
             self.check(generated_name, "publisher", publisher.span());
         }
     }
@@ -152,35 +155,25 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         symbol_table: &vsidl_v1_symbols::symbol_table::SymbolTable,
         subscriber: &vsidl_v1_symbols::specific_symbols::subscriber_symbol::SubscriberSymbol,
     ) {
-        // Get publication symbol
-        let proto_publication_symbols = subscriber
-            .enclosing_scope(symbol_table)
-            .resolve_proto_publication(symbol_table, subscriber.message.clone());
-        if proto_publication_symbols.is_empty() {
-            // This error is handled by the publication_type context condition
+        // Explicit channels are checked in start_visit_subscriber()
+        if !subscriber.channel.is_empty() {
             return;
         }
 
-        // Validate user-defined name
-        let publication = subscriber.publication(symbol_table);
-        if !publication.publishers(symbol_table).is_empty() {
-            let publisher = publication.publishers(symbol_table)[0].clone();
-            if publication.is_single_pub() && !publisher.service_unit_name.is_empty() {
-                self.check(publisher.service_unit_name.clone(), "subscriber", subscriber.span());
-                return;
-            }
+        // Get message symbol
+        let proto_message_symbols = subscriber
+            .enclosing_scope(symbol_table)
+            .resolve_proto_message(symbol_table, subscriber.message.clone());
+        if proto_message_symbols.is_empty() {
+            // This error is handled by the subscriber_type context condition
+            return;
         }
-
-        let proto_publication_symbol: ProtoPublicationSymbol = proto_publication_symbols[0].clone();
-        let mut channels = proto_publication_symbol.channels(symbol_table);
-        if channels.is_empty() {
-            channels.push(UNIQUE_CHANNEL.to_string());
-        }
+        let proto_message_symbol: ProtoMessageSymbol = proto_message_symbols[0].clone();
+        let channels = proto_message_symbol.channels(symbol_table);
 
         // Validate generated name
-        let fqn = name_to_fqn(&subscriber.message, &subscriber.package(symbol_table));
         for channel in &channels {
-            let generated_name = format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
+            let generated_name = channel.name().to_kebab_case();
             self.check(generated_name, "subscriber", subscriber.span());
         }
     }
@@ -247,9 +240,9 @@ mod test {
             .extend([vsidl_v1_test_data::DESCRIPTOR_NAME_TOO_LONG_PROTO.clone()]);
         catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_GENERATED_NAME_TOO_LONG.clone());
 
-        let mut creator = SymbolTableCreator::new();
+        let mut creator: SymbolTableCreator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
-        let mut linker = SymbolTableLinker::from(creator);
+        let mut linker: SymbolTableLinker = SymbolTableLinker::from(creator);
         linker.execute();
 
         // WHEN Executing context condition
@@ -259,21 +252,16 @@ mod test {
 
         // THEN context condition should fail
         assert!(coco.is_err());
+        eprintln!("Findings: {:?}", coco.finding_collector.findings());
 
-        // THEN publisher with UNIQUE channel was detected
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-unique-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-unique"));
-        // THEN publisher with explicit channels was detected
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
         // THEN publisher with implicit channels was detected
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-two"));
-        // THEN subscriber with UNIQUE channel was detected
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-unique-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-unique"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "for publisher 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-three"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "for publisher 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-four"));
         // THEN subscriber with explicit channels was detected
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "for subscriber 'sdv-test-this-is-a-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-five"));
         // THEN subscriber with implicit channels was detected
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-one"));
-        assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-another-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-two"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "for subscriber 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-three"));
+        assert!(coco.any_finding_contains(FindingSeverity::Error, "for subscriber 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-four"));
         // THEN RPC server was detected
         assert!(coco.any_finding_contains(FindingSeverity::Error, "sdv-test-this-is-a-very-long-rpc-server-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789"));
         // THEN RPC client was detected
