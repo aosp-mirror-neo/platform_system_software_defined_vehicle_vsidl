@@ -54,11 +54,11 @@ pub(crate) fn go_to_definition<F: FileProvider>(
                         && offset >= publisher.channel_span[0].start as usize
                         && offset <= publisher.channel_span[0].end as usize
                     {
-                        publisher.publication(symbol_table).channels_enum(symbol_table).span()
+                        publisher.channel_symbols(symbol_table)[0].span()
                     } else if offset >= publisher.message_span.start as usize
                         && offset <= publisher.message_span.end as usize
                     {
-                        publisher.publication(symbol_table).span()
+                        publisher.message(symbol_table).span()
                     } else {
                         // The cursor is on a part of the Publisher symbol that doesn't link
                         // to a specific definition (e.g., a comment).
@@ -70,11 +70,11 @@ pub(crate) fn go_to_definition<F: FileProvider>(
                         && offset >= subscriber.channel_span[0].start as usize
                         && offset <= subscriber.channel_span[0].end as usize
                     {
-                        subscriber.publication(symbol_table).channels_enum(symbol_table).span()
+                        subscriber.channel_symbols(symbol_table)[0].span()
                     } else if offset >= subscriber.message_span.start as usize
                         && offset <= subscriber.message_span.end as usize
                     {
-                        subscriber.publication(symbol_table).span()
+                        subscriber.message(symbol_table).span()
                     } else {
                         // The cursor is on a part of the Subscriber symbol that doesn't link
                         // to a specific definition (e.g., a comment).

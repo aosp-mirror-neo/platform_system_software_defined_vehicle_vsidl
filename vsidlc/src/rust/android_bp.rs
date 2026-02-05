@@ -189,34 +189,18 @@ impl Context {
         let mut dependencies = IndexSet::<String>::new();
 
         for subscriber in &service_bundle.subscribers(symbol_table) {
-            let proto_publication = subscriber.publication(symbol_table);
+            let proto_message = subscriber.message(symbol_table);
             dependencies
-                .insert(proto_publication.proto_metadata.rust_build_target_name.clone().unwrap());
-            dependencies.insert(
-                proto_publication
-                    .channels_enum(symbol_table)
-                    .proto_metadata
-                    .rust_build_target_name
-                    .clone()
-                    .unwrap(),
-            );
+                .insert(proto_message.proto_metadata.rust_build_target_name.clone().unwrap());
         }
 
         for publisher in &service_bundle.publishers(symbol_table) {
-            let proto_publication = publisher.publication(symbol_table);
+            let proto_message = publisher.message(symbol_table);
             dependencies
-                .insert(proto_publication.proto_metadata.rust_build_target_name.clone().unwrap());
-            dependencies.insert(
-                proto_publication
-                    .channels_enum(symbol_table)
-                    .proto_metadata
-                    .rust_build_target_name
-                    .clone()
-                    .unwrap(),
-            );
+                .insert(proto_message.proto_metadata.rust_build_target_name.clone().unwrap());
             // Dependencies required for registering message metadata used in reflection:
             if service_bundle.ast_node.register_reflection_metadata {
-                for proto_dependency in &proto_publication.proto_dependencies {
+                for proto_dependency in &proto_message.proto_dependencies {
                     dependencies.insert(proto_dependency.rust_build_target_name.clone().unwrap());
                 }
             }

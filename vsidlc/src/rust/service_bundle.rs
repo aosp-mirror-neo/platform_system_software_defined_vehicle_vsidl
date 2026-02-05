@@ -17,6 +17,7 @@ use crate::rust::rpc_service::RpcMethodContext;
 use handlebars::Handlebars;
 use indexmap::{IndexMap, IndexSet};
 use serde_derive::Serialize;
+use vsidl_v1_parser::proto_message_symbol::ProtoMessageSymbol;
 use vsidl_v1_parser::proto_publication_symbol::ProtoPublicationSymbol;
 use vsidl_v1_parser::proto_rpc_service_symbol::ProtoRpcServiceSymbol;
 use vsidl_v1_parser::publisher_symbol::PublisherSymbol;
@@ -81,7 +82,7 @@ pub(super) struct UnitTypeContext {
     bundle_name: String,
     pub(super) type_name: String,
     pub(super) proto_type_name: String,
-    pub(super) is_rpc: bool,
+    pub(super) is_rpc_service: bool,
     pub(super) methods: Vec<RpcMethodContext>,
 }
 impl UnitTypeContext {
@@ -107,7 +108,7 @@ impl UnitTypeContext {
             bundle_name: "".to_string(), // service bundle names as part of unit types are deprecated
             type_name: rpc_service.name().clone(),
             proto_type_name: extract_proto_typename_from_unit_type(&rpc_service.name()).to_string(),
-            is_rpc: true,
+            is_rpc_service: true,
             methods,
         }
     }
@@ -126,7 +127,23 @@ impl UnitTypeContext {
             bundle_name: "".to_string(), // service bundle names as part of unit types are deprecated
             type_name: publication.name().clone(),
             proto_type_name: extract_proto_typename_from_unit_type(&publication.name()).to_string(),
-            is_rpc: false,
+            is_rpc_service: false,
+            methods,
+        }
+    }
+
+    pub(super) fn from_message(message: &ProtoMessageSymbol, symbol_table: &SymbolTable) -> Self {
+        let crate_name = message.proto_metadata.rust_crate_name.clone().unwrap();
+        let methods = Vec::new();
+
+        UnitTypeContext {
+            crate_name,
+            proto_filename: extract_filename(&message.proto_metadata.filename).to_string(),
+            package: message.package(symbol_table),
+            bundle_name: "".to_string(), // service bundle names as part of unit types are deprecated
+            type_name: message.name().clone(),
+            proto_type_name: extract_proto_typename_from_unit_type(&message.name()).to_string(),
+            is_rpc_service: false,
             methods,
         }
     }
@@ -168,6 +185,38 @@ impl PublicationTypeContext {
                 .collect(),
         }
     }
+
+    pub(super) fn from_message(
+        proto_message: &ProtoMessageSymbol,
+        symbol_table: &SymbolTable,
+    ) -> Self {
+        PublicationTypeContext {
+            unit_type: UnitTypeContext::from_message(proto_message, symbol_table),
+            proto_enum_filename: extract_filename(&proto_message.proto_metadata.filename.clone())
+                .to_string(),
+            proto_enum_crate_name: proto_message.proto_metadata.rust_crate_name.clone().unwrap(),
+            proto_enum_name: proto_message.name.clone().unwrap().clone(),
+            message_size: proto_message.max_size.clone().unwrap().size,
+            // In the deprecated annotation-based channel definition, all Proto messages of the
+            // same type shared a common 'message_count'. Now, every publisher can set its own capacity.
+            // For backwards compatibility, temporarily use the maximum of all channels.
+            message_count: proto_message
+                .channels(symbol_table)
+                .iter()
+                .map(|c| c.capacity as u32)
+                .max()
+                .unwrap_or_default(),
+            // TODO: b/477164517 - Set the is_multipub flag to true once all types of subscribers / observers
+            // support the new channel concept. Then test with atest sdv_core_middleware_unit_vsidl_pubsub_e2e_test
+            is_multipub: false,
+            message_fqn: proto_message.full_name(symbol_table),
+            proto_dependencies: proto_message
+                .proto_dependencies
+                .iter()
+                .map(ProtoDependencyContext::from)
+                .collect(),
+        }
+    }
 }
 
 #[derive(Serialize, Clone)]
@@ -200,11 +249,12 @@ impl ProtoDependencyContext {
 pub(super) struct PublicationChannelContext {
     pub(super) channel_name: String,
     pub(super) service_unit_name: String,
+    pub(super) capacity: u32,
 }
 
 impl PublicationChannelContext {
-    pub(super) fn new(channel_name: String, service_unit_name: String) -> Self {
-        Self { channel_name, service_unit_name }
+    pub(super) fn new(channel_name: String, service_unit_name: String, capacity: u32) -> Self {
+        Self { channel_name, service_unit_name, capacity }
     }
 }
 
@@ -305,15 +355,15 @@ impl ServiceBundleContext {
         let mut unit_types = IndexSet::new();
 
         for subscriber in &service_bundle.subscribers(symbol_table) {
-            unit_types.insert(UnitTypeContext::from_publication(
-                subscriber.publication(symbol_table),
+            unit_types.insert(UnitTypeContext::from_message(
+                subscriber.message(symbol_table),
                 symbol_table,
             ));
         }
 
         for publisher in &service_bundle.publishers(symbol_table) {
-            unit_types.insert(UnitTypeContext::from_publication(
-                publisher.publication(symbol_table),
+            unit_types.insert(UnitTypeContext::from_message(
+                publisher.message(symbol_table),
                 symbol_table,
             ));
         }
@@ -336,9 +386,9 @@ impl ServiceBundleContext {
         let mut publishers_for_publication: IndexMap<String, Vec<&PublisherSymbol>> =
             IndexMap::new();
         for publisher in &service_bundle.publishers(symbol_table) {
-            let publication_symbol = publisher.publication(symbol_table);
+            let message_symbol = publisher.message(symbol_table);
             publishers_for_publication
-                .entry(publication_symbol.full_name(symbol_table))
+                .entry(message_symbol.full_name(symbol_table))
                 .or_default()
                 .push(publisher);
         }
@@ -346,21 +396,46 @@ impl ServiceBundleContext {
         for (publication_fqn, publishers) in &publishers_for_publication {
             let mut channel_contexts = Vec::new();
             for publisher in publishers {
-                for channel_name in &publisher.channels(symbol_table) {
-                    let service_unit_name = publisher.service_unit_name(symbol_table, channel_name);
-                    channel_contexts.push(PublicationChannelContext::new(
-                        channel_name.to_string(),
-                        service_unit_name,
-                    ));
+                if symbol_table.uses_pdk29() {
+                    for channel_name in &publisher.channels(symbol_table) {
+                        let service_unit_name =
+                            publisher.service_unit_name(symbol_table, channel_name);
+                        channel_contexts.push(PublicationChannelContext::new(
+                            channel_name.to_string(),
+                            service_unit_name,
+                            symbol_table.resolve_proto_publication_fqn(publication_fqn)[0]
+                                .message_count,
+                        ));
+                    }
+                } else {
+                    for channel in &publisher.channel_symbols(symbol_table) {
+                        let service_unit_name =
+                            publisher.service_unit_name(symbol_table, &channel.name());
+                        channel_contexts.push(PublicationChannelContext::new(
+                            channel.name().to_string(),
+                            service_unit_name,
+                            publisher.capacity,
+                        ));
+                    }
                 }
             }
-            publications.push((
-                PublicationTypeContext::from(
-                    symbol_table.resolve_proto_publication_fqn(publication_fqn)[0],
-                    symbol_table,
-                ),
-                channel_contexts,
-            ));
+            if symbol_table.uses_pdk29() {
+                publications.push((
+                    PublicationTypeContext::from(
+                        symbol_table.resolve_proto_publication_fqn(publication_fqn)[0],
+                        symbol_table,
+                    ),
+                    channel_contexts,
+                ));
+            } else {
+                publications.push((
+                    PublicationTypeContext::from_message(
+                        symbol_table.resolve_proto_message_fqn(publication_fqn)[0],
+                        symbol_table,
+                    ),
+                    channel_contexts,
+                ));
+            }
         }
         publications
     }
@@ -373,9 +448,9 @@ impl ServiceBundleContext {
         let mut subscribers_for_publication: IndexMap<String, Vec<&SubscriberSymbol>> =
             IndexMap::new();
         for subscriber in &service_bundle.subscribers(symbol_table) {
-            let publication_symbol = subscriber.publication(symbol_table);
+            let message_symbol = subscriber.message(symbol_table);
             subscribers_for_publication
-                .entry(publication_symbol.full_name(symbol_table))
+                .entry(message_symbol.full_name(symbol_table))
                 .or_default()
                 .push(subscriber);
         }
@@ -398,13 +473,23 @@ impl ServiceBundleContext {
                 }
             }
 
-            subscriptions.push((
-                PublicationTypeContext::from(
-                    symbol_table.resolve_proto_publication_fqn(publication_fqn)[0],
-                    symbol_table,
-                ),
-                channel_contexts,
-            ));
+            if symbol_table.uses_pdk29() {
+                subscriptions.push((
+                    PublicationTypeContext::from(
+                        symbol_table.resolve_proto_publication_fqn(publication_fqn)[0],
+                        symbol_table,
+                    ),
+                    channel_contexts,
+                ));
+            } else {
+                subscriptions.push((
+                    PublicationTypeContext::from_message(
+                        symbol_table.resolve_proto_message_fqn(publication_fqn)[0],
+                        symbol_table,
+                    ),
+                    channel_contexts,
+                ));
+            }
         }
         subscriptions
     }

@@ -17,7 +17,7 @@
 pub struct {{service_bundle_name}} {
     {{#unless used_comms}}_{{/unless}}comms: std::sync::Arc<dyn sdv::mw::Communicate>,
 {{#if is_publisher}}
-    publishers: std::collections::HashMap<(std::any::TypeId, i32), Box<dyn std::any::Any + Send + Sync>>,
+    publishers: std::collections::HashMap<(std::any::TypeId, String), Box<dyn std::any::Any + Send + Sync>>,
 {{/if}}
 {{#if is_server}}
     servers: std::vec::Vec<std::sync::Arc<dyn sdv::mw::ServerTransport>>,

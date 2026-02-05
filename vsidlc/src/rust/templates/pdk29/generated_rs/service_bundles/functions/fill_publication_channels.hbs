@@ -39,6 +39,7 @@ async fn fill_publication_channels<M: UnitType + publisher::Metadata + ::protobu
                         .message_metadata_required({{register_reflection_metadata}})
                         .build()?,
                 )
+                .topic_name(channel.service_unit.replace("-", "_"))
                 .build()?,
         )
         .await?;
