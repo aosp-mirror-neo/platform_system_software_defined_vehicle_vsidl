@@ -25,24 +25,27 @@ pub mod publisher {
     #[derive(Debug)]
     pub struct Channel<Proto: ::protobuf::Message> {
         _proto: std::marker::PhantomData<Proto>,
-        /// Unique id of a channel
-        pub id: i32,
+        /// Unique name of a channel
+        pub name: &'static str,
         service_unit: &'static str,
+        capacity: u32,
     }
     impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::publisher::Identity
     for Channel<Proto> {
         type ProtoMessage = Proto;
-        fn get_id(&self) -> i32 {
-            self.id
+        fn get_name(&self) -> &str {
+            self.name
         }
         fn get_service_unit_name(&self) -> &str {
             self.service_unit
+        }
+        fn get_capacity(&self) -> u32 {
+            self.capacity
         }
     }
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
         const MESSAGE_SIZE: u32 = 6;
-        const MESSAGE_COUNT: u32 = 8;
         const IS_MULTIPUB: bool = false;
         const IS_MESSAGE_METADATA_REQUIRED: bool = true;
         fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
@@ -70,14 +73,16 @@ pub mod publisher {
         /// Publication channel 'ONE' of 'sdv.golden.Pressure'
         pub const ONE: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::all_ast_node_types::TestVariants::ONE as i32,
+            name: "one",
             service_unit: "sdv-golden-pressure-one",
+            capacity: 8,
         };
         /// Publication channel 'TWO' of 'sdv.golden.Pressure'
         pub const TWO: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::all_ast_node_types::TestVariants::TWO as i32,
+            name: "two",
             service_unit: "sdv-golden-pressure-two",
+            capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.Pressure' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::ONE, Self::TWO];
@@ -93,8 +98,8 @@ pub mod subscriber {
     #[derive(Debug)]
     pub struct Channel<Proto: ::protobuf::Message> {
         _proto: std::marker::PhantomData<Proto>,
-        /// Unique id of a channel
-        pub id: i32,
+        /// Unique name of a channel
+        pub name: &'static str,
         service_bundle_package: &'static str,
         service_bundle_name: &'static str,
         service_unit: &'static str,
@@ -102,8 +107,8 @@ pub mod subscriber {
     impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::subscriber::Identity
     for Channel<Proto> {
         type ProtoMessage = Proto;
-        fn get_id(&self) -> i32 {
-            self.id
+        fn get_name(&self) -> &str {
+            self.name
         }
         fn get_service_unit_name(&self) -> &str {
             self.service_unit
@@ -133,7 +138,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'TWO' of 'sdv.golden.Pressure'
         pub const TWO: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::all_ast_node_types::TestVariants::TWO as i32,
+            name: "two",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "AllServiceBundleFeatures",
             service_unit: "sdv-golden-pressure-two",
@@ -146,7 +151,7 @@ pub mod subscriber {
 pub struct AllServiceBundleFeatures {
     _comms: std::sync::Arc<dyn sdv::mw::Communicate>,
     publishers: std::collections::HashMap<
-        (std::any::TypeId, i32),
+        (std::any::TypeId, String),
         Box<dyn std::any::Any + Send + Sync>,
     >,
     servers: std::vec::Vec<std::sync::Arc<dyn sdv::mw::ServerTransport>>,
@@ -204,7 +209,7 @@ impl AllServiceBundleFeatures {
     ) -> Option<sdv::mw::Publisher<M>> {
         let guarded_publisher = *self
             .publishers
-            .remove(&(std::any::TypeId::of::<M>(), channel.id))?
+            .remove(&(std::any::TypeId::of::<M>(), channel.name.to_string()))?
             .downcast::<std::sync::Mutex<sdv::mw::Publisher<M>>>()
             .unwrap();
         Some(guarded_publisher.into_inner().unwrap())
