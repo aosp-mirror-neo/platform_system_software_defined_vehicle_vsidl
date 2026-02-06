@@ -18,6 +18,7 @@ use sdv_comms::id::ServiceFqin;
 use sdv_status_rs::SdvStatus;
 use std::borrow::Cow;
 use std::fmt;
+use strum_macros::Display;
 
 #[derive(PartialEq, Eq, Clone, Default, Debug, Hash)]
 pub(crate) struct ServiceFqbn<'string_lt> {
@@ -63,14 +64,14 @@ impl<'fqin_lt> From<&'fqin_lt ServiceFqin> for ServiceFqbn<'fqin_lt> {
     }
 }
 
-#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone, Display)]
 pub(crate) enum DataType {
     SomeIp,
     Diagnostics,
     VsidlSchemas,
 }
 
-#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone, Display)]
 pub(crate) enum DataSource {
     Files,
     Apexes,

@@ -176,17 +176,21 @@ impl ProtoSchemasData {
             // don't immediately return error, could be a well-known type
             WELLKNOWN_TYPES_TO_DESCRIPTOR
                 .get(message)
-                .ok_or(SdvStatus::with_message(
-                    SdvStatusCode::NotFound,
-                    format!("Could not find message {message:?} in well known types"),
-                ))?
+                .ok_or_else(|| {
+                    SdvStatus::with_message(
+                        SdvStatusCode::NotFound,
+                        format!("Could not find message {message:?} in well known types"),
+                    )
+                })?
                 .clone()
         };
 
-        file_descriptor.message_by_full_name(message).ok_or(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!("Could not find message {message:?} in file descriptor"),
-        ))
+        file_descriptor.message_by_full_name(message).ok_or_else(|| {
+            SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Could not find message {message:?} in file descriptor"),
+            )
+        })
     }
 
     /// Gets a file descriptor for the given file_name, or creates if it does not exist in the cache.
