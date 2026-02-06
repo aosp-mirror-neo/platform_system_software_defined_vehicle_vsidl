@@ -350,7 +350,7 @@ async fn main() -> anyhow::Result<()> {
     let ctx: ContextRef = ContextRef::create(vsidl_provider_fqin.clone());
 
     let self_fqin = ctx.get_self_fqin();
-    dm.set_self_fqin(&self_fqin);
+    dm.set_self_fqin(self_fqin.to_string());
 
     let vsidl_provider = Arc::new(vsidl_provider::new_for_vsidl_provider_agent());
     dm.add_reporter("VSIDL Provider", &vsidl_provider);

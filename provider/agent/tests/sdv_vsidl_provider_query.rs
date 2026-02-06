@@ -262,7 +262,7 @@ async fn main() -> anyhow::Result<()> {
             .expect("Valid ServiceFqin");
     let ctx: ContextRef = ContextRef::create(client_fqin);
 
-    dm.set_self_fqin(&ctx.get_self_fqin());
+    dm.set_self_fqin(ctx.get_self_fqin().to_string());
 
     // Using new_for_integration_test flavor of VSIDL Provider, since we want to test the calls to the agent in remote VMs
     // The new_for_integration_test only creates a remote RemoteProviderFromAgent

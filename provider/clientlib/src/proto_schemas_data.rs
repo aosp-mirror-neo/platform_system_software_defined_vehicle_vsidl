@@ -17,11 +17,12 @@
 use crate::cache::VsidlFdCache;
 use crate::{file_utils::read_config_file, vsidl_provider_api::*};
 use dashmap::DashMap;
-use log::{error, warn};
+use log::warn;
 use protobuf::descriptor::FileDescriptorProto;
 use protobuf::reflect::FileDescriptor;
 use protobuf::reflect::MessageDescriptor;
 use sdv_comms::sd::UnitType;
+use sdv_status_rs::{SdvResult, SdvStatus, SdvStatusCode};
 use sdv_vsidl_common::{WELLKNOWN_PROTOS_TO_DESCRIPTOR, WELLKNOWN_TYPES_TO_DESCRIPTOR};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -129,44 +130,63 @@ impl ProtoSchemasData {
     pub fn get_publication_descriptor(
         &self,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
-        let (message, size_metadata) = self.topic_unit_type_to_proto_message.get(unit_type)?;
+    ) -> SdvResult<PublicationDescriptor> {
+        let (message, size_metadata) =
+            self.topic_unit_type_to_proto_message.get(unit_type).ok_or_else(|| {
+                SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("No topic unit type mapping found for {unit_type}"),
+                )
+            })?;
 
         let message_descriptor = self.get_message_descriptor(message)?;
-        Some(PublicationDescriptor { message_descriptor, size_metadata: size_metadata.clone() })
+        Ok(PublicationDescriptor { message_descriptor, size_metadata: size_metadata.clone() })
     }
 
     pub fn get_rpc_method_descriptor(
         &self,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
+    ) -> SdvResult<RpcMethodDescriptor> {
         let rpc_unit_type_to_proto_messages = &self.rpc_unit_type_to_proto_messages;
 
         let Some(method_map) = rpc_unit_type_to_proto_messages.get(unit_type) else {
-            log::error!("Could not find message for RPC interface {unit_type}");
-            return None;
+            return Err(SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Could not find RPC interface {unit_type}"),
+            ));
         };
 
         let Some((input_message_name, output_message_name)) = method_map.get(method_name) else {
-            log::error!("Could not find method name {method_name} in {unit_type}");
-            return None;
+            return Err(SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Could not find method name {method_name} in {unit_type}"),
+            ));
         };
-        let request_message = self.get_message_descriptor(input_message_name);
-        let response_message = self.get_message_descriptor(output_message_name);
-        Some(RpcMethodDescriptor { request_message, response_message })
+        let request_message = self.get_message_descriptor(input_message_name).ok();
+        let response_message = self.get_message_descriptor(output_message_name).ok();
+        Ok(RpcMethodDescriptor { request_message, response_message })
     }
 
-    pub fn get_message_descriptor(&self, message: &str) -> Option<MessageDescriptor> {
+    pub fn get_message_descriptor(&self, message: &str) -> SdvResult<MessageDescriptor> {
         let file_descriptor = if let Some(file_name) = self.proto_message_to_file_name.get(message)
         {
             self.get_file_descriptor(file_name)?
         } else {
             // don't immediately return error, could be a well-known type
-            WELLKNOWN_TYPES_TO_DESCRIPTOR.get(message)?.clone()
+            WELLKNOWN_TYPES_TO_DESCRIPTOR
+                .get(message)
+                .ok_or(SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Could not find message {message:?} in well known types"),
+                ))?
+                .clone()
         };
 
-        file_descriptor.message_by_full_name(message)
+        file_descriptor.message_by_full_name(message).ok_or(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("Could not find message {message:?} in file descriptor"),
+        ))
     }
 
     /// Gets a file descriptor for the given file_name, or creates if it does not exist in the cache.
@@ -176,12 +196,14 @@ impl ProtoSchemasData {
     /// Since FileDescriptor objects are checked for equality using pointer comparison, one should not
     /// rely on MessageDescriptors created from different threads to be equal (However, each MessageDescriptor will always be
     /// valid for reflective access to proto messages)
-    fn get_file_descriptor(&self, file_name: &str) -> Option<FileDescriptor> {
+    fn get_file_descriptor(&self, file_name: &str) -> SdvResult<FileDescriptor> {
         if !self.file_descriptor_cache.contains_file_descriptor_with_key(file_name) {
             let Some(file_descriptor_proto) = self.file_name_to_file_descriptor.get(file_name)
             else {
-                error!("Could not find file descriptor proto for file {file_name:?}");
-                return None;
+                return SdvResult::Err(SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Could not find file descriptor proto for file {file_name:?}"),
+                ));
             };
             //TODO try to add a match with if guards instead of this
             let mut fd_dependencies: Vec<FileDescriptor> = Vec::new();
@@ -204,8 +226,10 @@ impl ProtoSchemasData {
             let Ok(file_descriptor) =
                 FileDescriptor::new_dynamic(file_descriptor_proto.clone(), &fd_dependencies)
             else {
-                error!("Unable to create file descriptor for file {file_name:?}");
-                return None;
+                return SdvResult::Err(SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Unable to create file descriptor for file {file_name:?}"),
+                ));
             };
             self.file_descriptor_cache.insert_into_cache(file_name.to_string(), file_descriptor);
         }
