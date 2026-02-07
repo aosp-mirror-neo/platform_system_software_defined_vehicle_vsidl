@@ -102,6 +102,16 @@ impl LocalProviderFromApexes {
 
         Ok(result)
     }
+
+    /// Gets the bundle metadata for a given ServiceFqin, or returns a NotFound error.
+    fn get_bundle_metadata<'a>(&'a self, fqin: &'a ServiceFqin) -> SdvResult<&'a BundleMetadata> {
+        self.bundle_metadata.get(&fqin.into()).ok_or_else(|| {
+            SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                format!("Unable to find {fqin:?} in APEX bundle metadata"),
+            )
+        })
+    }
 }
 
 impl Display for LocalProviderFromApexes {
@@ -340,15 +350,14 @@ impl Display for LocalProviderFromApexes {
 }
 
 #[async_trait::async_trait]
-impl VsidlConfigProviderV1 for LocalProviderFromApexes {
+impl VsidlConfigProvider for LocalProviderFromApexes {
     async fn get_publication_descriptor(
         &self,
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
-        self.bundle_metadata
-            .get(&source_fqin.into())
-            .and_then(|data| data.proto_schemas.get_publication_descriptor(unit_type).ok())
+    ) -> SdvResult<PublicationDescriptor> {
+        self.get_bundle_metadata(source_fqin)
+            .and_then(|data| data.proto_schemas.get_publication_descriptor(unit_type))
     }
 
     async fn get_rpc_method_descriptor(
@@ -356,33 +365,48 @@ impl VsidlConfigProviderV1 for LocalProviderFromApexes {
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
-        self.bundle_metadata.get(&source_fqin.into()).and_then(|data| {
-            data.proto_schemas.get_rpc_method_descriptor(unit_type, method_name).ok()
-        })
+    ) -> SdvResult<RpcMethodDescriptor> {
+        self.get_bundle_metadata(source_fqin)
+            .and_then(|data| data.proto_schemas.get_rpc_method_descriptor(unit_type, method_name))
     }
 
     async fn get_message_descriptor(
         &self,
         source_fqin: &ServiceFqin,
         message_name: &str,
-    ) -> Option<MessageDescriptor> {
+    ) -> SdvResult<MessageDescriptor> {
         let full_message_name = &format!(".{message_name}");
 
-        self.bundle_metadata
-            .get(&source_fqin.into())
-            .and_then(|data| data.proto_schemas.get_message_descriptor(full_message_name).ok())
+        self.get_bundle_metadata(source_fqin)
+            .and_then(|data| data.proto_schemas.get_message_descriptor(full_message_name))
     }
 
-    async fn get_someip_mappings(&self, source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {
-        self.bundle_metadata.get(&source_fqin.into()).and_then(|data| data.someip_mappings.clone())
+    async fn get_someip_mappings(
+        &self,
+        source_fqin: &ServiceFqin,
+    ) -> SdvResult<Vec<SomeIpMapping>> {
+        self.get_bundle_metadata(source_fqin).and_then(|data| {
+            data.someip_mappings.clone().ok_or_else(|| {
+                SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Unable to find someip_mappings for {source_fqin:?}"),
+                )
+            })
+        })
     }
 
     async fn get_diagnostics_declaration(
         &self,
         fqin: &ServiceFqin,
-    ) -> Option<DiagnosticsDeclaration> {
-        self.bundle_metadata.get(&fqin.into()).and_then(|data| data.diagnostics_declaration.clone())
+    ) -> SdvResult<DiagnosticsDeclaration> {
+        self.get_bundle_metadata(fqin).and_then(|data| {
+            data.diagnostics_declaration.clone().ok_or_else(|| {
+                SdvStatus::with_message(
+                    SdvStatusCode::NotFound,
+                    format!("Unable to find diagnostics_declaration for {fqin:?}"),
+                )
+            })
+        })
     }
 }
 

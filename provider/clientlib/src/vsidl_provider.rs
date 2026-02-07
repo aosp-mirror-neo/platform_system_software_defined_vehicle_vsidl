@@ -19,6 +19,9 @@ use crate::types::{DataSource, DataType};
 use protobuf::reflect::MessageDescriptor;
 use sdv_comms::ContextRef;
 use sdv_comms::{id::ServiceFqin, sd::UnitType};
+use sdv_status_rs::SdvResult;
+use sdv_status_rs::SdvStatus;
+use sdv_status_rs::SdvStatusCode;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::Display;
@@ -29,7 +32,7 @@ use thiserror::Error;
 use vsidl_v1::{diagnostics_syntax::DiagnosticsDeclaration, someip::SomeIpMapping};
 
 use crate::vsidl_provider_api::{
-    PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProviderV1,
+    PublicationDescriptor, RpcMethodDescriptor, VsidlConfigProvider, VsidlConfigProviderV1,
 };
 
 const VSIDL_CONFIG_DIR: &str = "/etc/vsidl_v1/vsidl_config";
@@ -189,7 +192,7 @@ pub(crate) enum VsidlProviderErrorV1 {
 /// Implementation of VsidlConfigProvider
 struct VsidlProviderV1 {
     data_sources: HashMap<DataType, Vec<DataSource>>,
-    providers: HashMap<DataSource, Box<dyn VsidlConfigProviderV1>>,
+    providers: HashMap<DataSource, Box<dyn VsidlConfigProvider>>,
 }
 
 impl Display for VsidlProviderV1 {
@@ -211,45 +214,70 @@ impl Display for VsidlProviderV1 {
     }
 }
 
+impl VsidlProviderV1 {
+    fn get_data_sources(&self, data_type: DataType) -> SdvResult<&Vec<DataSource>> {
+        self.data_sources.get(&data_type).filter(|sources| !sources.is_empty()).ok_or_else(|| {
+            SdvStatus::with_message(SdvStatusCode::NotFound, "No {data_type} found in data sources")
+        })
+    }
+}
+
 #[async_trait::async_trait]
-impl VsidlConfigProviderV1 for VsidlProviderV1 {
+impl VsidlConfigProvider for VsidlProviderV1 {
     #[tracing::instrument(skip_all, fields(source_fqin = source_fqin.get_service_bundle_name()))]
-    async fn get_someip_mappings(&self, source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {
-        let data_sources = self.data_sources.get(&DataType::SomeIp)?;
+    async fn get_someip_mappings(
+        &self,
+        source_fqin: &ServiceFqin,
+    ) -> SdvResult<Vec<SomeIpMapping>> {
+        let data_sources = self.get_data_sources(DataType::SomeIp)?;
 
+        let mut all_errors = Vec::new();
         for data_source in data_sources {
-            let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_someip_mappings(source_fqin).await,
-                None => None,
-            };
-
-            if result.is_some() {
-                return result;
+            if let Some(provider) = self.providers.get(data_source).as_ref() {
+                match provider.get_someip_mappings(source_fqin).await {
+                    Ok(result) => {
+                        return Ok(result);
+                    }
+                    Err(e) => {
+                        all_errors.push((data_source, e));
+                    }
+                }
             }
         }
 
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("No Some/IP mappings found for fqin {source_fqin}. All errors (and data sources): {all_errors:?}"),
+        ))
     }
 
     #[tracing::instrument(skip_all, fields(fqin = fqin.get_service_bundle_name()))]
     async fn get_diagnostics_declaration(
         &self,
         fqin: &ServiceFqin,
-    ) -> Option<DiagnosticsDeclaration> {
-        let data_sources = self.data_sources.get(&DataType::Diagnostics)?;
+    ) -> SdvResult<DiagnosticsDeclaration> {
+        let data_sources = self.get_data_sources(DataType::Diagnostics)?;
 
+        let mut all_errors = Vec::new();
         for data_source in data_sources {
-            let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_diagnostics_declaration(fqin).await,
-                None => None,
-            };
-
-            if result.is_some() {
-                return result;
+            if let Some(provider) = self.providers.get(data_source).as_ref() {
+                match provider.get_diagnostics_declaration(fqin).await {
+                    Ok(result) => {
+                        return Ok(result);
+                    }
+                    Err(e) => {
+                        all_errors.push((data_source, e));
+                    }
+                }
             }
         }
 
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!(
+                "No Diagnostics Declarations found for fqin {fqin}. All errors (and data sources): {all_errors:?}"
+            ),
+        ))
     }
 
     #[tracing::instrument(skip_all, fields(
@@ -263,21 +291,27 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
         &self,
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
-        let data_sources = self.data_sources.get(&DataType::VsidlSchemas)?;
+    ) -> SdvResult<PublicationDescriptor> {
+        let data_sources = self.get_data_sources(DataType::VsidlSchemas)?;
 
+        let mut all_errors = Vec::new();
         for data_source in data_sources {
-            let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_publication_descriptor(source_fqin, unit_type).await,
-                None => None,
-            };
-
-            if result.is_some() {
-                return result;
+            if let Some(provider) = self.providers.get(data_source).as_ref() {
+                match provider.get_publication_descriptor(source_fqin, unit_type).await {
+                    Ok(result) => {
+                        return Ok(result);
+                    }
+                    Err(e) => {
+                        all_errors.push((data_source, e));
+                    }
+                }
             }
         }
 
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("No publication descriptor found for fqin {source_fqin} and unit_type {unit_type}. All errors (and data sources): {all_errors:?}"),
+        ))
     }
 
     #[tracing::instrument(skip_all, fields(unit_type_name = unit_type.get_unit_type_name(), vm_name = source_fqin.get_sdv_vm_name()))]
@@ -286,23 +320,28 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
-        let data_sources = self.data_sources.get(&DataType::VsidlSchemas)?;
+    ) -> SdvResult<RpcMethodDescriptor> {
+        let data_sources = self.get_data_sources(DataType::VsidlSchemas)?;
 
+        let mut all_errors = Vec::new();
         for data_source in data_sources {
-            let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => {
-                    provider.get_rpc_method_descriptor(source_fqin, unit_type, method_name).await
+            if let Some(provider) = self.providers.get(data_source).as_ref() {
+                match provider.get_rpc_method_descriptor(source_fqin, unit_type, method_name).await
+                {
+                    Ok(result) => {
+                        return Ok(result);
+                    }
+                    Err(e) => {
+                        all_errors.push((data_source, e));
+                    }
                 }
-                None => None,
-            };
-
-            if result.is_some() {
-                return result;
             }
         }
 
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("No rpc method descriptor found for fqin {source_fqin}, unit_type {unit_type} and method_name {method_name}. All errors (and data sources): {all_errors:?}"),
+        ))
     }
 
     #[tracing::instrument(skip(self, source_fqin), fields(vm_name = source_fqin.get_sdv_vm_name()))]
@@ -310,21 +349,27 @@ impl VsidlConfigProviderV1 for VsidlProviderV1 {
         &self,
         source_fqin: &ServiceFqin,
         message: &str,
-    ) -> Option<MessageDescriptor> {
-        let data_sources = self.data_sources.get(&DataType::VsidlSchemas)?;
+    ) -> SdvResult<MessageDescriptor> {
+        let data_sources = self.get_data_sources(DataType::VsidlSchemas)?;
 
+        let mut all_errors = Vec::new();
         for data_source in data_sources {
-            let result = match self.providers.get(data_source).as_ref() {
-                Some(provider) => provider.get_message_descriptor(source_fqin, message).await,
-                None => None,
-            };
-
-            if result.is_some() {
-                return result;
+            if let Some(provider) = self.providers.get(data_source).as_ref() {
+                match provider.get_message_descriptor(source_fqin, message).await {
+                    Ok(result) => {
+                        return Ok(result);
+                    }
+                    Err(e) => {
+                        all_errors.push((data_source, e));
+                    }
+                }
             }
         }
 
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::NotFound,
+            format!("No message descriptor found for fqin {source_fqin} and message {message}. All errors (and data sources): {all_errors:?}"),
+        ))
     }
 }
 
@@ -334,6 +379,8 @@ mod test {
     use protobuf::well_known_types::empty::Empty;
     use sdv_comms::id::ServiceFqin;
     use sdv_comms::ContextRef;
+    use sdv_status_rs::SdvStatus;
+    use sdv_status_rs::SdvStatusCode;
     use std::collections::{HashMap, HashSet};
     use std::iter::once;
     use std::str::FromStr;
@@ -367,10 +414,10 @@ mod test {
     }
 
     fn mock_factory(
-        provider_from_files: Option<Box<dyn VsidlConfigProviderV1>>,
-        provider_from_apexes: Option<Box<dyn VsidlConfigProviderV1>>,
-        provider_from_agent: Option<Box<dyn VsidlConfigProviderV1>>,
-        provider_from_remote_agent: Option<Box<dyn VsidlConfigProviderV1>>,
+        provider_from_files: Option<Box<dyn VsidlConfigProvider>>,
+        provider_from_apexes: Option<Box<dyn VsidlConfigProvider>>,
+        provider_from_agent: Option<Box<dyn VsidlConfigProvider>>,
+        provider_from_remote_agent: Option<Box<dyn VsidlConfigProvider>>,
     ) -> MockFactory {
         let mut mock_factory = MockFactory::new();
 
@@ -397,59 +444,59 @@ mod test {
         mock_factory
     }
 
-    fn empty_provider(
+    pub(crate) fn empty_provider(
         interactions: impl Fn(DataType) -> usize,
-    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
-        let mut mock_provider = MockVsidlConfigProviderV1::new();
+    ) -> Option<Box<dyn VsidlConfigProvider>> {
+        let mut mock_provider = MockVsidlConfigProvider::new();
 
         mock_provider
             .expect_get_someip_mappings()
             .times(interactions(DataType::SomeIp))
-            .returning(|_| None);
+            .returning(|_| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_diagnostics_declaration()
             .times(interactions(DataType::Diagnostics))
-            .returning(|_| None);
+            .returning(|_| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_publication_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _| None);
+            .returning(|_, _| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_rpc_method_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _, _| None);
+            .returning(|_, _, _| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         mock_provider
             .expect_get_message_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _| None);
+            .returning(|_, _| Err(SdvStatus::new(SdvStatusCode::Internal)));
 
         Some(Box::new(mock_provider))
     }
 
-    fn non_empty_provider(
+    pub(crate) fn non_empty_provider(
         interactions: impl Fn(DataType) -> usize,
-    ) -> Option<Box<dyn VsidlConfigProviderV1>> {
-        let mut mock_provider = MockVsidlConfigProviderV1::new();
+    ) -> Option<Box<dyn VsidlConfigProvider>> {
+        let mut mock_provider = MockVsidlConfigProvider::new();
 
         mock_provider
             .expect_get_someip_mappings()
             .times(interactions(DataType::SomeIp))
-            .returning(|_| Some(vec![]));
+            .returning(|_| Ok(vec![]));
 
         mock_provider
             .expect_get_diagnostics_declaration()
             .times(interactions(DataType::Diagnostics))
-            .returning(|_| Some(DiagnosticsDeclaration::default()));
+            .returning(|_| Ok(DiagnosticsDeclaration::default()));
 
         mock_provider
             .expect_get_publication_descriptor()
             .times(interactions(DataType::VsidlSchemas))
             .returning(|_, _| {
-                Some(PublicationDescriptor {
+                Ok(PublicationDescriptor {
                     message_descriptor: MessageDescriptor::for_type::<Empty>(),
                     size_metadata: SizeMetadata::default(),
                 })
@@ -458,12 +505,12 @@ mod test {
         mock_provider
             .expect_get_rpc_method_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _, _| Some(RpcMethodDescriptor::default()));
+            .returning(|_, _, _| Ok(RpcMethodDescriptor::default()));
 
         mock_provider
             .expect_get_message_descriptor()
             .times(interactions(DataType::VsidlSchemas))
-            .returning(|_, _| Some(MessageDescriptor::for_type::<Empty>()));
+            .returning(|_, _| Ok(MessageDescriptor::for_type::<Empty>()));
 
         Some(Box::new(mock_provider))
     }

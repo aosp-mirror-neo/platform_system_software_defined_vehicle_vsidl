@@ -146,13 +146,19 @@ impl ProviderFromAgent {
         self.use_for_local_vm || !self.is_same_vm(fqin)
     }
 
-    async fn try_get_data<T, F>(&self, source_fqin: &ServiceFqin, do_try_get_data: F) -> Option<T>
+    async fn try_get_data<T, F>(
+        &self,
+        source_fqin: &ServiceFqin,
+        do_try_get_data: F,
+    ) -> SdvResult<T>
     where
-        for<'a> F:
-            Fn(&'a Client) -> Pin<Box<dyn Future<Output = SdvResult<Option<T>>> + Send + 'a>>,
+        for<'a> F: Fn(&'a Client) -> Pin<Box<dyn Future<Output = SdvResult<T>> + Send + 'a>>,
     {
         if !self.use_for_fqin(source_fqin) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                format!("Provider from agent should not be used for {source_fqin:?}"),
+            ));
         }
 
         let server_vm_name = source_fqin.get_sdv_vm_name();
@@ -161,24 +167,23 @@ impl ProviderFromAgent {
         if let Some(client) =
             self.client_cache.get(server_vm_name).map(|client_ref| Arc::clone(client_ref.value()))
         {
-            if let Ok(result) = do_try_get_data(&client).await {
+            if let Ok(data) = do_try_get_data(&client).await {
                 info!("On vm:{}, reused Client for vm:{}", self.local_vm_name, server_vm_name);
-                return result;
+                return Ok(data);
             }
         }
 
         // try with a new client and insert if successful
-        let client = self.create_client(server_vm_name).await.ok()?;
-        if let Ok(result) = do_try_get_data(&client).await {
+        let client = self.create_client(server_vm_name).await?;
+        let result = do_try_get_data(&client).await;
+        if result.is_ok() {
             let old_client = self.client_cache.insert(server_vm_name.to_owned(), Arc::new(client));
 
             if old_client.is_some() {
                 info!("On vm:{}, replaced Client for vm:{}", self.local_vm_name, server_vm_name);
             }
-            return result;
         }
-
-        None
+        result
     }
 }
 
@@ -239,8 +244,8 @@ async fn try_get_publication_descriptor_from_client(
     client: &Client,
     source_fqin: ServiceFqin,
     unit_type: UnitType,
-) -> SdvResult<Option<PublicationDescriptor>> {
-    let response = match api::GetPublicationDescriptor::unary_call(
+) -> SdvResult<PublicationDescriptor> {
+    api::GetPublicationDescriptor::unary_call(
         client,
         GetPublicationDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -252,21 +257,16 @@ async fn try_get_publication_descriptor_from_client(
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => response,
-        Err(e) => {
-            warn!("GetPublicationDescriptor Error {e:?}");
-            return Err(e);
-        }
-    };
-
-    let Some(publication_descriptor_proto) = response.publication_descriptor.into_option() else {
-        warn!("No publication descriptor received");
-        return Ok(None);
-    };
-
-    Ok(publication_descriptor_from_proto(publication_descriptor_proto).ok())
+    .await?
+    .publication_descriptor
+    .into_option()
+    .ok_or_else(|| {
+        SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            format!("No publication descriptor received for unit_type: {unit_type}"),
+        )
+    })
+    .and_then(publication_descriptor_from_proto)
 }
 
 async fn try_get_rpc_method_descriptor_from_client(
@@ -274,8 +274,8 @@ async fn try_get_rpc_method_descriptor_from_client(
     source_fqin: ServiceFqin,
     unit_type: UnitType,
     method_name: String,
-) -> SdvResult<Option<RpcMethodDescriptor>> {
-    let response = match api::GetRpcMethodDescriptor::unary_call(
+) -> SdvResult<RpcMethodDescriptor> {
+    let response = api::GetRpcMethodDescriptor::unary_call(
         client,
         GetRpcMethodDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -288,16 +288,9 @@ async fn try_get_rpc_method_descriptor_from_client(
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => response,
-        Err(e) => {
-            warn!("GetRpcMethodDescriptor Error {e:?}");
-            return Err(e);
-        }
-    };
+    .await?;
 
-    Ok(Some(RpcMethodDescriptor {
+    Ok(RpcMethodDescriptor {
         request_message: response
             .request_message_descriptor
             .into_option()
@@ -308,15 +301,15 @@ async fn try_get_rpc_method_descriptor_from_client(
             .into_option()
             .as_ref()
             .and_then(|p| api::message_descriptor_from_proto(p).ok()),
-    }))
+    })
 }
 
 async fn try_get_message_descriptor_from_client(
     client: &Client,
     source_fqin: ServiceFqin,
     message_name: String,
-) -> SdvResult<Option<MessageDescriptor>> {
-    match api::GetMessageDescriptor::unary_call(
+) -> SdvResult<MessageDescriptor> {
+    api::GetMessageDescriptor::unary_call(
         client,
         GetMessageDescriptorRequest {
             source_fqbn: MessageField::some(ServiceFqbn {
@@ -324,29 +317,28 @@ async fn try_get_message_descriptor_from_client(
                 bundle: source_fqin.get_service_bundle_name().to_string(),
                 ..Default::default()
             }),
-            message_name,
+            message_name: message_name.clone(),
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => Ok(response
-            .message_descriptor
-            .into_option()
-            .as_ref()
-            .and_then(|p| api::message_descriptor_from_proto(p).ok())),
-        Err(e) => {
-            warn!("GetMessageDescriptorRequest Error {e:?}");
-            Err(e)
-        }
-    }
+    .await?
+    .message_descriptor
+    .into_option()
+    .as_ref()
+    .ok_or_else(|| {
+        SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            format!("No message_descriptor found for message: {message_name}"),
+        )
+    })
+    .and_then(api::message_descriptor_from_proto)
 }
 
 async fn try_get_diagnostics_declaration_from_client(
     client: &Client,
     fqin: ServiceFqin,
-) -> SdvResult<Option<DiagnosticsDeclaration>> {
-    match api::GetDiagnosticsDeclaration::unary_call(
+) -> SdvResult<DiagnosticsDeclaration> {
+    api::GetDiagnosticsDeclaration::unary_call(
         client,
         GetDiagnosticsDeclarationRequest {
             fqbn: MessageField::some(ServiceFqbn {
@@ -357,25 +349,29 @@ async fn try_get_diagnostics_declaration_from_client(
             ..Default::default()
         },
     )
-    .await
-    {
-        Ok(response) => Ok(response.declaration.into_option()),
-        Err(e) => {
-            warn!("GetDiagnosticsDeclarationRequest Error {e:?}");
-            Err(e)
-        }
-    }
+    .await?
+    .declaration
+    .into_option()
+    .ok_or_else(|| {
+        SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            format!("'Ok' response with 'None' diagnostics declaration for fqin: {fqin:?}"),
+        )
+    })
 }
 
 #[async_trait::async_trait]
-impl VsidlConfigProviderV1 for ProviderFromAgent {
+impl VsidlConfigProvider for ProviderFromAgent {
     async fn get_publication_descriptor(
         &self,
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
-    ) -> Option<PublicationDescriptor> {
+    ) -> SdvResult<PublicationDescriptor> {
         if !self.data_types.contains(&DataType::VsidlSchemas) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide VsidlSchemas",
+            ));
         };
 
         self.try_get_data(source_fqin, |client| {
@@ -393,9 +389,12 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
         method_name: &str,
-    ) -> Option<RpcMethodDescriptor> {
+    ) -> SdvResult<RpcMethodDescriptor> {
         if !self.data_types.contains(&DataType::VsidlSchemas) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide VsidlSchemas",
+            ));
         };
 
         self.try_get_data(source_fqin, |client| {
@@ -413,9 +412,12 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         &self,
         source_fqin: &ServiceFqin,
         message_name: &str,
-    ) -> Option<MessageDescriptor> {
+    ) -> SdvResult<MessageDescriptor> {
         if !self.data_types.contains(&DataType::VsidlSchemas) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide VsidlSchemas",
+            ));
         };
 
         self.try_get_data(source_fqin, |client| {
@@ -428,21 +430,32 @@ impl VsidlConfigProviderV1 for ProviderFromAgent {
         .await
     }
 
-    async fn get_someip_mappings(&self, _source_fqin: &ServiceFqin) -> Option<Vec<SomeIpMapping>> {
+    async fn get_someip_mappings(
+        &self,
+        _source_fqin: &ServiceFqin,
+    ) -> SdvResult<Vec<SomeIpMapping>> {
         if !self.data_types.contains(&DataType::SomeIp) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide SomeIp",
+            ));
         };
 
-        warn!("Unexpected call to get someip mappings from remote VM");
-        None
+        Err(SdvStatus::with_message(
+            SdvStatusCode::Internal,
+            "ProviderFromAgent does not support SomeIp data",
+        ))
     }
 
     async fn get_diagnostics_declaration(
         &self,
         fqin: &ServiceFqin,
-    ) -> Option<DiagnosticsDeclaration> {
+    ) -> SdvResult<DiagnosticsDeclaration> {
         if !self.data_types.contains(&DataType::Diagnostics) {
-            return None;
+            return SdvResult::Err(SdvStatus::with_message(
+                SdvStatusCode::Internal,
+                "This instance of ProviderFromAgent was not configured to provide Diagnostics",
+            ));
         };
         self.try_get_data(fqin, |client| {
             Box::pin(try_get_diagnostics_declaration_from_client(client, fqin.clone()))
@@ -467,8 +480,8 @@ mod tests {
     use vsidl_provider_agent_api::message_descriptor_to_proto;
     use vsidl_provider_agent_api_test_protos::message::TestMessage;
 
-    async fn ignore_client(_client: &Client) -> SdvResult<Option<String>> {
-        Ok(Some("closure is called".to_owned()))
+    async fn ignore_client(_client: &Client) -> SdvResult<String> {
+        Ok("closure is called".to_owned())
     }
 
     #[tokio::test]
@@ -495,7 +508,7 @@ mod tests {
                 Box::pin(try_get_diagnostics_declaration_from_client(client, fqin1.clone()))
             })
             .await;
-        assert!(res.is_none());
+        assert!(res.is_err());
 
         let fqin2 = ServiceFqin::from_str("instance2:com.sdv.google.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
@@ -506,7 +519,7 @@ mod tests {
         let res = remote_provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_none());
+        assert!(res.is_err());
 
         // create an entry for a remote client (note, it doesn't matter that the actual client is for instance1 for this test)
         remote_provider_from_agent.client_cache.insert(
@@ -520,7 +533,7 @@ mod tests {
         let res = remote_provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_some());
+        assert!(res.is_ok());
     }
 
     #[tokio::test]
@@ -544,7 +557,7 @@ mod tests {
         let res = provider_from_agent
             .try_get_data(&fqin1, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_some());
+        assert!(res.is_ok());
 
         let fqin2 = ServiceFqin::from_str("instance2:com.sdv.google.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
@@ -555,7 +568,7 @@ mod tests {
         let res = provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_none());
+        assert!(res.is_err());
 
         // create an entry for a remote client (note, it doesn't matter that the actual client is for instance1 for this test)
         provider_from_agent.client_cache.insert(
@@ -569,7 +582,7 @@ mod tests {
         let res = provider_from_agent
             .try_get_data(&fqin2, |client| Box::pin(ignore_client(client)))
             .await;
-        assert!(res.is_some());
+        assert!(res.is_ok());
     }
 
     #[googletest::test]
