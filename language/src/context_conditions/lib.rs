@@ -48,6 +48,9 @@ pub use empty_catalog::EmptyCatalog;
 mod channel_name_unique;
 pub use channel_name_unique::ChannelNameUnique;
 
+mod channel_name_snake_case;
+pub use channel_name_snake_case::ChannelNameSnakeCase;
+
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
 mod no_user_defined_names_for_multi_channel_publishers;
 pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;

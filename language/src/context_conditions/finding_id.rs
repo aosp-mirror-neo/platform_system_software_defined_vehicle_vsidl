@@ -90,6 +90,8 @@ macro_rules! finding_ids {
             E20B: (0x20B, ServiceBundleNamingConventionContinueChar),
             /// Service bundle names must not use reserved names such as Rust, Java, or C++ keywords as their name
             E20C: (0x20C, ServiceBundleNamingConventionForbiddenName),
+            /// Channel names must be in snake case
+            E20D: (0x20D, ChannelNameSnakeCase),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),
