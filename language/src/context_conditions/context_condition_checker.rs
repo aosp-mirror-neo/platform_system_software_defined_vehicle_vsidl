@@ -318,6 +318,10 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
+            Box::new(PublisherChannelMandatory::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
             Box::new(ServiceUnitNameTooLong::default()),
         )
         .add_context_condition(
