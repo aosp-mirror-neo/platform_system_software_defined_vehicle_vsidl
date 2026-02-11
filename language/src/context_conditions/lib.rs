@@ -59,6 +59,9 @@ pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesFo
 mod publication_type;
 pub use publication_type::PublicationType;
 
+mod publisher_capacity;
+pub use publisher_capacity::PublisherCapacity;
+
 /// Issues an error if the unit type specified for an RPC client is unknown
 mod rpc_client_type;
 pub use rpc_client_type::RpcClientType;
