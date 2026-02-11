@@ -136,6 +136,8 @@ macro_rules! finding_ids {
             E405: (0x405, UnitTypeOwnershipFromDifferentPackage),
             /// Publisher capacity must be at least 2 and an even number
             E406: (0x406, PublisherCapacity),
+            /// Publisher capacity is mandatory in latest VSIDL syntax
+            E407: (0x407, PublisherCapacityMandatory),
             // -- Limitations --
             /// Publishers using user-defined names must specify a channel if the type has multiple channels
             E501: (0x501, NoUserDefinedNamesForMultiChannelPublishers),

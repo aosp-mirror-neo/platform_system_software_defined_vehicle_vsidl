@@ -62,6 +62,9 @@ pub use publication_type::PublicationType;
 mod publisher_capacity;
 pub use publisher_capacity::PublisherCapacity;
 
+mod publisher_capacity_mandatory;
+pub use publisher_capacity_mandatory::PublisherCapacityMandatory;
+
 /// Issues an error if the unit type specified for an RPC client is unknown
 mod rpc_client_type;
 pub use rpc_client_type::RpcClientType;
