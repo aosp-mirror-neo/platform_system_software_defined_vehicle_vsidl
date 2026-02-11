@@ -313,6 +313,10 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,
+            Box::new(ChannelNameUnique::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
             Box::new(PublicationType::default()),
         )
         .add_context_condition(

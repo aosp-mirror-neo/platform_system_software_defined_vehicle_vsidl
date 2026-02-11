@@ -119,6 +119,8 @@ macro_rules! finding_ids {
             E312: (0x312, RpcDuplicateMethodName),
             /// Proto message or service has a duplicate fully qualified name
             E313: (0x313, ProtoFqnDuplicate),
+            /// Channel names must be globally unique across all publishers
+            E314: (0x314, ChannelNameUnique),
             // -- Structural Errors --
             /// SdvPublication annotation must include a positive message_count
             E401: (0x401, SdvPublicationMessageCountPositive),

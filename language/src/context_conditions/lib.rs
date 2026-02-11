@@ -44,6 +44,10 @@ pub use empty_catalog::EmptyCatalog;
 
 // ERRORS
 
+// Channel names must be globally unique
+mod channel_name_unique;
+pub use channel_name_unique::ChannelNameUnique;
+
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
 mod no_user_defined_names_for_multi_channel_publishers;
 pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;
