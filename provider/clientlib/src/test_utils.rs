@@ -16,12 +16,13 @@
 //! Provides functions for unit tests.
 
 use crate::types::DataType;
-use crate::vsidl_provider_api::VsidlConfigProviderV1;
+use crate::vsidl_provider_api::VsidlConfigProvider;
 use googletest::prelude::*;
 use log::info;
 use protobuf::MessageField;
 use sdv_comms::ContextRef;
 use sdv_comms::{id::ServiceFqin, sd::UnitType};
+use sdv_status_rs::SdvStatusCode;
 use std::collections::HashSet;
 use std::fmt;
 use std::str::FromStr;
@@ -50,6 +51,11 @@ impl fmt::Display for Subpackage {
             Subpackage::Shared => write!(f, "apex_with_shared_config_file"),
         }
     }
+}
+
+#[track_caller]
+fn assert_status_one_of(actual: SdvStatusCode, expected: &[SdvStatusCode]) {
+    assert!(expected.contains(&actual), "Expected one of {:?}, but got {:?}", expected, actual);
 }
 
 fn get_vm_name(ctx: Option<ContextRef>) -> String {
@@ -100,18 +106,24 @@ fn source_fqin_monitor_service(ctx: Option<ContextRef>) -> ServiceFqin {
     .unwrap()
 }
 
-pub async fn test_fixture_vsidl_init_succeeds<TProvider: VsidlConfigProviderV1>(
+pub async fn test_fixture_vsidl_init_succeeds<TProvider: VsidlConfigProvider>(
     provider: TProvider,
     ctx: Option<ContextRef>,
     data_types: HashSet<DataType>,
 ) {
-    assert_eq!(provider.get_someip_mappings(&non_existent_fqin(ctx)).await, None);
+    assert_status_one_of(
+        provider.get_someip_mappings(&non_existent_fqin(ctx)).await.unwrap_err().status_code(),
+        &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+    );
 
     let someip_query = provider.get_someip_mappings(&someip_config_fqin(ctx)).await;
     if data_types.contains(&DataType::SomeIp) {
-        assert!(someip_query.is_some());
+        assert!(someip_query.is_ok());
     } else {
-        assert!(someip_query.is_none());
+        assert_status_one_of(
+            someip_query.unwrap_err().status_code(),
+            &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+        );
     }
 
     // Iterate over all subpackages to test diag_fqin
@@ -119,22 +131,21 @@ pub async fn test_fixture_vsidl_init_succeeds<TProvider: VsidlConfigProviderV1>(
         let diag_query = provider.get_diagnostics_declaration(&diag_fqin(ctx, &subpackage)).await;
         if data_types.contains(&DataType::Diagnostics) {
             assert!(
-                diag_query.is_some(),
+                diag_query.is_ok(),
                 "Diagnostics query failed for subpackage: {:?}",
                 subpackage
             );
         } else {
-            assert!(
-                diag_query.is_none(),
-                "Diagnostics query should be None for subpackage: {:?}",
-                subpackage
+            assert_status_one_of(
+                diag_query.unwrap_err().status_code(),
+                &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
             );
         }
     }
 }
 
 pub async fn test_fixture_vsidl_provider_diagnostics_api_succeeds<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -145,10 +156,9 @@ pub async fn test_fixture_vsidl_provider_diagnostics_api_succeeds<
         let declaration = provider.get_diagnostics_declaration(&diag_fqin(ctx, &subpackage)).await;
 
         if !data_types.contains(&DataType::Diagnostics) {
-            assert!(
-                declaration.is_none(),
-                "Declaration should be None for subpackage: {:?}",
-                subpackage
+            assert_status_one_of(
+                declaration.unwrap_err().status_code(),
+                &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
             );
             continue;
         }
@@ -187,7 +197,7 @@ pub async fn test_fixture_vsidl_provider_diagnostics_api_succeeds<
 }
 
 pub async fn test_fixture_vsidl_provider_pubsub_metadata_api_succeeds<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -202,18 +212,21 @@ pub async fn test_fixture_vsidl_provider_pubsub_metadata_api_succeeds<
         .await;
 
     if data_types.contains(&DataType::VsidlSchemas) {
-        assert!(topic_metadata.is_some());
+        assert!(topic_metadata.is_ok());
         assert_eq!(
             topic_metadata.unwrap().message_descriptor.full_name(),
             "com.sdv.google.sample.vsidl_provider.TirePressureRange"
         );
     } else {
-        assert!(topic_metadata.is_none());
+        assert_status_one_of(
+            topic_metadata.unwrap_err().status_code(),
+            &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+        );
     }
 }
 
 pub async fn test_fixture_vsidl_provider_rpc_descriptor_api_succeeds<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -230,7 +243,7 @@ pub async fn test_fixture_vsidl_provider_rpc_descriptor_api_succeeds<
     info!("{rpc_data_result:?}");
 
     if data_types.contains(&DataType::VsidlSchemas) {
-        assert!(rpc_data_result.is_some());
+        assert!(rpc_data_result.is_ok());
         let rpc_data = rpc_data_result.unwrap();
         assert_eq!(
             rpc_data.request_message.unwrap().full_name(),
@@ -241,26 +254,33 @@ pub async fn test_fixture_vsidl_provider_rpc_descriptor_api_succeeds<
             "com.sdv.google.sample.vsidl_provider.HelloMessageResponse"
         );
     } else {
-        assert!(rpc_data_result.is_none());
+        assert_status_one_of(
+            rpc_data_result.unwrap_err().status_code(),
+            &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+        );
     }
 }
 
-pub async fn test_fixture_vsidl_provider_api_fails<TProvider: VsidlConfigProviderV1>(
+pub async fn test_fixture_vsidl_provider_api_fails<TProvider: VsidlConfigProvider>(
     provider: TProvider,
     ctx: Option<ContextRef>,
     _data_types: HashSet<DataType>,
 ) {
-    assert!(provider
-        .get_publication_descriptor(
-            &source_fqin_hello_service(ctx),
-            &UnitType::from_str("sdv.non_existent.NonExistent#NonExistent").unwrap()
-        )
-        .await
-        .is_none());
+    assert_status_one_of(
+        provider
+            .get_publication_descriptor(
+                &source_fqin_hello_service(ctx),
+                &UnitType::from_str("sdv.non_existent.NonExistent#NonExistent").unwrap(),
+            )
+            .await
+            .unwrap_err()
+            .status_code(),
+        &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+    );
 }
 
 pub async fn test_fixture_vsidl_provider_with_import_catalog_dependencies_succeeds<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -275,18 +295,21 @@ pub async fn test_fixture_vsidl_provider_with_import_catalog_dependencies_succee
         .await;
 
     if data_types.contains(&DataType::VsidlSchemas) {
-        assert!(topic_metadata.is_some());
+        assert!(topic_metadata.is_ok());
         assert_eq!(
             topic_metadata.unwrap().message_descriptor.full_name(),
             "com.sdv.google.sample.vsidl_provider.TirePressure"
         );
     } else {
-        assert!(topic_metadata.is_none());
+        assert_status_one_of(
+            topic_metadata.unwrap_err().status_code(),
+            &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+        );
     }
 }
 
 pub async fn test_fixture_vsidl_provider_with_import_well_known_dependencies_succeeds<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -302,18 +325,21 @@ pub async fn test_fixture_vsidl_provider_with_import_well_known_dependencies_suc
         .await;
 
     if !data_types.contains(&DataType::VsidlSchemas) {
-        assert!(rpc_data_result.is_none());
+        assert_status_one_of(
+            rpc_data_result.unwrap_err().status_code(),
+            &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+        );
         return;
     }
 
-    assert!(rpc_data_result.is_some());
+    assert!(rpc_data_result.is_ok());
     let rpc_data = rpc_data_result.unwrap();
     assert_eq!(rpc_data.request_message.unwrap().full_name(), "google.protobuf.Empty");
     assert_eq!(rpc_data.response_message.unwrap().full_name(), "google.protobuf.BoolValue");
 }
 
 pub async fn test_fixture_vsidl_provider_message_descriptor_api_succeeds<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -327,18 +353,21 @@ pub async fn test_fixture_vsidl_provider_message_descriptor_api_succeeds<
         .await;
 
     if data_types.contains(&DataType::VsidlSchemas) {
-        assert!(message_descriptor.is_some());
+        assert!(message_descriptor.is_ok());
         assert_eq!(
             message_descriptor.unwrap().full_name(),
             "com.sdv.google.sample.vsidl_provider.TirePressure"
         );
     } else {
-        assert!(message_descriptor.is_none());
+        assert_status_one_of(
+            message_descriptor.unwrap_err().status_code(),
+            &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+        );
     }
 }
 
 pub async fn test_fixture_vsidl_provider_message_descriptor_api_fails<
-    TProvider: VsidlConfigProviderV1,
+    TProvider: VsidlConfigProvider,
 >(
     provider: TProvider,
     ctx: Option<ContextRef>,
@@ -350,5 +379,8 @@ pub async fn test_fixture_vsidl_provider_message_descriptor_api_fails<
             "com.sdv.google.sample.vsidl_provider.NonExistent",
         )
         .await;
-    assert!(message_descriptor.is_none());
+    assert_status_one_of(
+        message_descriptor.unwrap_err().status_code(),
+        &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
+    );
 }

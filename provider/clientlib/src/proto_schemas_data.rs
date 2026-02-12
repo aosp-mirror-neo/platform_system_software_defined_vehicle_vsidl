@@ -58,10 +58,12 @@ impl ProtoSchemasData {
         let mut vsidl_runtime_config = VsidlRuntimeConfig::default();
 
         for input_file in input_files {
-            let config = read_config_file::<VsidlRuntimeConfig, _>(&input_file);
-            let Ok(mut config) = config else {
-                warn!("Unable to read config file {input_file:?}: {config:?}");
-                continue;
+            let mut config = match read_config_file::<VsidlRuntimeConfig, _>(&input_file) {
+                Ok(config) => config,
+                Err(e) => {
+                    warn!("Unable to read config file {input_file:?}: {e:?}");
+                    continue;
+                }
             };
 
             vsidl_runtime_config.unit_type_mapping.append(&mut config.unit_type_mapping);
