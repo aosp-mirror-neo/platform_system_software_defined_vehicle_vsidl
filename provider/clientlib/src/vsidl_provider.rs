@@ -198,9 +198,52 @@ impl Display for VsidlProviderV1 {
 
 impl VsidlProviderV1 {
     fn get_data_sources(&self, data_type: DataType) -> SdvResult<&Vec<DataSource>> {
-        self.data_sources.get(&data_type).filter(|sources| !sources.is_empty()).ok_or_else(|| {
-            SdvStatus::with_message(SdvStatusCode::NotFound, "No {data_type} found in data sources")
-        })
+        self.data_sources
+            .get(&data_type)
+            .filter(|sources| !sources.is_empty())
+            .ok_or_else(|| SdvStatus::new(SdvStatusCode::NotFound))
+    }
+
+    async fn get_from_providers<'a, T, F, Fut>(
+        &'a self,
+        data_type: DataType,
+        action: F,
+    ) -> SdvResult<T>
+    where
+        F: Fn(&'a Box<dyn VsidlConfigProvider>) -> Fut,
+        Fut: std::future::Future<Output = SdvResult<T>> + 'a,
+    {
+        let data_sources = self.get_data_sources(data_type)?;
+
+        let mut all_errors = Vec::new();
+        for data_source in data_sources {
+            if let Some(provider) = self.providers.get(data_source) {
+                match action(provider).await {
+                    Ok(result) => return Ok(result),
+                    Err(e) => all_errors.push((data_source, e)),
+                }
+            }
+        }
+
+        let mut iter = all_errors.into_iter();
+        let Some((first_source, first_err)) = iter.next() else {
+            return Err(SdvStatus::with_message(
+                SdvStatusCode::NotFound,
+                "No providers available".to_string(),
+            ));
+        };
+
+        let mut final_err = SdvStatus::with_cause_and_message(
+            first_err.status_code(),
+            first_err,
+            format!("Provider for source {first_source} failed"),
+        );
+        for (source, err) in iter {
+            let msg = format!("Provider for source {source} failed: {err}");
+            final_err = SdvStatus::with_cause_and_message(err.status_code(), final_err, msg);
+        }
+
+        Err(final_err)
     }
 }
 
@@ -211,26 +254,10 @@ impl VsidlConfigProvider for VsidlProviderV1 {
         &self,
         source_fqin: &ServiceFqin,
     ) -> SdvResult<Vec<SomeIpMapping>> {
-        let data_sources = self.get_data_sources(DataType::SomeIp)?;
-
-        let mut all_errors = Vec::new();
-        for data_source in data_sources {
-            if let Some(provider) = self.providers.get(data_source).as_ref() {
-                match provider.get_someip_mappings(source_fqin).await {
-                    Ok(result) => {
-                        return Ok(result);
-                    }
-                    Err(e) => {
-                        all_errors.push((data_source, e));
-                    }
-                }
-            }
-        }
-
-        Err(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!("No Some/IP mappings found for fqin {source_fqin}. All errors (and data sources): {all_errors:?}"),
-        ))
+        self.get_from_providers(DataType::SomeIp, |provider| {
+            provider.get_someip_mappings(source_fqin)
+        })
+        .await
     }
 
     #[tracing::instrument(skip_all, fields(fqin = fqin.get_service_bundle_name()))]
@@ -238,28 +265,10 @@ impl VsidlConfigProvider for VsidlProviderV1 {
         &self,
         fqin: &ServiceFqin,
     ) -> SdvResult<DiagnosticsDeclaration> {
-        let data_sources = self.get_data_sources(DataType::Diagnostics)?;
-
-        let mut all_errors = Vec::new();
-        for data_source in data_sources {
-            if let Some(provider) = self.providers.get(data_source).as_ref() {
-                match provider.get_diagnostics_declaration(fqin).await {
-                    Ok(result) => {
-                        return Ok(result);
-                    }
-                    Err(e) => {
-                        all_errors.push((data_source, e));
-                    }
-                }
-            }
-        }
-
-        Err(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!(
-                "No Diagnostics Declarations found for fqin {fqin}. All errors (and data sources): {all_errors:?}"
-            ),
-        ))
+        self.get_from_providers(DataType::Diagnostics, |provider| {
+            provider.get_diagnostics_declaration(fqin)
+        })
+        .await
     }
 
     #[tracing::instrument(skip_all, fields(
@@ -274,26 +283,10 @@ impl VsidlConfigProvider for VsidlProviderV1 {
         source_fqin: &ServiceFqin,
         unit_type: &UnitType,
     ) -> SdvResult<PublicationDescriptor> {
-        let data_sources = self.get_data_sources(DataType::VsidlSchemas)?;
-
-        let mut all_errors = Vec::new();
-        for data_source in data_sources {
-            if let Some(provider) = self.providers.get(data_source).as_ref() {
-                match provider.get_publication_descriptor(source_fqin, unit_type).await {
-                    Ok(result) => {
-                        return Ok(result);
-                    }
-                    Err(e) => {
-                        all_errors.push((data_source, e));
-                    }
-                }
-            }
-        }
-
-        Err(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!("No publication descriptor found for fqin {source_fqin} and unit_type {unit_type}. All errors (and data sources): {all_errors:?}"),
-        ))
+        self.get_from_providers(DataType::VsidlSchemas, |provider| {
+            provider.get_publication_descriptor(source_fqin, unit_type)
+        })
+        .await
     }
 
     #[tracing::instrument(skip_all, fields(unit_type_name = unit_type.get_unit_type_name(), vm_name = source_fqin.get_sdv_vm_name()))]
@@ -303,27 +296,10 @@ impl VsidlConfigProvider for VsidlProviderV1 {
         unit_type: &UnitType,
         method_name: &str,
     ) -> SdvResult<RpcMethodDescriptor> {
-        let data_sources = self.get_data_sources(DataType::VsidlSchemas)?;
-
-        let mut all_errors = Vec::new();
-        for data_source in data_sources {
-            if let Some(provider) = self.providers.get(data_source).as_ref() {
-                match provider.get_rpc_method_descriptor(source_fqin, unit_type, method_name).await
-                {
-                    Ok(result) => {
-                        return Ok(result);
-                    }
-                    Err(e) => {
-                        all_errors.push((data_source, e));
-                    }
-                }
-            }
-        }
-
-        Err(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!("No rpc method descriptor found for fqin {source_fqin}, unit_type {unit_type} and method_name {method_name}. All errors (and data sources): {all_errors:?}"),
-        ))
+        self.get_from_providers(DataType::VsidlSchemas, |provider| {
+            provider.get_rpc_method_descriptor(source_fqin, unit_type, method_name)
+        })
+        .await
     }
 
     #[tracing::instrument(skip(self, source_fqin), fields(vm_name = source_fqin.get_sdv_vm_name()))]
@@ -332,26 +308,10 @@ impl VsidlConfigProvider for VsidlProviderV1 {
         source_fqin: &ServiceFqin,
         message: &str,
     ) -> SdvResult<MessageDescriptor> {
-        let data_sources = self.get_data_sources(DataType::VsidlSchemas)?;
-
-        let mut all_errors = Vec::new();
-        for data_source in data_sources {
-            if let Some(provider) = self.providers.get(data_source).as_ref() {
-                match provider.get_message_descriptor(source_fqin, message).await {
-                    Ok(result) => {
-                        return Ok(result);
-                    }
-                    Err(e) => {
-                        all_errors.push((data_source, e));
-                    }
-                }
-            }
-        }
-
-        Err(SdvStatus::with_message(
-            SdvStatusCode::NotFound,
-            format!("No message descriptor found for fqin {source_fqin} and message {message}. All errors (and data sources): {all_errors:?}"),
-        ))
+        self.get_from_providers(DataType::VsidlSchemas, |provider| {
+            provider.get_message_descriptor(source_fqin, message)
+        })
+        .await
     }
 }
 
@@ -683,11 +643,11 @@ mod test {
 
         assert_that!(
             vsidl_provider.get_someip_mappings(&fqin).await.unwrap_err().status_code(),
-            eq(SdvStatusCode::NotFound)
+            eq(SdvStatusCode::Internal)
         );
         assert_that!(
             vsidl_provider.get_diagnostics_declaration(&fqin).await.unwrap_err().status_code(),
-            eq(SdvStatusCode::NotFound)
+            eq(SdvStatusCode::Internal)
         );
         assert_that!(
             vsidl_provider.get_publication_descriptor(&fqin, &Default::default()).await,
