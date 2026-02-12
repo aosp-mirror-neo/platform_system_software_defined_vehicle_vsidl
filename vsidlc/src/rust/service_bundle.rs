@@ -208,7 +208,10 @@ impl PublicationTypeContext {
                 .unwrap_or_default(),
             // TODO: b/477164517 - Set the is_multipub flag to true once all types of subscribers / observers
             // support the new channel concept. Then test with atest sdv_core_middleware_unit_vsidl_pubsub_e2e_test
-            is_multipub: false,
+            is_multipub: proto_message
+                .channels(symbol_table)
+                .iter()
+                .any(|channel| channel.publishers(symbol_table).len() > 1),
             message_fqn: proto_message.full_name(symbol_table),
             proto_dependencies: proto_message
                 .proto_dependencies

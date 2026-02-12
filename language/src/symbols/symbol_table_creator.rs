@@ -24,8 +24,8 @@ use vsidl_v1::syntax::{
 };
 
 use super::specific_symbols::rpc_client_symbol::RpcClientSymbol;
-use super::symbol_table::SymbolTableState;
 use super::symbol_table::GLOBAL_SCOPE_ID;
+use super::symbol_table::{SymbolTableState, TargetApi};
 use super::{
     scope::ScopeId,
     specific_symbols::{
@@ -113,6 +113,8 @@ pub struct SymbolTableCreator<F: FileProvider = DiskFileProvider> {
     created_channels: HashSet<String>,
     /// Optional path to a specific file to process. If set, only this file is processed.
     target_file: Option<PathBuf>,
+    /// The target API level for code generation.
+    target_api: TargetApi,
     /// The file provider for reading files.
     file_provider: F,
 }
@@ -159,6 +161,7 @@ impl<F: FileProvider> SymbolTableCreator<F> {
             should_process_current_file: true,
             created_channels: HashSet::new(),
             target_file: None,
+            target_api: TargetApi::default(),
             file_provider,
         }
     }
@@ -174,6 +177,11 @@ impl<F: FileProvider> SymbolTableCreator<F> {
     /// Only symbols originating from this file will be created.
     pub fn restrict_to_file(&mut self, file: PathBuf) {
         self.target_file = Some(file);
+    }
+
+    /// Sets the target API level for code generation.
+    pub fn set_target_api(&mut self, target_api: TargetApi) {
+        self.target_api = target_api;
     }
 
     /// Returns an immutable reference to the symbol table being built.
@@ -281,6 +289,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.catalog = catalog.clone();
         if self.symbol_table.get_state() == SymbolTableState::NotCreated {
             self.symbol_table = SymbolTable::default();
+            self.symbol_table.set_target_api(self.target_api.clone());
             self.global_scope = Some(self.symbol_table.create_scope("".to_string()));
         } else {
             // Reuse existing symbol table

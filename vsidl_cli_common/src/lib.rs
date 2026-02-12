@@ -20,7 +20,10 @@
 use anyhow::anyhow;
 use std::path::PathBuf;
 
-use vsidl_v1_parser::{AndroidBpDanglingFiles, Catalog, FindingId, SymbolTable, SymbolTableState};
+use vsidl_v1_parser::{
+    AndroidBpDanglingFiles, AstNodeMut, Catalog, ChannelCase, ConvertChannelCase, FindingId,
+    HideChannelSyntax, HidePdk29Syntax, SymbolTable, SymbolTableState, TargetApi,
+};
 
 const BOLD_RED: &str = "\x1b[1;31m";
 const BOLD: &str = "\x1b[1m";
@@ -52,6 +55,10 @@ pub struct VsidlcCommonCli {
 
     /// Optional. Enable validation of ContextCondition related to Genrule. Default false.
     pub genrule: bool,
+
+    /// Optional. Specifies the target API level for code generation.
+    /// Examples: "latest", "pdk29".
+    pub target_api: String,
 }
 
 impl VsidlcCommonCli {
@@ -74,13 +81,15 @@ impl VsidlcCommonCli {
     pub fn create_catalog(&self, override_vsidl_path: Option<PathBuf>) -> anyhow::Result<Catalog> {
         let dependencies: Vec<&std::path::Path> =
             self.dependency_catalog_path.iter().map(PathBuf::as_path).collect();
-        vsidl_v1_parser::read_catalog(
+        let mut catalog = vsidl_v1_parser::read_catalog(
             self.catalog_path.as_path(),
             &dependencies,
             override_vsidl_path
                 .unwrap_or_else(|| vsidl_v1_parser::get_vsidl_syntax_default_path().unwrap())
                 .as_path(),
-        )
+        )?;
+        self.apply_target_api_visitors(&mut catalog);
+        Ok(catalog)
     }
 
     /// Same as create_catalog but uses Pest parser internally
@@ -90,13 +99,31 @@ impl VsidlcCommonCli {
     ) -> anyhow::Result<Catalog> {
         let dependencies: Vec<&std::path::Path> =
             self.dependency_catalog_path.iter().map(PathBuf::as_path).collect();
-        vsidl_v1_parser::read_catalog_using_pest(
+        let mut catalog = vsidl_v1_parser::read_catalog_using_pest(
             self.catalog_path.as_path(),
             &dependencies,
             override_vsidl_path
                 .unwrap_or_else(|| vsidl_v1_parser::get_vsidl_syntax_default_path().unwrap())
                 .as_path(),
-        )
+        )?;
+        self.apply_target_api_visitors(&mut catalog);
+        Ok(catalog)
+    }
+
+    fn apply_target_api_visitors(&self, catalog: &mut Catalog) {
+        match self.target_api.as_str() {
+            "pdk29" => {
+                HideChannelSyntax::traverse(catalog);
+                let mut visitor = ConvertChannelCase { case: ChannelCase::Upper };
+                catalog.accept(&mut visitor);
+            }
+            "latest" => {
+                HidePdk29Syntax::traverse(catalog);
+                let mut visitor = ConvertChannelCase { case: ChannelCase::Lower };
+                catalog.accept(&mut visitor);
+            }
+            _ => {}
+        }
     }
 
     /// Creates a [SymbolTable] table from a VSIDL [Catalog].
@@ -122,6 +149,11 @@ impl VsidlcCommonCli {
         if !self.no_warn {
             coco_checker.enable_warnings();
         }
+        match self.target_api.as_str() {
+            "pdk29" => coco_checker.enable_pdk29(),
+            "latest" => coco_checker.enable_latest(),
+            _ => {}
+        }
         if self.genrule {
             coco_checker.add_context_condition(
                 SymbolTableState::NotCreated,
@@ -134,7 +166,13 @@ impl VsidlcCommonCli {
             eprintln!("{BOLD_RED}WARNING{RESET}{BOLD}: Manually disabled input validation {ignored_id}. Generated code may be invalid.{RESET}");
             coco_checker.disable_finding_id(finding_id);
         }
-        vsidl_v1_parser::create_symbol_table(catalog, coco_checker)
+
+        let target_api = match self.target_api.as_str() {
+            "latest" => TargetApi::Latest,
+            _ => TargetApi::Pdk29,
+        };
+
+        vsidl_v1_parser::create_symbol_table(catalog, coco_checker, target_api)
     }
 
     /// Reads a VSIDL catalog and creates [Catalog] and [SymbolTable] object if possible.
@@ -233,6 +271,7 @@ sdv_service_bundle {
             dependency_catalog_path: vec![],
             no_warn: false,
             genrule: false,
+            target_api: "pdk29".into(),
         };
 
         // WHEN creating a catalog WITH a custom syntax path
@@ -256,6 +295,7 @@ sdv_service_bundle {
             dependency_catalog_path: vec![],
             no_warn: false,
             genrule: false,
+            target_api: "pdk29".into(),
         };
 
         // WHEN creating a catalog WITHOUT passing a custom syntax path
@@ -278,6 +318,7 @@ sdv_service_bundle {
             dependency_catalog_path: vec![],
             no_warn: false,
             genrule: false,
+            target_api: "pdk29".into(),
         };
 
         // WHEN creating symbol table WITH custom syntax path
@@ -300,6 +341,7 @@ sdv_service_bundle {
             dependency_catalog_path: vec![],
             no_warn: false,
             genrule: false,
+            target_api: "pdk29".into(),
         };
 
         // WHEN creating a catalog WITH a custom syntax path
@@ -324,6 +366,7 @@ sdv_service_bundle {
             dependency_catalog_path: vec![],
             no_warn: false,
             genrule: false,
+            target_api: "pdk29".into(),
         };
 
         // WHEN creating a catalog WITH a custom syntax path
@@ -348,6 +391,7 @@ sdv_service_bundle {
             dependency_catalog_path: vec![],
             no_warn: false,
             genrule: false,
+            target_api: "pdk29".into(),
         };
 
         // WHEN creating a catalog WITH a custom syntax path
@@ -371,5 +415,6 @@ sdv_service_bundle {
         assert!(!cli.purge);
         assert_eq!(cli.ignore, Vec::<String>::default());
         assert_eq!(cli.dependency_catalog_path, Vec::<PathBuf>::default());
+        assert_eq!(cli.target_api, String::default());
     }
 }

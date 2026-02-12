@@ -100,7 +100,7 @@ pub(crate) fn setup_mock_cli(temp_dir: &TempDir) -> Cli {
         genrule: false,
         apex: false,
         services: false,
-        target_api: "latest".to_string(),
+        target_api: "pdk29".to_string(),
         no_warn: false,
         lsp: true,
     }

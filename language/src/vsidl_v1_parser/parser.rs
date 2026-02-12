@@ -16,11 +16,11 @@
 //! Extract all information from the catalog to be used for code-generation
 use crate::symbol_table_creator::SymbolTableCreator;
 use crate::symbol_table_linker::SymbolTableLinker;
-use crate::visitors::detect_input_version::DetectInputVersion;
 use crate::visitors::keyword_converter::KeywordConverter;
 use crate::visitors::visitor::AstNode;
 use crate::Catalog;
 use crate::SymbolTable;
+use crate::TargetApi;
 use heck::ToKebabCase;
 use vsidl_v1_context_conditions::*;
 
@@ -34,18 +34,13 @@ pub fn get_rpc_unit_name(fqn: &str) -> anyhow::Result<String> {
 pub fn create_symbol_table(
     catalog: &Catalog,
     mut coco_checker: ContextConditionChecker,
+    target_api: TargetApi,
 ) -> anyhow::Result<SymbolTable> {
     let mut catalog = catalog.clone();
     KeywordConverter::traverse(&mut catalog);
-    let mut version_detector = DetectInputVersion::default();
-    catalog.accept(&mut version_detector);
-    if version_detector.uses_pdk29 {
-        coco_checker.enable_pdk29();
-    } else {
-        coco_checker.enable_latest();
-    }
     coco_checker.check_ast(&catalog)?;
     let mut creator = SymbolTableCreator::new();
+    creator.set_target_api(target_api);
     catalog.accept(&mut creator);
     coco_checker.check_symbol_table(creator.symbol_table())?;
     let mut linker = SymbolTableLinker::from(creator);
@@ -123,7 +118,7 @@ mod tests {
         let coco_checker = ContextConditionChecker::default();
 
         // WHEN creating a symbol table
-        let symbol_table = create_symbol_table(&catalog, coco_checker).unwrap();
+        let symbol_table = create_symbol_table(&catalog, coco_checker, TargetApi::Pdk29).unwrap();
 
         // THEN the symbol table contains the expected symbols
         // Note: These are not all symbols, but just a short sanity check.

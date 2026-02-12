@@ -52,6 +52,16 @@ pub enum SymbolTableState {
     Linked,
 }
 
+/// Represents the target API level for code generation.
+#[derive(Default, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum TargetApi {
+    /// Target PDK29.
+    #[default]
+    Pdk29,
+    /// Target the latest API version.
+    Latest,
+}
+
 /// The fixed [ScopeId] for the global scope, which is the root of the scope hierarchy.
 pub(crate) const GLOBAL_SCOPE_ID: ScopeId = ScopeId(0);
 
@@ -81,6 +91,8 @@ pub struct SymbolTable {
     next_symbol_id: usize,
     /// The current construction state of the symbol table. See [SymbolTableState].
     state: SymbolTableState,
+    /// The target API level for code generation.
+    pub(crate) target_api: TargetApi,
 }
 
 /// Macro to generate a function that retrieves all symbols of a specific kind.
@@ -213,6 +225,11 @@ impl SymbolTable {
         self.state.clone()
     }
 
+    /// Sets the target API level for code generation.
+    pub fn set_target_api(&mut self, target_api: TargetApi) {
+        self.target_api = target_api;
+    }
+
     /// Returns the symbols of the symbol table that still need to be linked.
     ///
     /// # Returns
@@ -265,8 +282,7 @@ impl SymbolTable {
     /// }
     /// ```
     pub fn uses_pdk29(&self) -> bool {
-        // PDK29 syntax means we have protobuf annotations
-        !self.get_all_proto_publication_symbols().is_empty()
+        self.target_api == TargetApi::Pdk29
     }
 
     /// Creates a new, empty scope with the given name and adds it to the table.

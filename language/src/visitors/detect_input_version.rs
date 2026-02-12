@@ -54,3 +54,51 @@ impl VsidlVisitor for DetectInputVersion {
         self.uses_channels = self.uses_channels || node.capacity != 0;
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test_data;
+    use crate::Catalog;
+
+    #[test]
+    fn test_should_detect_pdk29_syntax() {
+        // GIVEN A catalog using PDK29 syntax
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
+
+        // WHEN executing the visitor
+        let version = DetectInputVersion::traverse(&catalog);
+
+        // THEN PDK29 syntax is detected
+        assert!(version.uses_pdk29);
+        assert!(!version.uses_channels);
+    }
+
+    #[test]
+    fn test_should_detect_channel_syntax() {
+        // GIVEN A catalog using channel syntax (capacity)
+        let mut catalog = Catalog::new();
+        catalog.catalog_vsidl_files.push(test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.clone());
+
+        // WHEN executing the visitor
+        let version = DetectInputVersion::traverse(&catalog);
+
+        // THEN channel syntax is detected
+        assert!(version.uses_channels);
+        assert!(!version.uses_pdk29);
+    }
+
+    #[test]
+    fn test_should_not_detect_anything_on_empty_catalog() {
+        // GIVEN An empty catalog
+        let catalog = Catalog::new();
+
+        // WHEN executing the visitor
+        let version = DetectInputVersion::traverse(&catalog);
+
+        // THEN nothing is detected
+        assert!(!version.uses_pdk29);
+        assert!(!version.uses_channels);
+    }
+}

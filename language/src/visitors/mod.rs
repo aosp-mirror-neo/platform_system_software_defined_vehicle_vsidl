@@ -15,7 +15,10 @@
  */
 //! This crate provides visitors for traversing the VSIDL catalog
 
+pub mod convert_channel_case;
 pub mod detect_input_version;
+pub mod hide_channel_syntax;
+pub mod hide_pdk29_syntax;
 pub mod keyword_converter;
 pub mod remove_non_google_options;
 pub mod visitor;
