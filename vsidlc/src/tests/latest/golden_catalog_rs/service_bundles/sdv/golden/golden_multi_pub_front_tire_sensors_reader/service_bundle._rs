@@ -56,11 +56,11 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.TireSpeed'
+        /// Publication channel 'unique' of 'sdv.golden.TireSpeed'
         pub const UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "unique",
-            service_unit: "sdv-golden-tire-speed-unique",
+            service_unit: "tire-speed-front",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TireSpeed' available to the service bundle

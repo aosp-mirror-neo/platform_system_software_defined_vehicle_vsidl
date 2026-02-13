@@ -56,15 +56,17 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.VehicleSpeedForOtherCatalog'
-        pub const UNIQUE: &Self = &Self {
+        /// Publication channel 'vehicle_speed_for_other_catalog' of 'sdv.golden.VehicleSpeedForOtherCatalog'
+        pub const VEHICLE_SPEED_FOR_OTHER_CATALOG: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
-            service_unit: "sdv-golden-vehicle-speed-for-other-catalog-unique",
+            name: "vehicle_speed_for_other_catalog",
+            service_unit: "vehicle-speed-for-other-catalog",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeedForOtherCatalog' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::VEHICLE_SPEED_FOR_OTHER_CATALOG,
+        ];
     }
 }
 /// Service bundle

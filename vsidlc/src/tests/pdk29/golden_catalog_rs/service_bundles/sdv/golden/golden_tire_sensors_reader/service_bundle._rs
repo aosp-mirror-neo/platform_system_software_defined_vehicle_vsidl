@@ -77,36 +77,40 @@ pub mod publisher {
         const IS_MULTIPUB: bool = false;
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-        /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TIREPressure'
-        pub const FRONT_LEFT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_FRONT_LEFT' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_LEFT as i32,
-            service_unit: "sdv-golden-tire-pressure-front-left",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureLocation::TIRE_PRESSURE_FRONT_LEFT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-front-left",
         };
-        /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TIREPressure'
-        pub const FRONT_RIGHT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_FRONT_RIGHT' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
-            service_unit: "sdv-golden-tire-pressure-front-right",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureLocation::TIRE_PRESSURE_FRONT_RIGHT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-front-right",
         };
-        /// Publication channel 'REAR_LEFT' of 'sdv.golden.TIREPressure'
-        pub const REAR_LEFT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_REAR_LEFT' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
-            service_unit: "sdv-golden-tire-pressure-rear-left",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureLocation::TIRE_PRESSURE_REAR_LEFT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-rear-left",
         };
-        /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TIREPressure'
-        pub const REAR_RIGHT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_REAR_RIGHT' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_RIGHT as i32,
-            service_unit: "sdv-golden-tire-pressure-rear-right",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureLocation::TIRE_PRESSURE_REAR_RIGHT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-rear-right",
         };
         /// List of all publication channels of 'sdv.golden.TIREPressure' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::FRONT_LEFT,
-            Self::FRONT_RIGHT,
-            Self::REAR_LEFT,
-            Self::REAR_RIGHT,
+            Self::TIRE_PRESSURE_FRONT_LEFT,
+            Self::TIRE_PRESSURE_FRONT_RIGHT,
+            Self::TIRE_PRESSURE_REAR_LEFT,
+            Self::TIRE_PRESSURE_REAR_RIGHT,
         ];
     }
     impl Metadata for sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances {
@@ -115,36 +119,40 @@ pub mod publisher {
         const IS_MULTIPUB: bool = false;
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
-        /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const FRONT_LEFT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_EXPLICIT_FRONT_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_LEFT as i32,
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-front-left",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitLocation::TIRE_PRESSURE_EXPLICIT_FRONT_LEFT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-front-left",
         };
-        /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const FRONT_RIGHT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-front-right",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitLocation::TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-front-right",
         };
-        /// Publication channel 'REAR_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const REAR_LEFT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_EXPLICIT_REAR_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-left",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitLocation::TIRE_PRESSURE_EXPLICIT_REAR_LEFT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-rear-left",
         };
-        /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const REAR_RIGHT: &Self = &Self {
+        /// Publication channel 'TIRE_PRESSURE_EXPLICIT_REAR_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_RIGHT as i32,
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-right",
+            id: sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitLocation::TIRE_PRESSURE_EXPLICIT_REAR_RIGHT
+                as i32,
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-rear-right",
         };
         /// List of all publication channels of 'sdv.golden.TirePressureExplicitInstances' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::FRONT_LEFT,
-            Self::FRONT_RIGHT,
-            Self::REAR_LEFT,
-            Self::REAR_RIGHT,
+            Self::TIRE_PRESSURE_EXPLICIT_FRONT_LEFT,
+            Self::TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT,
+            Self::TIRE_PRESSURE_EXPLICIT_REAR_LEFT,
+            Self::TIRE_PRESSURE_EXPLICIT_REAR_RIGHT,
         ];
     }
     impl Metadata for sdv_vsidlc_goldens_catalog::tire::TireTemperature {
@@ -153,14 +161,17 @@ pub mod publisher {
         const IS_MULTIPUB: bool = false;
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TireTemperature'
-        pub const FRONT_RIGHT: &Self = &Self {
+        /// Publication channel 'TIRE_TEMPERATURE_FRONT_RIGHT' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
-            service_unit: "sdv-golden-tire-temperature-front-right",
+            id: sdv_vsidlc_goldens_catalog::tire::TireTemperatureLocation::TIRE_TEMPERATURE_FRONT_RIGHT
+                as i32,
+            service_unit: "sdv-golden-tire-temperature-tire-temperature-front-right",
         };
         /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::FRONT_RIGHT];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::TIRE_TEMPERATURE_FRONT_RIGHT,
+        ];
     }
     impl Metadata for sdv_vsidlc_goldens_catalog::tire::VehicleSpeed {
         const MESSAGE_SIZE: u32 = 5;
@@ -168,14 +179,15 @@ pub mod publisher {
         const IS_MULTIPUB: bool = false;
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.VehicleSpeed'
-        pub const UNIQUE: &Self = &Self {
+        /// Publication channel 'VEHICLE_SPEED' of 'sdv.golden.VehicleSpeed'
+        pub const VEHICLE_SPEED: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
-            service_unit: "sdv-golden-vehicle-speed-unique",
+            id: sdv_vsidlc_goldens_catalog::tire::VehicleSpeedChannels::VEHICLE_SPEED
+                as i32,
+            service_unit: "sdv-golden-vehicle-speed-vehicle-speed",
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeed' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];
     }
 }
 /// Service bundle

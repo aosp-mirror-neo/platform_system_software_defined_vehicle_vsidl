@@ -67,16 +67,16 @@ pub mod subscriber {
     impl Channel<
         sdv_vsidlc_goldens_two_folders_one_bp_folder_a_catalog::speed_a::VehicleSpeedA,
     > {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeedA'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'vehicle_speed_a' of 'sdv.golden.VehicleSpeedA'
+        pub const VEHICLE_SPEED_A: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
+            name: "vehicle_speed_a",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTwoFoldersServerPublisher",
-            service_unit: "sdv-golden-vehicle-speed-a-unique",
+            service_unit: "vehicle-speed-a",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_A];
     }
     impl sdv::mw::clientlib::channel::subscriber::Metadata
     for Channel<
@@ -99,16 +99,16 @@ pub mod subscriber {
     impl Channel<
         sdv_vsidlc_goldens_two_folders_one_bp_folder_b_catalog::speed_b::VehicleSpeedB,
     > {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeedB'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'vehicle_speed_b' of 'sdv.golden.VehicleSpeedB'
+        pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
+            name: "vehicle_speed_b",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTwoFoldersPublisher",
-            service_unit: "sdv-golden-vehicle-speed-b-unique",
+            service_unit: "vehicle-speed-b",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_B];
     }
 }
 /// Service bundle

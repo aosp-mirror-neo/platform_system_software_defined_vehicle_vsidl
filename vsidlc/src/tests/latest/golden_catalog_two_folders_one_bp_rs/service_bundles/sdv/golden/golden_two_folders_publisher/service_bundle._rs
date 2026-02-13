@@ -62,15 +62,15 @@ pub mod publisher {
     impl Channel<
         sdv_vsidlc_goldens_two_folders_one_bp_folder_b_catalog::speed_b::VehicleSpeedB,
     > {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.VehicleSpeedB'
-        pub const UNIQUE: &Self = &Self {
+        /// Publication channel 'vehicle_speed_b' of 'sdv.golden.VehicleSpeedB'
+        pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
-            service_unit: "sdv-golden-vehicle-speed-b-unique",
+            name: "vehicle_speed_b",
+            service_unit: "vehicle-speed-b",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_B];
     }
 }
 /// Service bundle

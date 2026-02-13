@@ -56,40 +56,40 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-        /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TIREPressure'
-        pub const FRONT_LEFT: &Self = &Self {
+        /// Publication channel 'tire_pressure_front_left' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_left",
-            service_unit: "sdv-golden-tire-pressure-front-left",
+            name: "tire_pressure_front_left",
+            service_unit: "tire-pressure-front-left",
             capacity: 8,
         };
-        /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TIREPressure'
-        pub const FRONT_RIGHT: &Self = &Self {
+        /// Publication channel 'tire_pressure_front_right' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_right",
-            service_unit: "sdv-golden-tire-pressure-front-right",
+            name: "tire_pressure_front_right",
+            service_unit: "tire-pressure-front-right",
             capacity: 8,
         };
-        /// Publication channel 'REAR_LEFT' of 'sdv.golden.TIREPressure'
-        pub const REAR_LEFT: &Self = &Self {
+        /// Publication channel 'tire_pressure_rear_left' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "rear_left",
-            service_unit: "sdv-golden-tire-pressure-rear-left",
+            name: "tire_pressure_rear_left",
+            service_unit: "tire-pressure-rear-left",
             capacity: 8,
         };
-        /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TIREPressure'
-        pub const REAR_RIGHT: &Self = &Self {
+        /// Publication channel 'tire_pressure_rear_right' of 'sdv.golden.TIREPressure'
+        pub const TIRE_PRESSURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "rear_right",
-            service_unit: "sdv-golden-tire-pressure-rear-right",
+            name: "tire_pressure_rear_right",
+            service_unit: "tire-pressure-rear-right",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TIREPressure' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::FRONT_LEFT,
-            Self::FRONT_RIGHT,
-            Self::REAR_LEFT,
-            Self::REAR_RIGHT,
+            Self::TIRE_PRESSURE_FRONT_LEFT,
+            Self::TIRE_PRESSURE_FRONT_RIGHT,
+            Self::TIRE_PRESSURE_REAR_LEFT,
+            Self::TIRE_PRESSURE_REAR_RIGHT,
         ];
     }
     impl sdv::mw::clientlib::channel::publisher::Metadata
@@ -107,40 +107,40 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
-        /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const FRONT_LEFT: &Self = &Self {
+        /// Publication channel 'tire_pressure_explicit_front_left' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_left",
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-front-left",
+            name: "tire_pressure_explicit_front_left",
+            service_unit: "tire-pressure-explicit-front-left",
             capacity: 8,
         };
-        /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const FRONT_RIGHT: &Self = &Self {
+        /// Publication channel 'tire_pressure_explicit_front_right' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_right",
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-front-right",
+            name: "tire_pressure_explicit_front_right",
+            service_unit: "tire-pressure-explicit-front-right",
             capacity: 8,
         };
-        /// Publication channel 'REAR_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const REAR_LEFT: &Self = &Self {
+        /// Publication channel 'tire_pressure_explicit_rear_left' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "rear_left",
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-left",
+            name: "tire_pressure_explicit_rear_left",
+            service_unit: "tire-pressure-explicit-rear-left",
             capacity: 8,
         };
-        /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
-        pub const REAR_RIGHT: &Self = &Self {
+        /// Publication channel 'tire_pressure_explicit_rear_right' of 'sdv.golden.TirePressureExplicitInstances'
+        pub const TIRE_PRESSURE_EXPLICIT_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "rear_right",
-            service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-right",
+            name: "tire_pressure_explicit_rear_right",
+            service_unit: "tire-pressure-explicit-rear-right",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TirePressureExplicitInstances' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::FRONT_LEFT,
-            Self::FRONT_RIGHT,
-            Self::REAR_LEFT,
-            Self::REAR_RIGHT,
+            Self::TIRE_PRESSURE_EXPLICIT_FRONT_LEFT,
+            Self::TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT,
+            Self::TIRE_PRESSURE_EXPLICIT_REAR_LEFT,
+            Self::TIRE_PRESSURE_EXPLICIT_REAR_RIGHT,
         ];
     }
     impl sdv::mw::clientlib::channel::publisher::Metadata
@@ -158,15 +158,17 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TireTemperature'
-        pub const FRONT_RIGHT: &Self = &Self {
+        /// Publication channel 'tire_temperature_front_right' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_right",
-            service_unit: "sdv-golden-tire-temperature-front-right",
+            name: "tire_temperature_front_right",
+            service_unit: "tire-temperature-front-right",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::FRONT_RIGHT];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::TIRE_TEMPERATURE_FRONT_RIGHT,
+        ];
     }
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
@@ -183,15 +185,15 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.VehicleSpeed'
-        pub const UNIQUE: &Self = &Self {
+        /// Publication channel 'vehicle_speed' of 'sdv.golden.VehicleSpeed'
+        pub const VEHICLE_SPEED: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
-            service_unit: "sdv-golden-vehicle-speed-unique",
+            name: "vehicle_speed",
+            service_unit: "vehicle-speed",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeed' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];
     }
 }
 /// Service bundle

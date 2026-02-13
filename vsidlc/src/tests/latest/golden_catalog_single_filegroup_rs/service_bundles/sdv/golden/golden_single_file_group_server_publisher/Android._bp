@@ -33,7 +33,6 @@ rust_library {
         "libsdv_rs",
         "libfutures",
         "libsdv_vsidlc_goldens_single_filegroup_catalog",
-        "libvsidl_v1_stdlib_proto_rs",
         "libsdv_golden_rpc_tire_status_rpc_rs",
         "libsdv_proto_reflection_rs",
     ],

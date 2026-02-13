@@ -59,16 +59,19 @@ pub mod subscriber {
         const IS_MULTIPUB: bool = false;
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog> {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeedForOtherCatalog'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'VEHICLE_SPEED_FOR_OTHER_CATALOG' of 'sdv.golden.VehicleSpeedForOtherCatalog'
+        pub const VEHICLE_SPEED_FOR_OTHER_CATALOG: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
+            id: sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalogChannels::VEHICLE_SPEED_FOR_OTHER_CATALOG
+                as i32,
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenNoAndroidbpPublishingBundle",
-            service_unit: "sdv-golden-vehicle-speed-for-other-catalog-unique",
+            service_unit: "sdv-golden-vehicle-speed-for-other-catalog-vehicle-speed-for-other-catalog",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedForOtherCatalog' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::VEHICLE_SPEED_FOR_OTHER_CATALOG,
+        ];
     }
 }
 /// Service bundle

@@ -61,16 +61,18 @@ pub mod subscriber {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog> {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeedForOtherCatalog'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'vehicle_speed_for_other_catalog' of 'sdv.golden.VehicleSpeedForOtherCatalog'
+        pub const VEHICLE_SPEED_FOR_OTHER_CATALOG: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
+            name: "vehicle_speed_for_other_catalog",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenNoAndroidbpPublishingBundle",
-            service_unit: "sdv-golden-vehicle-speed-for-other-catalog-unique",
+            service_unit: "vehicle-speed-for-other-catalog",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedForOtherCatalog' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::VEHICLE_SPEED_FOR_OTHER_CATALOG,
+        ];
     }
 }
 /// Service bundle

@@ -56,24 +56,24 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TireTemperature'
-        pub const FRONT_LEFT: &Self = &Self {
+        /// Publication channel 'tire_temperature_front_left' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_left",
+            name: "tire_temperature_front_left",
             service_unit: "my-temperature-left",
             capacity: 8,
         };
-        /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TireTemperature'
-        pub const REAR_RIGHT: &Self = &Self {
+        /// Publication channel 'tire_temperature_rear_right' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "rear_right",
+            name: "tire_temperature_rear_right",
             service_unit: "my-temperature-right",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::FRONT_LEFT,
-            Self::REAR_RIGHT,
+            Self::TIRE_TEMPERATURE_FRONT_LEFT,
+            Self::TIRE_TEMPERATURE_REAR_RIGHT,
         ];
     }
     impl sdv::mw::clientlib::channel::publisher::Metadata
@@ -91,7 +91,7 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.TireSpeed'
+        /// Publication channel 'unique' of 'sdv.golden.TireSpeed'
         pub const UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "unique",
@@ -149,26 +149,26 @@ pub mod subscriber {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        /// Enables access to subscription channel 'FRONT_LEFT' of 'sdv.golden.TireTemperature'
-        pub const FRONT_LEFT: &Self = &Self {
+        /// Enables access to subscription channel 'tire_temperature_front_left' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "front_left",
+            name: "tire_temperature_front_left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenUserDefinedNames",
             service_unit: "my-temperature-left",
         };
-        /// Enables access to subscription channel 'REAR_RIGHT' of 'sdv.golden.TireTemperature'
-        pub const REAR_RIGHT: &Self = &Self {
+        /// Enables access to subscription channel 'tire_temperature_rear_right' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "rear_right",
+            name: "tire_temperature_rear_right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenUserDefinedNames",
             service_unit: "my-temperature-right",
         };
         /// List of all subscription channels of 'sdv.golden.TireTemperature' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::FRONT_LEFT,
-            Self::REAR_RIGHT,
+            Self::TIRE_TEMPERATURE_FRONT_LEFT,
+            Self::TIRE_TEMPERATURE_REAR_RIGHT,
         ];
     }
 }

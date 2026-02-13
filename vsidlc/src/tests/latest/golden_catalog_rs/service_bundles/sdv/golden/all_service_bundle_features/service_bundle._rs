@@ -70,22 +70,25 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        /// Publication channel 'ONE' of 'sdv.golden.Pressure'
-        pub const ONE: &Self = &Self {
+        /// Publication channel 'pressure_one' of 'sdv.golden.Pressure'
+        pub const PRESSURE_ONE: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "one",
-            service_unit: "sdv-golden-pressure-one",
+            name: "pressure_one",
+            service_unit: "pressure-one",
             capacity: 8,
         };
-        /// Publication channel 'TWO' of 'sdv.golden.Pressure'
-        pub const TWO: &Self = &Self {
+        /// Publication channel 'pressure_two' of 'sdv.golden.Pressure'
+        pub const PRESSURE_TWO: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "two",
-            service_unit: "sdv-golden-pressure-two",
+            name: "pressure_two",
+            service_unit: "pressure-two",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.Pressure' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::ONE, Self::TWO];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::PRESSURE_ONE,
+            Self::PRESSURE_TWO,
+        ];
     }
 }
 /// Provides access to subscriptions available to the service bundle
@@ -135,16 +138,16 @@ pub mod subscriber {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        /// Enables access to subscription channel 'TWO' of 'sdv.golden.Pressure'
-        pub const TWO: &Self = &Self {
+        /// Enables access to subscription channel 'pressure_two' of 'sdv.golden.Pressure'
+        pub const PRESSURE_TWO: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "two",
+            name: "pressure_two",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "AllServiceBundleFeatures",
-            service_unit: "sdv-golden-pressure-two",
+            service_unit: "pressure-two",
         };
         /// List of all subscription channels of 'sdv.golden.Pressure' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::TWO];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::PRESSURE_TWO];
     }
 }
 /// Service bundle

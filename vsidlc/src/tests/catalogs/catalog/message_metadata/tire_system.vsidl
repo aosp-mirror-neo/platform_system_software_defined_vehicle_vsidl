@@ -22,7 +22,8 @@ service_bundle {
 
     publisher {
         message: "TireTemperature"
-        channel: "REAR_LEFT"
+        channel: "TIRE_TEMPERATURE_REAR_LEFT"
+        capacity: 8
     }
 
     diagnostics_declaration {

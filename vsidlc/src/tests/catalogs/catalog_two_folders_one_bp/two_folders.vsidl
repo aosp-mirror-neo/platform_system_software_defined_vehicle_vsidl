@@ -34,6 +34,8 @@ service_bundle {
     name: "GoldenTwoFoldersServerPublisher"
     publisher {
         message: "VehicleSpeedA"
+        channel: "VEHICLE_SPEED_A"
+        capacity: 8
     }
     server {
         service: "sdv.golden.rpc.TireStatus"
@@ -44,5 +46,7 @@ service_bundle {
     name: "GoldenTwoFoldersPublisher"
     publisher {
         message: "VehicleSpeedB"
+        channel: "VEHICLE_SPEED_B"
+        capacity: 8
     }
 }

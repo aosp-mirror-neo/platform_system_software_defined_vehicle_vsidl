@@ -23,30 +23,34 @@ service_bundle {
     # single pub
     publisher {
         message: "TireTemperature"
-        channel: "FRONT_LEFT"
+        channel: "TIRE_TEMPERATURE_FRONT_LEFT"
         service_unit_name: "my-temperature-left"
+        capacity: 8
     }
 
     publisher {
         message: "TireTemperature"
-        channel: "REAR_RIGHT"
+        channel: "TIRE_TEMPERATURE_REAR_RIGHT"
         service_unit_name: "my-temperature-right"
+        capacity: 8
     }
 
     subscriber {
         message: "TireTemperature"
-        channel: "FRONT_LEFT"
+        channel: "TIRE_TEMPERATURE_FRONT_LEFT"
     }
 
     subscriber {
         message: "TireTemperature"
-        channel: "REAR_RIGHT"
+        channel: "TIRE_TEMPERATURE_REAR_RIGHT"
     }
 
     # multi pub
     publisher {
         message: "TireSpeed"
+        channel: "UNIQUE"
         service_unit_name: "my-multipub-tire-speed"
+        capacity: 8
     }
 
     # RPC server
