@@ -97,21 +97,27 @@ server = { "server" ~ "{" ~ server_body ~ "}" }
 server_body = {
     (
         server_interface |
-        server_service_unit_name
+        server_service_unit_name |
+        server_channel
     )*
 }
 
 server_interface = { ("interface" | "service" ) ~ ":" ~ service_str }
 server_service_unit_name = { "service_unit_name" ~ ":" ~ service_unit_name_str }
+server_channel = { "channel" ~ ":" ~ channel_str }
 
 // Client
 client = { "client" ~ "{" ~ client_body ~ "}" }
 
 client_body = {
-    (client_interface)*
+    (
+        client_interface |
+        client_channel
+    )*
 }
 
 client_interface = { ("interface" | "service" ) ~ ":" ~ service_str }
+client_channel = { "channel" ~ ":" ~ channel_str }
 
 // UnitType
 unit_type = { "unit_type" ~ "{" ~ unit_type_body ~ "}" }

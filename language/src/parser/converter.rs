@@ -227,6 +227,11 @@ pub fn convert_to_server(pair: Pair<Rule>, file_path: &str) -> Server {
                 server.service_unit_name = unquote(inner.as_str());
                 server.service_unit_name_span = proto_span(inner, file_path);
             }
+            Rule::server_channel => {
+                let inner = get_inner_pair(item);
+                server.channel = unquote(inner.as_str());
+                server.channel_span = proto_span(inner, file_path);
+            }
             _ => (),
         }
     }
@@ -247,6 +252,11 @@ pub fn convert_to_client(pair: Pair<Rule>, file_path: &str) -> Client {
                 let inner = get_inner_pair(item);
                 client.service = unquote(inner.as_str());
                 client.service_span = proto_span(inner, file_path);
+            }
+            Rule::client_channel => {
+                let inner = get_inner_pair(item);
+                client.channel = unquote(inner.as_str());
+                client.channel_span = proto_span(inner, file_path);
             }
             _ => (),
         }
