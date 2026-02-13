@@ -317,7 +317,7 @@ impl DiagnosticsContext {
             proto_message: self
                 .messages
                 .get(full_message_name)
-                .unwrap_or_else(|| panic!("Message {full_message_name} not found"))
+                .ok_or_else(|| anyhow::anyhow!("Message {full_message_name} not found"))?
                 .clone(),
             message_size: message_size::compute_message_size(
                 full_message_name,
