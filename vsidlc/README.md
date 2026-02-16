@@ -144,7 +144,7 @@ be placed in separate directories.
 ```bash
 croot system/software_defined_vehicle/samples/vsidl/perf5/
 
-vsidlc -c catalog/ -o . -d $ANDROID_BUILD_TOP/system/software_defined_vehicle/common/protos/com/sdv/google/test_messages -p
+vsidlc -c catalog/ -o . -d $ANDROID_BUILD_TOP/system/software_defined_vehicle/common/protos/com/android/sdv/test_messages -p
 ```
 
 ## Known Limitations
