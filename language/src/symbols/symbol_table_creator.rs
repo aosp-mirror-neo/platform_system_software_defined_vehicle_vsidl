@@ -722,12 +722,20 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
 
         // Diagnostics
         // Pass the cached context!
-        let diagnostics_info = DiagnosticsInfo::from(
+        let diagnostics_info = match DiagnosticsInfo::from(
             self.diagnostics_context.as_mut().expect("Diagnostics context must be initialized"),
             &self.package,
             node,
-        )
-        .expect("Could not extract diagnostics info");
+        ) {
+            Ok(info) => info,
+            Err(e) => {
+                eprintln!(
+                    "Warning: Failed to extract diagnostics info for bundle '{}': {}",
+                    node.name, e
+                );
+                None
+            }
+        };
 
         // Add scope for service bundle (anonymous, i.e., without name, because service bundles place all their members in their package)
         let new_scope_id = self.symbol_table.create_scope("".to_string());
