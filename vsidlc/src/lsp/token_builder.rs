@@ -187,7 +187,9 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::subscriber_channel
         | Rule::server_interface
         | Rule::server_service_unit_name
+        | Rule::server_channel
         | Rule::client_interface
+        | Rule::client_channel
         | Rule::unit_type_type
         | Rule::build_configuration_target_name
         | Rule::build_configuration_skip_codegen

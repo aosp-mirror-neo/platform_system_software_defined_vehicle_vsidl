@@ -108,18 +108,25 @@ message ServiceBundle {
   message Server {
     // Deprecated, use "service" instead.
     string interface = 1 [ deprecated = true ];
+    // Deprecated, use "channel" instead.
     // Name of the service unit. Name may only use characters from [a-z0-9\-]+,
     // must start with [a-z], may not end with a hyphen,
     // and may not contain consecutive hyphens.
-    string service_unit_name = 3;
+    string service_unit_name = 3 [ deprecated = true ];
     // Required. Name of the RPC service.
     string service = 4;
+    // Required. Name of the RPC channel.
+    // Name may only use characters from [a-z0-9\_]+,
+    // must start with [a-z], may not end with an underscore,
+    // and may not contain consecutive underscores.
+    string channel = 5;
 
     // Parsing metadata that describes where the syntax element was found in the
     // input. Do not fill fields of this type manually.
     Span span = 10000;
     Span service_unit_name_span = 10003;
     Span service_span = 10004;
+    Span channel_span = 10005;
   }
 
   // Represents an RPC client within a service bundle.
@@ -128,11 +135,17 @@ message ServiceBundle {
     string interface = 1 [ deprecated = true ];
     // Required. Name of the RPC service.
     string service = 2;
+    // Required. Name of the RPC channel.
+    // Name may only use characters from [a-z0-9\_]+,
+    // must start with [a-z], may not end with an underscore,
+    // and may not contain consecutive underscores.
+    string channel = 3;
 
     // Parsing metadata that describes where the syntax element was found in the
     // input. Do not fill fields of this type manually.
     Span span = 10000;
     Span service_span = 10002;
+    Span channel_span = 10003;
   }
 
   // Required. Name of the service bundle (without the package name).

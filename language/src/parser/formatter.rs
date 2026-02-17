@@ -243,6 +243,9 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         Rule::server_interface | Rule::client_interface => {
             format_property(result, "service", pair, context)
         }
+        Rule::server_channel | Rule::client_channel => {
+            format_property(result, "channel", pair, context)
+        }
         Rule::unit_type_type => format_property(result, "type", pair, context),
         Rule::build_configuration_target_name => {
             format_property(result, "target_name", pair, context)
