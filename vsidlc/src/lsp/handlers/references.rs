@@ -125,7 +125,7 @@ mod tests {
         let symbol_table = common_cli.create_symbol_table(None)?;
 
         // GIVEN cursor position on "TirePressure" in subscriber
-        let position = Position { line: 10, character: 20 };
+        let position = Position { line: 12, character: 20 };
 
         let vsidl_file_path = temp_dir.path().join("test.vsidl");
 
@@ -149,10 +149,10 @@ mod tests {
         assert_eq!(locations.len(), 1);
         let location = &locations[0];
         assert_eq!(location.uri, Url::from_file_path(vsidl_file_path).unwrap());
-        // publisher is from line 5 to 8 (1-indexed), which is 4 to 7 (0-indexed).
+        // publisher is from line 5 to 8 (1-indexed), which is 4 to 9 (0-indexed).
         assert_eq!(location.range.start.line, 4);
         assert_eq!(location.range.start.character, 2);
-        assert_eq!(location.range.end.line, 7);
+        assert_eq!(location.range.end.line, 9);
         assert_eq!(location.range.end.character, 3);
 
         Ok(())

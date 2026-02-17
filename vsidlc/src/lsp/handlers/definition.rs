@@ -35,7 +35,7 @@ pub(crate) fn go_to_definition<F: FileProvider>(
         params.text_document_position_params.position
     );
     let uri = params.text_document_position_params.text_document.uri;
-    let mut position = params.text_document_position_params.position;
+    let mut position: lsp_types::Position = params.text_document_position_params.position;
     position = convert_position_0_based_to_1_based_index(position);
     let mut definition_location: Option<Span> = None;
 
@@ -146,7 +146,7 @@ mod tests {
         let symbol_table = common_cli.create_symbol_table(Some(".".into()))?;
 
         // GIVEN cursor position on "TirePressure" in subscriber
-        let position = Position { line: 10, character: 20 };
+        let position = Position { line: 12, character: 20 };
 
         let vsidl_file_path = temp_dir.path().join("test.vsidl");
         let proto_file_path = temp_dir.path().join("protos/test.proto");

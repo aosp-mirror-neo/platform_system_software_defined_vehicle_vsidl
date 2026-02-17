@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+pub(crate) mod completion;
 pub(crate) mod definition;
 pub(crate) mod document_symbols;
 pub(crate) mod folding;

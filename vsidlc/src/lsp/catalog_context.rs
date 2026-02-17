@@ -30,6 +30,8 @@ pub(crate) struct CatalogContext {
     pub symbol_table: SymbolTable,
     /// The parsed catalog.
     pub catalog: Catalog,
+    /// The last successfully linked and error-free symbol table.
+    pub last_valid_symbol_table: Option<SymbolTable>,
     /// Tracks active findings per file to avoid resending duplicates and to manage clearing correctly.
     pub active_findings: HashMap<String, FileDiagnostics>,
     /// Shadow workspace for handling dirty files with external parsers.

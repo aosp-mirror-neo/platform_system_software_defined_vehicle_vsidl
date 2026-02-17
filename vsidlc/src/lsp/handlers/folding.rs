@@ -230,7 +230,7 @@ mod tests {
             FoldingRange {
                 start_line: 1,
                 start_character: Some(15),
-                end_line: 13,
+                end_line: 16,
                 end_character: Some(1),
                 kind: Some(Region),
                 collapsed_text: Some("{ Manager }".to_string()),
@@ -238,15 +238,15 @@ mod tests {
             FoldingRange {
                 start_line: 4,
                 start_character: Some(12),
-                end_line: 7,
+                end_line: 9,
                 end_character: Some(3),
                 kind: Some(Region),
                 collapsed_text: Some("{ TirePressure }".to_string()),
             },
             FoldingRange {
-                start_line: 9,
+                start_line: 11,
                 start_character: Some(13),
-                end_line: 12,
+                end_line: 15,
                 end_character: Some(3),
                 kind: Some(Region),
                 collapsed_text: Some("{ TirePressure }".to_string()),
