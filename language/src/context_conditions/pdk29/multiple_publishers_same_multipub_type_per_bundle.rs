@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
+use crate::{FindingCollector, FindingId};
 use std::collections::HashMap;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
@@ -79,7 +79,7 @@ impl SymbolTableChecker for MultiplePublishersSameMultipubTopicPerBundle {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::multiple_publishers_same_multipub_type_per_bundle::MultiplePublishersSameMultipubTopicPerBundle;
+    use crate::pdk29::MultiplePublishersSameMultipubTopicPerBundle;
     use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;

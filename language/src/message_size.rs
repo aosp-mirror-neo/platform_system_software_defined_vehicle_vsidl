@@ -108,10 +108,32 @@ pub fn compute_message_size(
     messages_computed_sizes: &mut IndexMap<String, MessageSize>,
     messages_metadata_set: &MessageSizeMetadataSet,
 ) -> anyhow::Result<MessageSize> {
+    let mut recursion_stack = Vec::new();
+    compute_message_size_internal(
+        message_full_name,
+        messages_computed_sizes,
+        messages_metadata_set,
+        &mut recursion_stack,
+    )
+}
+
+fn compute_message_size_internal(
+    message_full_name: &str,
+    messages_computed_sizes: &mut IndexMap<String, MessageSize>,
+    messages_metadata_set: &MessageSizeMetadataSet,
+    recursion_stack: &mut Vec<String>,
+) -> anyhow::Result<MessageSize> {
     if let Some(message_size) = messages_computed_sizes.get(message_full_name) {
         // we computed size of the message already
         return Ok(message_size.clone());
     }
+
+    if recursion_stack.contains(&message_full_name.to_string()) {
+        // Circular dependency detected. Return a zeroed MessageSize to break the loop.
+        return Ok(MessageSize::default());
+    }
+
+    recursion_stack.push(message_full_name.to_string());
 
     let message_size_metadata = messages_metadata_set.messages.get(message_full_name).ok_or(anyhow!(format!("Failed to find message size metadata for {:?} message. Something went wrong during parsing.", message_full_name)))?;
     let mut message_size: usize = 0;
@@ -121,6 +143,7 @@ pub fn compute_message_size(
             messages_computed_sizes,
             messages_metadata_set,
             message_full_name,
+            recursion_stack,
         )?;
     }
 
@@ -132,7 +155,10 @@ pub fn compute_message_size(
         .collect();
 
     let message_computed_size = MessageSize { size: message_size, size_constraints };
+
+    recursion_stack.pop();
     messages_computed_sizes.insert(message_full_name.to_string(), message_computed_size.clone());
+
     Ok(message_computed_size)
 }
 
@@ -147,6 +173,7 @@ pub fn compute_message_size(
 /// * `messages_computed_sizes` - A mutable map used for memoization when calculating nested message sizes.
 /// * `messages_metadata_set` - The set containing metadata for all relevant messages.
 /// * `message_name` - The fully qualified name of the message containing this field (used for error reporting).
+/// * `recursion_stack` - A mutable stack used to detect circular dependencies.
 ///
 /// # Returns
 ///
@@ -166,6 +193,7 @@ fn compute_field_size(
     messages_computed_sizes: &mut IndexMap<String, MessageSize>,
     messages_metadata_set: &MessageSizeMetadataSet,
     message_name: &str,
+    recursion_stack: &mut Vec<String>,
 ) -> anyhow::Result<usize> {
     let mut field_size: usize = 0;
     field_size += compute_tag_size(field_size_metadata.tag_id);
@@ -200,10 +228,11 @@ fn compute_field_size(
                 size + compute_length_size(size)
             } else {
                 let message_full_name_without_dot = &message_full_name[1..];
-                let message_size = compute_message_size(
+                let message_size = compute_message_size_internal(
                     message_full_name_without_dot,
                     messages_computed_sizes,
                     messages_metadata_set,
+                    recursion_stack,
                 )?;
                 message_size.size + compute_length_size(message_size.size)
             }

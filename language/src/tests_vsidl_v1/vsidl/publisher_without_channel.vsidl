@@ -22,5 +22,13 @@ service_bundle {
 
   publisher {
     message: "Pressure"
+    channel: "ONE"
+    channel: "TWO"
+    capacity: 8
+  }
+
+  publisher {
+    message: "Pressure"
+    capacity: 8
   }
 }

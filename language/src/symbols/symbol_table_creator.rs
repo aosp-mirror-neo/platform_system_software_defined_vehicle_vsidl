@@ -29,8 +29,8 @@ use super::symbol_table::GLOBAL_SCOPE_ID;
 use super::{
     scope::ScopeId,
     specific_symbols::{
-        proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
-        proto_publication_symbol::ProtoPublicationSymbol,
+        channel_symbol::ChannelSymbol, proto_enum_symbol::ProtoEnumSymbol,
+        proto_message_symbol::ProtoMessageSymbol, proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
         rpc_server_symbol::RpcServerSymbol, service_bundle_symbol::ServiceBundleSymbol,
         subscriber_symbol::SubscriberSymbol,
@@ -43,7 +43,7 @@ use crate::service_bundle_symbol::ServiceBundleSource;
 use pest::iterators::Pair;
 use pest::Parser;
 use protobuf::descriptor::{DescriptorProto, EnumDescriptorProto, ServiceDescriptorProto};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use vsidl_v1_common::message_size::{MessageSize, MessageSizeMetadataSet};
 use vsidl_v1_common::{
     get_proto_dependencies, message_size, DiagnosticsContext, DiagnosticsInfo, DiskFileProvider,
@@ -109,6 +109,8 @@ pub struct SymbolTableCreator<F: FileProvider = DiskFileProvider> {
     diagnostics_context: Option<DiagnosticsContext>,
     /// Flag indicating if the current file should be processed (for incremental updates).
     should_process_current_file: bool,
+    /// Already created channels in the symbol table.
+    created_channels: HashSet<String>,
     /// Optional path to a specific file to process. If set, only this file is processed.
     target_file: Option<PathBuf>,
     /// The file provider for reading files.
@@ -155,6 +157,7 @@ impl<F: FileProvider> SymbolTableCreator<F> {
             proto_comes_from_catalog: false,
             diagnostics_context: None,
             should_process_current_file: true,
+            created_channels: HashSet::new(),
             target_file: None,
             file_provider,
         }
@@ -283,6 +286,8 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             // Reuse existing symbol table
             self.global_scope = Some(GLOBAL_SCOPE_ID);
         }
+        self.created_channels =
+            self.symbol_table.get_all_channel_symbols().iter().map(|s| s.name()).collect();
         self.current_scope_id = self.global_scope.clone();
         self.total_files = catalog.catalog_vsidl_files.len() + catalog.proto_descriptors.len();
         self.printer = ProgressPrinter::new(self.total_files);
@@ -403,6 +408,14 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         let new_scope_id = self.symbol_table.create_scope(message_name.clone());
         self.symbol_table.add_subscope(&current_scope_id, &new_scope_id);
 
+        let message_fqn = format!("{}.{}", self.package, message_name);
+        let max_size: Option<MessageSize> = message_size::compute_message_size(
+            &message_fqn,
+            &mut self.messages_computed_sizes,
+            &self.message_size_metadata,
+        )
+        .ok();
+
         // Add symbol for proto message
         let symbol = ProtoMessageSymbol {
             ast_node: node.clone(),
@@ -412,6 +425,12 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
                 .get(&("message".to_string(), message_name.clone()))
                 .cloned()
                 .unwrap_or_default(),
+            proto_dependencies: self
+                .proto_dependencies
+                .get(&self.proto_metadata.filename)
+                .cloned()
+                .unwrap_or_else(Vec::new),
+            max_size,
             ..Default::default()
         };
         let span = self.current_proto_spans.get(&("message".to_string(), message_name.clone()));
@@ -456,7 +475,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
         )
-        .unwrap();
+        .unwrap_or_default();
 
         let symbol = ProtoPublicationSymbol {
             ast_node: node.clone(),
@@ -517,7 +536,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
         )
-        .unwrap();
+        .unwrap_or_default();
 
         let symbol = ProtoPublicationSymbol {
             ast_node: node.clone(),
@@ -777,6 +796,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         // Add symbol for publisher
         let symbol = PublisherSymbol {
             ast_node: node.clone(),
+            capacity: node.capacity as u32,
             owning_service_bundle: self.current_service_bundle_symbol_id.clone(),
             ..Default::default()
         };
@@ -785,6 +805,22 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             node.span.as_ref().cloned(),
             SymbolKind::Publisher(symbol),
         );
+
+        // Create channel symbols if defined inline
+        for (i, channel_name) in node.channel.iter().enumerate() {
+            if !self.created_channels.contains(channel_name) {
+                let channel_symbol = ChannelSymbol { ast_node: node.clone(), ..Default::default() };
+                let span = node.channel_span.get(i).cloned();
+                let id = self.symbol_table.create_symbol(
+                    channel_name.clone(),
+                    span,
+                    SymbolKind::Channel(channel_symbol),
+                );
+                // Add to global scope
+                self.symbol_table.add_symbol_to_scope(&GLOBAL_SCOPE_ID, &id);
+                self.created_channels.insert(channel_name.clone());
+            };
+        }
 
         // Connect symbol and scope
         self.symbol_table.add_symbol_to_scope(&current_scope_id, &symbol_id);

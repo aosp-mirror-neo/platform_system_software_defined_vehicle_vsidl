@@ -16,7 +16,7 @@ use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use anyhow::Result;
 use handlebars::{Context, Handlebars, Helper, HelperResult, Output, RenderContext};
-use heck::ToSnakeCase;
+use heck::{ToShoutySnakeCase, ToSnakeCase};
 
 pub struct InitializeHandlebars;
 
@@ -251,12 +251,16 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
 
     /* Publisher Module Impl Functions */
     (
-        "generated_rs/service_bundles/publisher/impl_identity/functions/get_id",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_id.hbs"),
+        "generated_rs/service_bundles/publisher/impl_identity/functions/get_name",
+        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_name.hbs"),
     ),
     (
         "generated_rs/service_bundles/publisher/impl_identity/functions/get_service_unit_name",
         include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_service_unit_name.hbs"),
+    ),
+    (
+        "generated_rs/service_bundles/publisher/impl_identity/functions/get_capacity",
+        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_capacity.hbs"),
     ),
     (
         "generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata",
@@ -269,8 +273,8 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
 
     /* Subscriber Module Impl Functions */
     (
-        "generated_rs/service_bundles/subscriber/impl_identity/functions/get_id",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_id.hbs"),
+        "generated_rs/service_bundles/subscriber/impl_identity/functions/get_name",
+        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_name.hbs"),
     ),
     (
         "generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_unit_name",
@@ -371,6 +375,7 @@ impl GeneratorStepExecution for InitializeHandlebars {
         handlebars.set_strict_mode(true);
         // Helpers
         handlebars.register_helper("snake_case", Box::new(snake_case_helper));
+        handlebars.register_helper("upper_snake_case", Box::new(upper_snake_case_helper));
 
         register_templates(&mut handlebars, &state.cli.target_api.to_lowercase())?;
 
@@ -391,5 +396,20 @@ fn snake_case_helper(
     let param = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
     // Write the snake_cased string to the output
     out.write(&param.to_snake_case())?;
+    Ok(())
+}
+
+// A helper to convert a string to UPPER_SNAKE_CASE
+fn upper_snake_case_helper(
+    h: &Helper,
+    _: &Handlebars,
+    _: &Context,
+    _: &mut RenderContext,
+    out: &mut dyn Output,
+) -> HelperResult {
+    // Get the parameter from the template
+    let param = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
+    // Write the shouty_snake_cased string to the output
+    out.write(&param.to_shouty_snake_case())?;
     Ok(())
 }

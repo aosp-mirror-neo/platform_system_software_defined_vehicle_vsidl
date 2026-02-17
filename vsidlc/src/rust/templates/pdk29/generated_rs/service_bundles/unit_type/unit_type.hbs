@@ -35,7 +35,7 @@ pub trait UnitType {
 }
 
 {{#each unit_types}}
-impl UnitType for {{#if this.is_rpc~}}
+impl UnitType for {{#if this.is_rpc_service~}}
     dyn {{this.crate_name}}::Interface
 {{~else}}
     {{this.crate_name}}::{{this.proto_filename}}::{{this.proto_type_name}}

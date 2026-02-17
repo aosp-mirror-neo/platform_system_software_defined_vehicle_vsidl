@@ -16,6 +16,7 @@
 //! Extract all information from the catalog to be used for code-generation
 use crate::symbol_table_creator::SymbolTableCreator;
 use crate::symbol_table_linker::SymbolTableLinker;
+use crate::visitors::detect_input_version::DetectInputVersion;
 use crate::visitors::keyword_converter::KeywordConverter;
 use crate::visitors::visitor::AstNode;
 use crate::Catalog;
@@ -36,6 +37,13 @@ pub fn create_symbol_table(
 ) -> anyhow::Result<SymbolTable> {
     let mut catalog = catalog.clone();
     KeywordConverter::traverse(&mut catalog);
+    let mut version_detector = DetectInputVersion::default();
+    catalog.accept(&mut version_detector);
+    if version_detector.uses_pdk29 {
+        coco_checker.enable_pdk29();
+    } else {
+        coco_checker.enable_latest();
+    }
     coco_checker.check_ast(&catalog)?;
     let mut creator = SymbolTableCreator::new();
     catalog.accept(&mut creator);

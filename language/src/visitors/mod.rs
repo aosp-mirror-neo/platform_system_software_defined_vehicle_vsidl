@@ -15,6 +15,7 @@
  */
 //! This crate provides visitors for traversing the VSIDL catalog
 
+pub mod detect_input_version;
 pub mod keyword_converter;
 pub mod remove_non_google_options;
 pub mod visitor;

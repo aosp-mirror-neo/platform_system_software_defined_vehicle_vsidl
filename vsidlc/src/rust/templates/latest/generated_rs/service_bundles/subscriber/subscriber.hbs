@@ -24,8 +24,8 @@ pub mod subscriber {
 #[derive(Debug)]
 pub struct Channel<Proto: ::protobuf::Message> {
     _proto: std::marker::PhantomData<Proto>,
-    /// Unique id of a channel
-    pub id: i32,
+    /// Unique name of a channel
+    pub name: &'static str,
     service_bundle_package: &'static str,
     service_bundle_name: &'static str,
     service_unit: &'static str,

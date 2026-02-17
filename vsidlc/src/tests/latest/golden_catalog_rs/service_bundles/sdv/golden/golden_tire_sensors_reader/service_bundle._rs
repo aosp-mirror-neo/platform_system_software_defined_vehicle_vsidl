@@ -23,24 +23,27 @@ pub mod publisher {
     #[derive(Debug)]
     pub struct Channel<Proto: ::protobuf::Message> {
         _proto: std::marker::PhantomData<Proto>,
-        /// Unique id of a channel
-        pub id: i32,
+        /// Unique name of a channel
+        pub name: &'static str,
         service_unit: &'static str,
+        capacity: u32,
     }
     impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::publisher::Identity
     for Channel<Proto> {
         type ProtoMessage = Proto;
-        fn get_id(&self) -> i32 {
-            self.id
+        fn get_name(&self) -> &str {
+            self.name
         }
         fn get_service_unit_name(&self) -> &str {
             self.service_unit
+        }
+        fn get_capacity(&self) -> u32 {
+            self.capacity
         }
     }
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
         const MESSAGE_SIZE: u32 = 6;
-        const MESSAGE_COUNT: u32 = 8;
         const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
@@ -56,26 +59,30 @@ pub mod publisher {
         /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TIREPressure'
         pub const FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_LEFT as i32,
+            name: "front_left",
             service_unit: "sdv-golden-tire-pressure-front-left",
+            capacity: 8,
         };
         /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TIREPressure'
         pub const FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
+            name: "front_right",
             service_unit: "sdv-golden-tire-pressure-front-right",
+            capacity: 8,
         };
         /// Publication channel 'REAR_LEFT' of 'sdv.golden.TIREPressure'
         pub const REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
+            name: "rear_left",
             service_unit: "sdv-golden-tire-pressure-rear-left",
+            capacity: 8,
         };
         /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TIREPressure'
         pub const REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_RIGHT as i32,
+            name: "rear_right",
             service_unit: "sdv-golden-tire-pressure-rear-right",
+            capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TIREPressure' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
@@ -88,7 +95,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
         const MESSAGE_SIZE: u32 = 6;
-        const MESSAGE_COUNT: u32 = 8;
         const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
@@ -104,26 +110,30 @@ pub mod publisher {
         /// Publication channel 'FRONT_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_LEFT as i32,
+            name: "front_left",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-front-left",
+            capacity: 8,
         };
         /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
+            name: "front_right",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-front-right",
+            capacity: 8,
         };
         /// Publication channel 'REAR_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
+            name: "rear_left",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-left",
+            capacity: 8,
         };
         /// Publication channel 'REAR_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_RIGHT as i32,
+            name: "rear_right",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-right",
+            capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TirePressureExplicitInstances' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
@@ -136,7 +146,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
         const MESSAGE_SIZE: u32 = 6;
-        const MESSAGE_COUNT: u32 = 8;
         const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
@@ -152,8 +161,9 @@ pub mod publisher {
         /// Publication channel 'FRONT_RIGHT' of 'sdv.golden.TireTemperature'
         pub const FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
+            name: "front_right",
             service_unit: "sdv-golden-tire-temperature-front-right",
+            capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::FRONT_RIGHT];
@@ -161,7 +171,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
         const MESSAGE_SIZE: u32 = 5;
-        const MESSAGE_COUNT: u32 = 8;
         const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
@@ -177,8 +186,9 @@ pub mod publisher {
         /// Publication channel 'UNIQUE' of 'sdv.golden.VehicleSpeed'
         pub const UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
+            name: "unique",
             service_unit: "sdv-golden-vehicle-speed-unique",
+            capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeed' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
@@ -188,7 +198,7 @@ pub mod publisher {
 pub struct GoldenTireSensorsReader {
     _comms: std::sync::Arc<dyn sdv::mw::Communicate>,
     publishers: std::collections::HashMap<
-        (std::any::TypeId, i32),
+        (std::any::TypeId, String),
         Box<dyn std::any::Any + Send + Sync>,
     >,
 }
@@ -248,7 +258,7 @@ impl GoldenTireSensorsReader {
     ) -> Option<sdv::mw::Publisher<M>> {
         let guarded_publisher = *self
             .publishers
-            .remove(&(std::any::TypeId::of::<M>(), channel.id))?
+            .remove(&(std::any::TypeId::of::<M>(), channel.name.to_string()))?
             .downcast::<std::sync::Mutex<sdv::mw::Publisher<M>>>()
             .unwrap();
         Some(guarded_publisher.into_inner().unwrap())

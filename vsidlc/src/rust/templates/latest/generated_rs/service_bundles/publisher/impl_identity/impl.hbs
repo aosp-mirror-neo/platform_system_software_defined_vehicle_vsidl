@@ -15,6 +15,7 @@
 --}}
 impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::publisher::Identity for Channel<Proto> {
     type ProtoMessage = Proto;
-    {{> generated_rs/service_bundles/publisher/impl_identity/functions/get_id}}
+    {{> generated_rs/service_bundles/publisher/impl_identity/functions/get_name}}
     {{> generated_rs/service_bundles/publisher/impl_identity/functions/get_service_unit_name}}
+    {{> generated_rs/service_bundles/publisher/impl_identity/functions/get_capacity}}
 }

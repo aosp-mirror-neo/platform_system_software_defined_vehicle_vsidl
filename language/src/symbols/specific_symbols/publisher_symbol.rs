@@ -15,14 +15,17 @@
  */
 
 use crate::{
-    implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
+    implement_ast_node_deref, implement_symbol_deref, proto_message_symbol::ProtoMessageSymbol,
+    SymbolCommon, SymbolId, SymbolKind, SymbolTable,
 };
+use heck::ToKebabCase;
 use vsidl_v1::syntax::service_bundle::Publisher;
 use vsidl_v1::syntax::Span;
 use vsidl_v1_common::{constants::UNIQUE_CHANNEL, format_service_unit_name};
 
 use super::{
-    proto_publication_symbol::ProtoPublicationSymbol, service_bundle_symbol::ServiceBundleSymbol,
+    channel_symbol::ChannelSymbol, proto_publication_symbol::ProtoPublicationSymbol,
+    service_bundle_symbol::ServiceBundleSymbol,
 };
 
 /// Symbol representing a VSIDL Publisher definition within a service bundle.
@@ -37,8 +40,14 @@ pub struct PublisherSymbol {
     pub ast_node: Publisher,
     /// Common information shared across all symbol types (like ID, name, scope).
     pub symbol: SymbolCommon,
-    /// Symbol ID of the [ProtoPublicationSymbol] published by this publisher. Requires the symbol table to be linked.
+    /// The number of messages the channel queue can hold.
+    pub capacity: u32,
+    /// Symbol ID of the [ProtoMessageSymbol] published by this publisher. Requires the symbol table to be linked.
+    pub(crate) message: Option<SymbolId>,
+    /// (PDK29 only) Symbol ID of the [ProtoPublicationSymbol] published by this publisher. Requires the symbol table to be linked.
     pub(crate) publication: Option<SymbolId>,
+    /// Symbol IDs of the [ChannelSymbol]s this publisher publishes to. Requires the symbol table to be linked.
+    pub(crate) channels: Vec<SymbolId>,
     /// Symbol ID of the [ServiceBundleSymbol] that owns this publisher. Requires the symbol table to be linked.
     pub(crate) owning_service_bundle: Option<SymbolId>,
 }
@@ -48,6 +57,24 @@ implement_ast_node_deref!(PublisherSymbol, Publisher);
 impl PublisherSymbol {
     // This macro implements accessors for SymbolCommon, allowing access to its fields directly.
     implement_symbol_deref!();
+
+    /// Returns the [ProtoMessageSymbol] associated with this publisher.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol_table` - The linked symbol table to resolve the message ID.
+    ///
+    /// # Returns
+    ///
+    /// The [ProtoMessageSymbol] that this publisher publishes.
+    ///
+    /// # Panics
+    ///
+    /// * If the symbol table is not linked.
+    pub fn message<'a>(&self, symbol_table: &'a SymbolTable) -> &'a ProtoMessageSymbol {
+        symbol_table.panic_if_not_linked();
+        symbol_table.get_proto_message_symbol(&self.message.clone().unwrap()).unwrap()
+    }
 
     /// Returns the [ProtoPublicationSymbol] associated with this publisher.
     ///
@@ -144,9 +171,11 @@ impl PublisherSymbol {
         // Return service unit name
         if self.has_user_defined_name() {
             self.service_unit_name.clone()
-        } else {
+        } else if symbol_table.uses_pdk29() {
             let publication_fqn = self.publication(symbol_table).full_name(symbol_table);
             format_service_unit_name(publication_fqn, channel_name.to_string())
+        } else {
+            channel_name.to_string().to_kebab_case()
         }
     }
 
@@ -170,34 +199,71 @@ impl PublisherSymbol {
 
     /// Returns the list of channel names published by this publisher.
     ///
-    /// The logic for determining the channels is as follows:
-    /// 1. If the publisher explicitly defines channels in the `channel` field of the VSIDL, those are returned.
-    /// 2. If the publisher does not define explicit channels, but the associated [ProtoPublicationSymbol] does (via `channels_enum`), all channels from the publication are returned.
-    /// 3. If neither the publisher nor the publication defines channels, a single channel named [UNIQUE_CHANNEL] is returned.
-    ///
     /// # Parameters
     ///
-    /// * `symbol_table` - The linked symbol table required for resolving the publication and its channels.
+    /// * `symbol_table` - The linked symbol table required for resolving the channels.
     ///
     /// # Returns
     ///
     /// A `Vec<String>` containing the names of the channels published.
-    ///
-    /// # Panics
-    ///
-    /// * If the symbol table is not linked.
     pub fn channels(&self, symbol_table: &SymbolTable) -> Vec<String> {
         symbol_table.panic_if_not_linked();
-        // Case 1: Publisher defines explicit channels
-        let mut channels = self.channel.clone();
-        // Case 2: Publisher defines no channels, but publication has channels => use all
-        if channels.is_empty() {
-            channels = self.publication(symbol_table).channels(symbol_table).clone();
+        if symbol_table.uses_pdk29() {
+            // Case 1: Publisher defines explicit channels
+            let mut channels = self.channel.clone();
+            // Case 2: Publisher defines no channels, but publication has channels => use all
+            if channels.is_empty() {
+                channels = self.publication(symbol_table).channels(symbol_table).clone();
+            }
+            // Case 3: Publisher defines no channels and publication has no channels => use UNIQUE
+            if channels.is_empty() {
+                channels.push(UNIQUE_CHANNEL.to_string());
+            }
+            channels
+        } else {
+            // Case 1: Publisher defines explicit channels
+            let channels = if !self.channels.is_empty() {
+                self.channels.iter().map(|id| symbol_table.get_symbol(id).unwrap().name()).collect()
+            } else {
+                // Case 2: Publisher defines no channels, but message has channels => use all
+                let mut channels = Vec::new();
+                if let Some(message_id) = &self.message {
+                    if let Some(SymbolKind::ProtoMessage(message)) =
+                        symbol_table.get_symbol(message_id)
+                    {
+                        channels = message
+                            .channels(symbol_table)
+                            .iter()
+                            .map(|channel| channel.name())
+                            .collect();
+                    }
+                }
+                channels
+            };
+
+            channels
         }
-        // Case 3: Publisher defines no channels and publication has no channels => use UNIQUE
-        if channels.is_empty() {
-            channels.push(UNIQUE_CHANNEL.to_string());
-        }
+    }
+
+    /// Returns the [ChannelSymbol]s associated with this publisher.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol_table` - The linked symbol table to resolve the channel IDs.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<&ChannelSymbol>` containing the channels for this publisher.
+    pub fn channel_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a ChannelSymbol> {
+        let mut channels: Vec<_> = self
+            .channels
+            .iter()
+            .map(|channel_id| symbol_table.get_channel_symbol(channel_id).unwrap())
+            .collect();
+
+        // Sorts the channels by name; necessary for a stable order in generated files
+        channels.sort_by_key(|channel| channel.name());
+
         channels
     }
 }
@@ -214,7 +280,7 @@ mod tests {
     use vsidl_v1_common::AstNode;
     use vsidl_v1_common::Catalog;
 
-    fn setup_test() -> (SymbolTable, PublisherSymbol) {
+    fn setup_test_pdk29() -> (SymbolTable, PublisherSymbol) {
         // Given: A valid catalog
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
@@ -240,10 +306,48 @@ mod tests {
         )
     }
 
+    fn setup_test() -> (SymbolTable, PublisherSymbol) {
+        // Given: A valid catalog
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([
+            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
+        ]);
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.clone());
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+        (
+            linker.symbol_table().clone(),
+            linker
+                .symbol_table()
+                .resolve_publisher_fqn("sdv.test.Pressure")
+                .into_iter()
+                .find(|symbol| symbol.channel[0] == "ONE")
+                .unwrap()
+                .clone(),
+        )
+    }
+
+    #[test]
+    fn test_message() {
+        // GIVEN a valid symbol table
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
+
+        // WHEN getting the message
+        let message = publisher_symbol.message(&symbol_table);
+
+        // THEN the message should be found
+        assert_eq!(message.full_name(&symbol_table), "sdv.test.Pressure");
+    }
+
     #[test]
     fn test_publication() {
         // GIVEN a valid symbol table
-        let (symbol_table, publisher_symbol) = setup_test();
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
 
         // WHEN getting the publication
         let publication = publisher_symbol.publication(&symbol_table);
@@ -255,7 +359,7 @@ mod tests {
     #[test]
     fn test_owning_service_bundle() {
         // GIVEN a valid symbol table
-        let (symbol_table, publisher_symbol) = setup_test();
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
 
         // WHEN getting the service bundle
         let bundle = publisher_symbol.owning_service_bundle(&symbol_table);
@@ -267,7 +371,7 @@ mod tests {
     #[test]
     fn test_is_single_pub() {
         // GIVEN a valid symbol table
-        let (symbol_table, publisher_symbol) = setup_test();
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
 
         // WHEN requesting is_single_pub
         let result = publisher_symbol.is_single_pub(&symbol_table);
@@ -279,7 +383,7 @@ mod tests {
     #[test]
     fn test_is_multi_pub() {
         // GIVEN a valid symbol table
-        let (symbol_table, publisher_symbol) = setup_test();
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
 
         // WHEN requesting is_multi_pub
         let result = publisher_symbol.is_multi_pub(&symbol_table);
@@ -315,7 +419,7 @@ mod tests {
     #[test]
     fn test_service_unit_name_user_defined_name() {
         // GIVEN a valid symbol table
-        let (symbol_table, publisher_symbol) = setup_test();
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
 
         // WHEN requesting service unit name
         let result = publisher_symbol.service_unit_name(&symbol_table, "ONE");
@@ -328,7 +432,7 @@ mod tests {
     #[should_panic]
     fn test_service_unit_name_non_existing_channel() {
         // GIVEN a valid symbol table
-        let (symbol_table, publisher_symbol) = setup_test();
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
 
         // WHEN requesting service unit name
         let _result = publisher_symbol.service_unit_name(&symbol_table, "UNIQUE");
@@ -339,6 +443,18 @@ mod tests {
     #[test]
     fn test_channels_explicit() {
         // GIVEN a valid symbol table
+        let (symbol_table, publisher_symbol) = setup_test_pdk29();
+
+        // WHEN requesting channels
+        let result = publisher_symbol.channels(&symbol_table);
+
+        // THEN channels should be ONE
+        assert_eq!(result, vec!["ONE"]);
+    }
+
+    #[test]
+    fn test_channels_explicit_non_pdk29() {
+        // GIVEN a non-PDK29 symbol table
         let (symbol_table, publisher_symbol) = setup_test();
 
         // WHEN requesting channels
@@ -362,7 +478,7 @@ mod tests {
         linker.execute();
         let symbol_table = linker.symbol_table().clone();
         let publisher_symbol =
-            linker.symbol_table().resolve_publisher_fqn("sdv.test.Pressure")[0].clone();
+            linker.symbol_table().resolve_publisher_fqn("sdv.test.Pressure")[1].clone();
 
         // WHEN requesting channels
         let result = publisher_symbol.channels(&symbol_table);

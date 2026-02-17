@@ -17,8 +17,8 @@
 use super::{
     scope::{Scope, ScopeId},
     specific_symbols::{
-        proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
-        proto_publication_symbol::ProtoPublicationSymbol,
+        channel_symbol::ChannelSymbol, proto_enum_symbol::ProtoEnumSymbol,
+        proto_message_symbol::ProtoMessageSymbol, proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
         rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol,
         service_bundle_symbol::ServiceBundleSymbol, subscriber_symbol::SubscriberSymbol,
@@ -50,6 +50,8 @@ pub enum SymbolKind {
     PlaceholderForTests(SymbolCommon),
 
     // ---- VSIDL specific symbols ----
+    /// Represents a VSIDL channel definition. See [ChannelSymbol].
+    Channel(ChannelSymbol),
     /// Represents a VSIDL service bundle definition. See [ServiceBundleSymbol].
     ServiceBundle(ServiceBundleSymbol),
     /// Represents a VSIDL publisher definition within a service bundle. See [PublisherSymbol].
@@ -210,6 +212,7 @@ macro_rules! implement_symbol_kind_methods {
 
 // Apply the macro to generate methods for all SymbolKind channels
 implement_symbol_kind_methods!(
+    (Channel, ChannelSymbol),
     (ServiceBundle, ServiceBundleSymbol),
     (Publisher, PublisherSymbol),
     (Subscriber, SubscriberSymbol),

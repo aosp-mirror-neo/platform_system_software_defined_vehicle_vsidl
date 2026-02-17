@@ -42,6 +42,8 @@ service_bundle {
 
   publisher {
     message: "BatteryLevel"
+    channel: "MAIN"
+    capacity: 8
     service_unit_name: "my-battery"
   }
 }

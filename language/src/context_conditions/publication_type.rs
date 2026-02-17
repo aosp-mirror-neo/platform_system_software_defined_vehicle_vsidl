@@ -27,16 +27,16 @@ pub struct PublicationType {
 impl_context_condition_symtab!(PublicationType);
 impl VsidlVisitor for PublicationType {}
 
-/// Issues an error if the type of a publisher is either not defined at all or not a publication
+/// Issues an error if the type of a publisher is either not defined at all or not a message
 impl SymbolTableChecker for PublicationType {
     fn check_publisher(&mut self, symbol_table: &SymbolTable, publisher: &PublisherSymbol) {
-        // Get publication symbol
-        let proto_publication_symbols = publisher
+        // Get message symbol
+        let proto_message_symbols = publisher
             .enclosing_scope(symbol_table)
-            .resolve_proto_publication(symbol_table, publisher.message.clone());
+            .resolve_proto_message(symbol_table, publisher.message.clone());
 
-        // Check that Proto publication exists
-        if proto_publication_symbols.is_empty() {
+        // Check that Proto message exists
+        if proto_message_symbols.is_empty() {
             // Get RPC service symbol (just for printing a better error message)
             let proto_rpc_service_symbols = publisher
                 .enclosing_scope(symbol_table)
@@ -46,7 +46,7 @@ impl SymbolTableChecker for PublicationType {
                 self.finding_collector.error(
                     FindingId::PublicationTypeIsNotPublication,
                     format!(
-                        "Service bundle '{}': Publisher message type `{}` corresponds to an RPC service, not a publication",
+                        "Service bundle '{}': Publisher message type `{}` corresponds to an RPC service, not a message",
                         publisher.owning_service_bundle(symbol_table).full_name(symbol_table),
                         publisher.message.clone()
                     ),
@@ -56,7 +56,7 @@ impl SymbolTableChecker for PublicationType {
                 self.finding_collector.error(
                     FindingId::PublicationTypeDoesNotExist,
                     format!(
-                        "Service bundle '{}': Publisher message type `{}` has no Proto publication",
+                        "Service bundle '{}': Publisher message type `{}` has no Proto message",
                         publisher.owning_service_bundle(symbol_table).full_name(symbol_table),
                         publisher.message.clone()
                     ),
@@ -93,7 +93,7 @@ mod test {
 
         // Then: Should have found error
         assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "Service bundle 'sdv.test.PublisherWithInvalidType': Publisher message type `sdv.test.DummyRpc` corresponds to an RPC service, not a publication"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "Service bundle 'sdv.test.PublisherWithInvalidType': Publisher message type `sdv.test.DummyRpc` corresponds to an RPC service, not a message"));
     }
 
     #[test]
@@ -112,7 +112,7 @@ mod test {
 
         // Then: Should have found error
         assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "Service bundle 'sdv.test.PublisherWithNonexistingType': Publisher message type `sdv.test.NonExisting` has no Proto publication"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "Service bundle 'sdv.test.PublisherWithNonexistingType': Publisher message type `sdv.test.NonExisting` has no Proto message"));
     }
 
     #[test]

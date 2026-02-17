@@ -14,31 +14,34 @@
  * limitations under the License.
  */
 
-use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
+use crate::{FindingCollector, FindingId};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::{
     proto_publication_symbol::ProtoPublicationSymbol, SymbolTable, SymbolTableChecker,
 };
 
 #[derive(Debug, Default)]
-pub struct PublicationUnused {
+pub struct PublicationMultipubMisuse {
     finding_collector: FindingCollector,
 }
-impl_context_condition_symtab!(PublicationUnused);
-impl VsidlVisitor for PublicationUnused {}
+impl_context_condition_symtab!(PublicationMultipubMisuse);
+impl VsidlVisitor for PublicationMultipubMisuse {}
 
-/// Issues a warning if a publication is unused
-impl SymbolTableChecker for PublicationUnused {
+/// Issues a warning if a publication is specified as `MULTI_PUB` but is used by at most one publisher.
+impl SymbolTableChecker for PublicationMultipubMisuse {
     fn check_proto_publication(
         &mut self,
         symbol_table: &SymbolTable,
         publication: &ProtoPublicationSymbol,
     ) {
-        if publication.publishers(symbol_table).is_empty() {
+        if publication.is_multi_pub() && publication.publishers(symbol_table).len() == 1 {
             self.finding_collector.warn(
-                FindingId::PublicationUnused,
-                format!("Publication '{}' is unused.", publication.full_name(symbol_table)),
+                FindingId::PublicationMultipubMisuse,
+                format!(
+                    "Publication '{}' is used by only one publisher, `MULTI_PUB` specification could be removed.",
+                    publication.full_name(symbol_table)
+                ),
                 vec![publication.span()],
             );
         }
@@ -48,7 +51,7 @@ impl SymbolTableChecker for PublicationUnused {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::publication_unused::PublicationUnused;
+    use crate::pdk29::PublicationMultipubMisuse;
     use crate::FindingSeverity;
     use vsidl_v1_common::{AstNode, Catalog};
     use vsidl_v1_symbols::{
@@ -56,32 +59,35 @@ mod test {
     };
 
     #[test]
-    fn test_publication_unused_warning() {
-        // GIVEN a catalog with unused publication
+    fn test_publication_multipub_misuse_warning() {
+        // GIVEN a catalog with multipub misuse
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_PUBLICATION_MULTIPUB_MISUSE.clone()]);
+        catalog
+            .catalog_vsidl_files
+            .push(vsidl_v1_test_data::VSIDL_PUBLICATION_MULTIPUB_MISUSE.clone());
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
 
         // WHEN executing context condition
-        let mut check = PublicationUnused::default();
+        let mut check = PublicationMultipubMisuse::default();
         check.check_linked_symbol_table(linker.symbol_table());
 
         // THEN warnings should be found
         assert!(check.has_findings());
         assert!(check.any_finding_contains(
             FindingSeverity::Warn,
-            "Publication 'sdv.test.TirePressure' is unused."
+            "Publication 'sdv.test.TirePressure' is used by only one publisher, `MULTI_PUB` specification could be removed."
         ));
     }
 
     #[test]
-    fn test_publication_used_ok() {
-        // GIVEN a catalog without unused publication
+    fn test_publication_multipub_ok() {
+        // GIVEN a catalog with multipub
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors
@@ -93,7 +99,7 @@ mod test {
         linker.execute();
 
         // WHEN executing context condition
-        let mut check = PublicationUnused::default();
+        let mut check = PublicationMultipubMisuse::default();
         check.check_linked_symbol_table(linker.symbol_table());
 
         // THEN result should be ok

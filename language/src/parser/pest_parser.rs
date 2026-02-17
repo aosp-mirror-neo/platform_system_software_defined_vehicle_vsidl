@@ -70,12 +70,14 @@ publisher_body = {
     (
         publisher_message |
         publisher_channel |
+        publisher_capacity |
         publisher_service_unit_name
     )*
 }
 
 publisher_message = { ( "type" | "message" ) ~ ":" ~ message_str }
 publisher_channel = { ( "instance" | "channel" ) ~ ":" ~ channel_str }
+publisher_capacity = { ( "capacity" ) ~ ":" ~ integer }
 publisher_service_unit_name = { "service_unit_name" ~ ":" ~ service_unit_name_str }
 
 // Subscriber

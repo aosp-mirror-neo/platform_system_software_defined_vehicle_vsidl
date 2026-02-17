@@ -205,6 +205,11 @@ vsidl_file!(
 );
 vsidl_file!(VSIDL_GENERATED_NAME_TOO_LONG, "tests_vsidl_v1/vsidl", "generated_name_too_long.vsidl");
 vsidl_file!(
+    VSIDL_GENERATED_NAME_TOO_LONG_PDK29,
+    "tests_vsidl_v1/vsidl",
+    "generated_name_too_long_pdk29.vsidl"
+);
+vsidl_file!(
     VSIDL_GENERATED_NAME_TOO_LONG_WITH_SHORT_USER_DEFINED_NAME,
     "tests_vsidl_v1/vsidl",
     "generated_name_too_long_with_short_user_defined_name.vsidl"
@@ -303,6 +308,11 @@ vsidl_file!(
     VSIDL_PUBLISHER_WITHOUT_CHANNEL,
     "tests_vsidl_v1/vsidl",
     "publisher_without_channel.vsidl"
+);
+vsidl_file!(
+    VSIDL_PUBLISHER_WITHOUT_CHANNEL_PDK29,
+    "tests_vsidl_v1/vsidl",
+    "publisher_without_channel_pdk29.vsidl"
 );
 vsidl_file!(
     VSIDL_SUBSCRIBER_WITHOUT_CHANNEL,
@@ -446,6 +456,18 @@ vsidl_file!(
 );
 vsidl_file!(VSIDL_PUBLICATION_MULTIPUB, "tests_vsidl_v1/vsidl", "publication_multipub.vsidl");
 vsidl_file!(VSIDL_DEPRECATED_KEYWORDS, "tests_vsidl_v1/vsidl", "deprecated_keywords.vsidl");
+vsidl_file!(VSIDL_TIRE_PRESSURE_PUBLISHER, "tests_vsidl_v1/vsidl", "tire_pressure_channel.vsidl");
+vsidl_file!(VSIDL_DESCRIPTOR_MESSAGE_LOOP, "tests_vsidl_v1/vsidl", "proto_message_loop.vsidl");
+vsidl_file!(
+    VSIDL_DESCRIPTOR_MESSAGE_WITH_ANNOTATION,
+    "tests_vsidl_v1/vsidl",
+    "proto_message_with_annotation.vsidl"
+);
+vsidl_file!(
+    VSIDL_DESCRIPTOR_MESSAGE_WITHOUT_ANNOTATION,
+    "tests_vsidl_v1/vsidl",
+    "proto_message_without_annotation.vsidl"
+);
 
 /*
     PROTOBUF FILE DESCRIPTORS
@@ -455,10 +477,20 @@ vsidl_file!(VSIDL_DEPRECATED_KEYWORDS, "tests_vsidl_v1/vsidl", "deprecated_keywo
 
 proto_file!(ALL_AST_NODE_TYPES_PROTO, sdv_vsidl_v1_test_protos_rs, all_ast_node_types);
 proto_file!(DESCRIPTOR_MESSAGE_PROTO, sdv_vsidl_v1_test_protos_rs, messages);
+proto_file!(
+    DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS,
+    sdv_vsidl_v1_test_protos_rs,
+    messages_no_annotations
+);
 proto_file!(DESCRIPTOR_UNKNOWN_OPTIONS, sdv_vsidl_v1_test_protos_rs, unknown_options);
 proto_file!(DESCRIPTOR_NAME_TOO_LONG_PROTO, sdv_vsidl_v1_test_protos_rs, name_too_long);
 proto_file!(DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO, sdv_vsidl_v1_test_protos_rs, another_dummy_rpc);
 proto_file!(DESCRIPTOR_DUMMY_RPC_PROTO, sdv_vsidl_v1_test_protos_rs, dummy_rpc);
+proto_file!(
+    DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS,
+    sdv_vsidl_v1_test_protos_rs,
+    dummy_rpc_no_annotations
+);
 proto_file!(
     DESCRIPTOR_DUMMY_RPC_WITH_DEPENDENCY_PROTO,
     sdv_vsidl_v1_test_protos_rs,

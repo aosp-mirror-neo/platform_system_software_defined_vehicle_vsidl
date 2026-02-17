@@ -16,8 +16,8 @@
 
 use super::{
     specific_symbols::{
-        proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
-        proto_publication_symbol::ProtoPublicationSymbol,
+        channel_symbol::ChannelSymbol, proto_enum_symbol::ProtoEnumSymbol,
+        proto_message_symbol::ProtoMessageSymbol, proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
         rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol,
         service_bundle_symbol::ServiceBundleSymbol, subscriber_symbol::SubscriberSymbol,
@@ -42,6 +42,17 @@ pub trait SymbolTableChecker: AsDynChecker {
     ///
     /// * `_symbol_table` - The symbol table that is about to be checked.
     fn before_checks(&mut self, _symbol_table: &SymbolTable) {}
+
+    /// Checks a specific [ChannelSymbol].
+    ///
+    /// This method is called for each channel symbol found during the traversal
+    /// of the symbol table.
+    ///
+    /// # Parameters
+    ///
+    /// * `_symbol_table` - The symbol table containing the symbol.
+    /// * `_channel` - The channel symbol to check.
+    fn check_channel(&mut self, _symbol_table: &SymbolTable, _channel: &ChannelSymbol) {}
 
     /// Checks a specific [ServiceBundleSymbol].
     ///

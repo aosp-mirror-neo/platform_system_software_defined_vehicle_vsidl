@@ -17,8 +17,7 @@
 use crate::impl_context_condition_symtab;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::{
-    proto_publication_symbol::ProtoPublicationSymbol, symbol_table_checker::SymbolTableChecker,
-    SymbolTable,
+    proto_message_symbol::ProtoMessageSymbol, symbol_table_checker::SymbolTableChecker, SymbolTable,
 };
 
 use super::{FindingCollector, FindingId};
@@ -35,19 +34,29 @@ impl_context_condition_symtab!(ProtoMessageExceedsMaxSize);
 impl VsidlVisitor for ProtoMessageExceedsMaxSize {}
 
 impl SymbolTableChecker for ProtoMessageExceedsMaxSize {
-    fn check_proto_publication(
-        &mut self,
-        symbol_table: &SymbolTable,
-        publication: &ProtoPublicationSymbol,
-    ) {
-        if publication.message_size.size > PROTO_MAX_SIZE_BYTES {
+    fn check_proto_message(&mut self, symbol_table: &SymbolTable, message: &ProtoMessageSymbol) {
+        if message.channels(symbol_table).is_empty() {
+            // Only messages used by at least one channel are
+            // required to have a maximum size
+            return;
+        }
+
+        if let Some(max_size) = &message.max_size {
+            if max_size.size > PROTO_MAX_SIZE_BYTES {
+                self.finding_collector.error(
+                    FindingId::ProtoMessageExceedsMaxSize,
+                    format!(
+                        "message '{}' exceeds proto limit size of 2GiB",
+                        message.full_name(symbol_table),
+                    ),
+                    vec![message.span()],
+                );
+            }
+        } else {
             self.finding_collector.error(
                 FindingId::ProtoMessageExceedsMaxSize,
-                format!(
-                    "message '{}' exceeds proto limit size of 2GiB",
-                    publication.full_name(symbol_table),
-                ),
-                vec![publication.span()],
+                format!("message '{}' has unknown maximum size", message.full_name(symbol_table),),
+                vec![message.span()],
             );
         }
     }
@@ -60,6 +69,7 @@ mod test {
     use crate::FindingSeverity;
     use vsidl_v1_common::{AstNode, Catalog};
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
+    use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
 
     #[test]
     fn test_proto_message_exceeds_max_size_error() {
@@ -68,12 +78,16 @@ mod test {
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_PROTO_MESSAGE_EXCEEDS_MAX_SIZE.clone()]);
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.clone());
+
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
 
         // WHEN executing context condition
         let mut check = ProtoMessageExceedsMaxSize::default();
-        check.check_symbol_table(creator.symbol_table());
+        check.check_symbol_table(linker.symbol_table());
 
         // THEN should have found error
         assert!(check.is_err());
@@ -90,12 +104,16 @@ mod test {
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_PROTO_MESSAGE_WITHIN_MAX_SIZE.clone()]);
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.clone());
+
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
 
         // WHEN executing context condition
         let mut check = ProtoMessageExceedsMaxSize::default();
-        check.check_symbol_table(creator.symbol_table());
+        check.check_symbol_table(linker.symbol_table());
 
         // THEN check should be ok
         assert!(check.is_ok());
