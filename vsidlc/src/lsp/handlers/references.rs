@@ -49,7 +49,7 @@ pub(crate) fn find_references<F: FileProvider>(
         if let Some(symbol_under_cursor) = symbol_table.get_symbol_at_location(&path, offset) {
             match symbol_under_cursor {
                 SymbolKind::Publisher(publisher) => {
-                    let subscribers = publisher.publication(symbol_table).subscribers(symbol_table);
+                    let subscribers = publisher.message(symbol_table).subscribers(symbol_table);
                     for subscriber in subscribers {
                         if let Some(span) = subscriber.span() {
                             references_spans.push(span);
@@ -57,7 +57,7 @@ pub(crate) fn find_references<F: FileProvider>(
                     }
                 }
                 SymbolKind::Subscriber(subscriber) => {
-                    let publishers = subscriber.publication(symbol_table).publishers(symbol_table);
+                    let publishers = subscriber.message(symbol_table).publishers(symbol_table);
                     for publisher in publishers {
                         if let Some(span) = publisher.span() {
                             references_spans.push(span);

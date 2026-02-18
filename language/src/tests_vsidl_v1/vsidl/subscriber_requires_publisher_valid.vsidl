@@ -19,8 +19,9 @@ package: "sdv.test"
 service_bundle {
     name: "SubscriberRequiresPublisherValid"
 
-    # Publisher publishes all channels without naming them explicitly
-    publisher { message: "Pressure" }
+    # Publisher publishes all channels
+    publisher { message: "Pressure" channel: "ONE" capacity: 8 }
+    publisher { message: "Pressure" channel: "TWO" capacity: 8 }
 
     subscriber { message: "Pressure" channel: "TWO" }
 }

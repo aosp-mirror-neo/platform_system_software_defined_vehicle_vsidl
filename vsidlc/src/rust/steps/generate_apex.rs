@@ -44,8 +44,8 @@ struct AclServiceUnit {
 
 #[derive(Serialize)]
 struct AclData {
-    publication_unit_types: Vec<AclUnitType>,
-    publication_service_units: Vec<AclServiceUnit>,
+    message_unit_types: Vec<AclUnitType>,
+    message_service_units: Vec<AclServiceUnit>,
     rpc_unit_types: Vec<AclUnitType>,
     rpc_service_units: Vec<AclServiceUnit>,
 }
@@ -110,32 +110,27 @@ impl GeneratorStepExecution for GenerateApex {
 }
 
 fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
-    let mut publication_unit_types_map: HashMap<String, AclUnitType> = HashMap::new();
-    let mut publication_service_units = Vec::new();
+    let mut message_unit_types_map: HashMap<String, AclUnitType> = HashMap::new();
+    let mut message_service_units = Vec::new();
 
     for publisher in symbol_table.get_all_publisher_symbols() {
-        let publication = publisher.publication(symbol_table);
-        let publication_name = publication.name().to_string();
+        let message = publisher.message(symbol_table);
+        let message_name = message.name().to_string();
         let publisher_bundle_fqn =
             publisher.owning_service_bundle(symbol_table).full_name(symbol_table);
 
         // Unit Type for the Publication Topic
         let unit_type =
-            publication_unit_types_map.entry(publication_name.clone()).or_insert_with(|| {
-                AclUnitType {
-                    name: publication_name.clone(),
-                    acl_name: format!(
-                        "{}-topic-acl",
-                        publication_name.to_lowercase().replace('_', "-")
-                    ),
-                    members: Vec::new(),
-                }
+            message_unit_types_map.entry(message_name.clone()).or_insert_with(|| AclUnitType {
+                name: message_name.clone(),
+                acl_name: format!("{}-topic-acl", message_name.to_lowercase().replace('_', "-")),
+                members: Vec::new(),
             });
         unit_type.members.push(format!("*:{}", publisher_bundle_fqn));
 
         // Service Unit for each channel of the Publisher
         for channel in publisher.channels(symbol_table) {
-            let subscribers: Vec<String> = publication
+            let subscribers: Vec<String> = message
                 .subscribers(symbol_table)
                 .iter()
                 .map(|s| {
@@ -144,7 +139,7 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
                 .collect();
 
             let service_unit_name = publisher.service_unit_name(symbol_table, &channel);
-            publication_service_units.push(AclServiceUnit {
+            message_service_units.push(AclServiceUnit {
                 name: service_unit_name.clone(),
                 acl_name: format!("{}-publisher-acl", service_unit_name.replace('_', "-")),
                 members: subscribers,
@@ -185,8 +180,8 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
     }
 
     AclData {
-        publication_unit_types: publication_unit_types_map.into_values().collect(),
-        publication_service_units,
+        message_unit_types: message_unit_types_map.into_values().collect(),
+        message_service_units,
         rpc_unit_types: rpc_unit_types_map.into_values().collect(),
         rpc_service_units,
     }

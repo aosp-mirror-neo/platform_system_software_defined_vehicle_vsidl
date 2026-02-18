@@ -23,9 +23,10 @@ pub mod publisher {
 #[derive(Debug)]
 pub struct Channel<Proto: ::protobuf::Message> {
     _proto: std::marker::PhantomData<Proto>,
-    /// Unique id of a channel
-    pub id: i32,
+    /// Unique name of a channel
+    pub name: &'static str,
     service_unit: &'static str,
+    capacity: u32,
 }
 
 {{> service_bundles/publisher/impl_identity/impl}}

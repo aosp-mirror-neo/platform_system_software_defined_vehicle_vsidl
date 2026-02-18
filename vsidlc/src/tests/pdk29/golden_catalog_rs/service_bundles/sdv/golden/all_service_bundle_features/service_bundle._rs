@@ -394,6 +394,7 @@ impl AllServiceBundleFeatures {
                                 .message_metadata_required(true)
                                 .build()?,
                         )
+                        .topic_name(channel.service_unit.replace("-", "_"))
                         .build()?,
                 )
                 .await?;

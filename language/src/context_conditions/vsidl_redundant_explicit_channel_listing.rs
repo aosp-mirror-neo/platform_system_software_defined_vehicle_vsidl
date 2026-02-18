@@ -46,11 +46,16 @@ impl VsidlRedundantExplicitChannelListing {
         // potentially multiple publisher declarations, and store the total number of
         // channels available for that type to compare against later.
         for publisher in publishers {
+            // Publishers that define a channel are not redundant
+            if publisher.capacity != 0 {
+                continue;
+            }
+
             let full_name = publisher.full_name(symbol_table);
             explicit_channels.entry(full_name.clone()).or_default();
             all_channels.insert(
                 full_name.clone(),
-                publisher.publication(symbol_table).channels(symbol_table).len(),
+                publisher.message(symbol_table).channels(symbol_table).len(),
             );
 
             for channel in &publisher.channel {
@@ -100,7 +105,7 @@ impl VsidlRedundantExplicitChannelListing {
             explicit_channels.entry(full_name.clone()).or_default();
             all_channels.insert(
                 full_name.clone(),
-                subscriber.publication(symbol_table).channels(symbol_table).len(),
+                subscriber.message(symbol_table).channels(symbol_table).len(),
             );
 
             for channel in &subscriber.channel {

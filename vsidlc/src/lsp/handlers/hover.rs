@@ -49,41 +49,19 @@ pub(crate) fn hover<F: FileProvider>(
         if let Some(symbol_under_cursor) = symbol_table.get_symbol_at_location(&path, offset) {
             hover_text = match symbol_under_cursor {
                 SymbolKind::Publisher(publisher) => {
-                    if !publisher.channel_span.is_empty()
-                        && offset >= publisher.channel_span[0].start as usize
-                        && offset <= publisher.channel_span[0].end as usize
-                    {
-                        Some(
-                            publisher
-                                .publication(symbol_table)
-                                .channels_enum(symbol_table)
-                                .doc_string
-                                .clone(),
-                        )
-                    } else if offset >= publisher.message_span.start as usize
+                    if offset >= publisher.message_span.start as usize
                         && offset <= publisher.message_span.end as usize
                     {
-                        Some(publisher.publication(symbol_table).doc_string.clone())
+                        Some(publisher.message(symbol_table).doc_string.clone())
                     } else {
                         None
                     }
                 }
                 SymbolKind::Subscriber(subscriber) => {
-                    if !subscriber.channel_span.is_empty()
-                        && offset >= subscriber.channel_span[0].start as usize
-                        && offset <= subscriber.channel_span[0].end as usize
-                    {
-                        Some(
-                            subscriber
-                                .publication(symbol_table)
-                                .channels_enum(symbol_table)
-                                .doc_string
-                                .clone(),
-                        )
-                    } else if offset >= subscriber.message_span.start as usize
+                    if offset >= subscriber.message_span.start as usize
                         && offset <= subscriber.message_span.end as usize
                     {
-                        Some(subscriber.publication(symbol_table).doc_string.clone())
+                        Some(subscriber.message(symbol_table).doc_string.clone())
                     } else {
                         None
                     }

@@ -33,7 +33,7 @@ async fn fill_publication_channels<M: UnitType + publisher::Metadata + ::protobu
                 .metadata(
                     sdv::mw::PublisherMetadata::builder()
                         .message_size(M::MESSAGE_SIZE)
-                        .message_count(M::MESSAGE_COUNT)
+                        .message_count(channel.capacity)
                         .is_multipub(M::IS_MULTIPUB)
                         .message_metadata(M::get_message_metadata())
                         .message_metadata_required({{register_reflection_metadata}})
@@ -43,7 +43,7 @@ async fn fill_publication_channels<M: UnitType + publisher::Metadata + ::protobu
         )
         .await?;
         self.publishers.insert(
-            (std::any::TypeId::of::<M>(), channel.id),
+            (std::any::TypeId::of::<M>(), channel.name.to_string()),
             Box::new(std::sync::Mutex::new(sdv::mw::Publisher::<M>::new(publish_handle))),
         );
     }

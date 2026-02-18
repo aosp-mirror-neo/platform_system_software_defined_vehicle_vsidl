@@ -214,6 +214,7 @@ impl GoldenSingleFileGroupUpperFolderServerPublisher {
                                 .message_metadata_required(false)
                                 .build()?,
                         )
+                        .topic_name(channel.service_unit.replace("-", "_"))
                         .build()?,
                 )
                 .await?;

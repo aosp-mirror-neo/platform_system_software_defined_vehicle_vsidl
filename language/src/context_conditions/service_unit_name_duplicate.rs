@@ -19,9 +19,8 @@ use crate::impl_context_condition_symtab;
 use heck::ToKebabCase;
 use std::collections::{HashMap, HashSet};
 use vsidl_v1::syntax::Span;
-use vsidl_v1_common::constants::UNIQUE_CHANNEL;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
-use vsidl_v1_symbols::specific_symbols::proto_publication_symbol::ProtoPublicationSymbol;
+use vsidl_v1_symbols::specific_symbols::proto_message_symbol::ProtoMessageSymbol;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
 
 const IS_PUBLISHER: bool = true;
@@ -108,10 +107,10 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
         let service_bundle_name =
             publisher.owning_service_bundle(symbol_table).full_name(symbol_table);
 
-        // Get publication symbol
+        // Get message symbol
         // The context condition is only executed if the symbol table was successfully linked,
         // so the symbol can be looked up directly, instead of resolving the name.
-        let proto_publication_symbol: &ProtoPublicationSymbol = publisher.publication(symbol_table);
+        let proto_message_symbol: &ProtoMessageSymbol = publisher.message(symbol_table);
 
         // User-defined service unit name
         if !publisher.service_unit_name.is_empty() {
@@ -122,26 +121,13 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
                 publisher.span.clone().into_option(),
             );
             return;
-        } else if publisher.is_multi_pub(symbol_table) {
-            // for multi pub, we only evaluate user-defined service unit names
-            return;
         }
 
         // Generated service unit names
-
-        // Case 1: Publisher defines explicit channels
-        let mut channels = publisher.channel.clone();
-        // Case 2: Publisher defines no channels, but publication has channels => use all
-        if channels.is_empty() {
-            channels = proto_publication_symbol.channels(symbol_table).clone();
-        }
-        // Case 3: Publisher defines no channels and publication has no channels => use UNIQUE
-        if channels.is_empty() {
-            channels.push(UNIQUE_CHANNEL.to_string());
-        }
+        let channels = publisher.channel.clone();
 
         // Validate generated name
-        let fqn = proto_publication_symbol.full_name(symbol_table);
+        let fqn = proto_message_symbol.full_name(symbol_table);
         for channel in channels {
             let service_unit_name =
                 format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();

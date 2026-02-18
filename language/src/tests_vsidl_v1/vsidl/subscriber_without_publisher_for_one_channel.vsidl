@@ -19,8 +19,8 @@ package: "sdv.test"
 service_bundle {
     name: "SubscriberWithoutPublisherForOneChannel"
 
-    publisher { message: "Pressure" channel: "TWO" }
+    publisher { message: "Pressure" channel: "TWO" capacity: 8 }
 
     # ERROR: There's a publisher for this subscriber, but not for channel 'ONE'
-    subscriber { message: "Pressure" }
+    subscriber { message: "Pressure" channel: "ONE" }
 }

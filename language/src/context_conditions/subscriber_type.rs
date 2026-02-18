@@ -17,8 +17,8 @@
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
-use vsidl_v1_common::UNIQUE_CHANNEL;
-use vsidl_v1_symbols::specific_symbols::proto_publication_symbol::ProtoPublicationSymbol;
+use vsidl_v1_symbols::channel_symbol::ChannelSymbol;
+use vsidl_v1_symbols::specific_symbols::proto_message_symbol::ProtoMessageSymbol;
 use vsidl_v1_symbols::specific_symbols::subscriber_symbol::SubscriberSymbol;
 use vsidl_v1_symbols::symbol_table::SymbolTable;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
@@ -30,20 +30,20 @@ pub struct SubscriberType {
 impl_context_condition_symtab!(SubscriberType);
 impl VsidlVisitor for SubscriberType {}
 
-/// Issues an error if the type of a publisher is either not defined at all or not a publication
+/// Issues an error if the type of a subscriber is either not defined at all or not a message
 impl SymbolTableChecker for SubscriberType {
     fn check_subscriber(&mut self, symbol_table: &SymbolTable, subscriber: &SubscriberSymbol) {
-        // Find publication
-        let publications: Vec<ProtoPublicationSymbol> = subscriber
+        // Find message
+        let messages: Vec<ProtoMessageSymbol> = subscriber
             .enclosing_scope(symbol_table)
-            .resolve_proto_publication(symbol_table, subscriber.message.clone());
+            .resolve_proto_message(symbol_table, subscriber.message.clone());
 
-        // ERROR: No publication for subscriber
-        if publications.is_empty() {
+        // ERROR: No message for subscriber
+        if messages.is_empty() {
             self.finding_collector.error(
                 FindingId::SubscriberTypeDoesNotExist,
                 format!(
-                    "Subscriber '{}' uses message '{}' that does not exist as a publication in Proto.",
+                    "Subscriber '{}' uses message '{}' which does not exist as a message in Proto.",
                     subscriber.full_name(symbol_table),
                     subscriber.message
                 ),
@@ -52,38 +52,19 @@ impl SymbolTableChecker for SubscriberType {
             return;
         }
 
-        // Get channels
-        let publication = publications[0].clone();
-        let channels_enum_name = publication.channels_enum_name();
-        let publication_channels = if let Some(ref channels_enum_name) = channels_enum_name {
-            publication
-                .enclosing_scope(symbol_table)
-                .resolve_proto_enum(symbol_table, channels_enum_name.clone())[0]
-                .values()
-        } else {
-            vec![UNIQUE_CHANNEL.to_string()] // no channels defined for Proto publication, means there is an implicit UNIQUE channel
-        };
+        for (index, channel) in subscriber.channel.iter().enumerate() {
+            let channels: Vec<ChannelSymbol> =
+                subscriber.enclosing_scope(symbol_table).resolve_channel(symbol_table, channel);
 
-        // ERROR: Channel specified by subscriber does not exist for publication
-        let subscriber_channels = subscriber.channel.clone();
-        for (index, channel) in subscriber_channels.iter().enumerate() {
-            if !publication_channels.contains(&channel.clone()) {
+            // ERROR: Channel specified by subscriber does not exist for message
+            if channels.is_empty() {
                 self.finding_collector.error(
                     FindingId::SubscriberTypeDoesNotHaveRequestedChannel,
                     format!(
-                        "Subscriber '{}' uses channel '{}' that is not defined for type '{}'",
+                        "Subscriber '{}' uses undefined channel '{}' for message '{}'",
                         subscriber.full_name(symbol_table),
                         channel,
                         subscriber.message
-                    ),
-                    vec![subscriber.channel_span.get(index).cloned()],
-                );
-            } else if channels_enum_name.is_none() && channel == UNIQUE_CHANNEL {
-                self.finding_collector.warn(
-                    FindingId::VsidlRedundantUniqueChannelDeclaration,
-                    format!(
-                        "'UNIQUE' channel specification is redundant in subscriber '{}'",
-                        subscriber.symbol.name.clone()
                     ),
                     vec![subscriber.channel_span.get(index).cloned()],
                 );
@@ -171,33 +152,5 @@ mod tests {
         // THEN Should have found an error
         assert!(check.is_err());
         assert!(check.any_finding_contains(FindingSeverity::Error, "NonExisting"));
-    }
-
-    #[test]
-    fn test_should_accept_subscriber_with_explicit_defined_unique_channel() {
-        // GIVEN A catalog with a subscriber that has a non existing type
-        let mut catalog = Catalog::new();
-        catalog.proto_descriptors.extend([
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
-        ]);
-        catalog
-            .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_WITH_UNIQUE_CHANNEL.clone());
-        let mut creator = SymbolTableCreator::new();
-        catalog.accept(&mut creator);
-
-        // WHEN Executing context condition
-        let mut check = SubscriberType::default();
-        check.check_symbol_table(creator.symbol_table());
-
-        // THEN Should have found a warning
-        assert!(check.is_ok());
-        assert!(check.any_finding_contains(
-            FindingSeverity::Warn,
-            "'UNIQUE' channel specification is redundant in subscriber 'FuelLevel'",
-        ));
     }
 }

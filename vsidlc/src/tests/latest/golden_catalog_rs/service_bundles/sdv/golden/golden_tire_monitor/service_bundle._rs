@@ -24,8 +24,8 @@ pub mod subscriber {
     #[derive(Debug)]
     pub struct Channel<Proto: ::protobuf::Message> {
         _proto: std::marker::PhantomData<Proto>,
-        /// Unique id of a channel
-        pub id: i32,
+        /// Unique name of a channel
+        pub name: &'static str,
         service_bundle_package: &'static str,
         service_bundle_name: &'static str,
         service_unit: &'static str,
@@ -33,8 +33,8 @@ pub mod subscriber {
     impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::subscriber::Identity
     for Channel<Proto> {
         type ProtoMessage = Proto;
-        fn get_id(&self) -> i32 {
-            self.id
+        fn get_name(&self) -> &str {
+            self.name
         }
         fn get_service_unit_name(&self) -> &str {
             self.service_unit
@@ -64,7 +64,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'FRONT_LEFT' of 'sdv.golden.TIREPressure'
         pub const FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_LEFT as i32,
+            name: "front_left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-front-left",
@@ -72,7 +72,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'FRONT_RIGHT' of 'sdv.golden.TIREPressure'
         pub const FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
+            name: "front_right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-front-right",
@@ -80,7 +80,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'REAR_LEFT' of 'sdv.golden.TIREPressure'
         pub const REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
+            name: "rear_left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-rear-left",
@@ -88,7 +88,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'REAR_RIGHT' of 'sdv.golden.TIREPressure'
         pub const REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_RIGHT as i32,
+            name: "rear_right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-rear-right",
@@ -119,7 +119,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'FRONT_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_LEFT as i32,
+            name: "front_left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-front-left",
@@ -127,7 +127,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'FRONT_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const FRONT_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::FRONT_RIGHT as i32,
+            name: "front_right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-front-right",
@@ -135,7 +135,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'REAR_LEFT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
+            name: "rear_left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-left",
@@ -143,7 +143,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'REAR_RIGHT' of 'sdv.golden.TirePressureExplicitInstances'
         pub const REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_RIGHT as i32,
+            name: "rear_right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "sdv-golden-tire-pressure-explicit-instances-rear-right",

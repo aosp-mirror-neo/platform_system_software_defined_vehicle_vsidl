@@ -77,6 +77,8 @@ message ServiceBundle {
     string message = 4;
     // Specific channel(s) on which the data is being published.
     repeated string channel = 5;
+    // The number of messages a publication queue can hold.
+    int64 capacity = 6;
 
     // Parsing metadata that describes where the syntax element was found in the
     // input. Do not fill fields of this type manually.
@@ -84,6 +86,7 @@ message ServiceBundle {
     Span service_unit_name_span = 10003;
     Span message_span = 10004;
     repeated Span channel_span = 10005;
+    Span capacity_span = 10006;
   }
 
   // Represents a subscriber within a service bundle.

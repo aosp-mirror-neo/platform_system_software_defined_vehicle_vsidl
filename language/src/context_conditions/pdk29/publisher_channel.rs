@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
+use crate::{FindingCollector, FindingId};
 use std::collections::{HashMap, HashSet};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_common::UNIQUE_CHANNEL;
@@ -152,7 +152,7 @@ impl SymbolTableChecker for PublisherChannel {
 #[cfg(test)]
 mod tests {
     use crate::context_condition::ContextCondition;
-    use crate::publisher_channel::PublisherChannel;
+    use crate::pdk29::PublisherChannel;
     use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;
@@ -231,7 +231,7 @@ mod tests {
         catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
         catalog
             .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+            .push(vsidl_v1_test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL_PDK29.clone());
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
 
@@ -240,6 +240,7 @@ mod tests {
         check.check_symbol_table(creator.symbol_table());
 
         // THEN Should not have found any errors
+        check.finding_collector.print_findings();
         assert!(check.is_ok());
     }
 
