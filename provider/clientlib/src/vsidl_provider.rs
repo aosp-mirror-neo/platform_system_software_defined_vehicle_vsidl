@@ -16,6 +16,9 @@
 //! Provides runtime vsidl configuration for the SDV VM.
 use crate::factory::{Factory, FactoryImpl};
 use crate::types::{DataSource, DataType};
+use crate::vsidl_provider_api::AvailabilityChangeEvent;
+use crate::vsidl_provider_api::AvailabilityStream;
+use futures::stream::{self, StreamExt};
 use protobuf::reflect::MessageDescriptor;
 use sdv_comms::ContextRef;
 use sdv_comms::{id::ServiceFqin, sd::UnitType};
@@ -313,10 +316,63 @@ impl VsidlConfigProvider for VsidlProviderV1 {
         })
         .await
     }
+
+    async fn subscribe_availability_change_by_vm(
+        &self,
+        vm_name: &str,
+    ) -> SdvResult<AvailabilityStream> {
+        let mut streams = Vec::new();
+        for provider in self.providers.values() {
+            streams.push(provider.subscribe_availability_change_by_vm(vm_name).await?);
+        }
+
+        if streams.is_empty() {
+            return Err(SdvStatus::new(SdvStatusCode::NotFound));
+        }
+
+        let num_streams = streams.len();
+        let indexed_streams = streams
+            .into_iter()
+            .enumerate()
+            .map(|(i, s)| s.map(move |event| (i, event)).boxed())
+            .collect::<Vec<_>>();
+
+        let combined = stream::select_all(indexed_streams);
+
+        let initial_states: Vec<Option<AvailabilityChangeEvent>> = vec![None; num_streams];
+        let last_emitted: Option<AvailabilityChangeEvent> = None;
+
+        let output = combined
+            .scan((initial_states, last_emitted), move |(states, last_emitted), (idx, event)| {
+                states[idx] = Some(event);
+
+                // None means the associated stream has not emitted anything yet.
+                if states.iter().any(|s| s.is_none()) {
+                    return futures::future::ready(Some(None));
+                }
+
+                let new_state = if states.contains(&Some(AvailabilityChangeEvent::Unavailable)) {
+                    AvailabilityChangeEvent::Unavailable
+                } else {
+                    AvailabilityChangeEvent::Available
+                };
+
+                if *last_emitted != Some(new_state) {
+                    *last_emitted = Some(new_state);
+                    futures::future::ready(Some(Some(new_state)))
+                } else {
+                    futures::future::ready(Some(None))
+                }
+            })
+            .filter_map(futures::future::ready);
+
+        Ok(Box::pin(output))
+    }
 }
 
 #[cfg(test)]
 mod test {
+    use futures::stream;
     use protobuf::reflect::MessageDescriptor;
     use protobuf::well_known_types::empty::Empty;
     use sdv_comms::id::ServiceFqin;
@@ -333,9 +389,11 @@ mod test {
     use crate::types::DataType;
     use crate::vsidl_provider::VSIDL_CONFIG_DIR;
     use crate::vsidl_provider_api::{
-        MockVsidlConfigProvider, PublicationDescriptor, RpcMethodDescriptor, SizeMetadata,
-        VsidlConfigProvider,
+        AvailabilityChangeEvent, AvailabilityStream, MockVsidlConfigProvider,
+        PublicationDescriptor, RpcMethodDescriptor, SizeMetadata, VsidlConfigProvider,
     };
+    use futures::StreamExt;
+    use sdv_status_rs::SdvResult;
 
     use mockall::predicate::eq as mock_eq;
     use mockall::Predicate;
@@ -967,5 +1025,203 @@ mod test {
             vsidl_provider.get_message_descriptor(&fqin, "test_message").await,
             ok(eq(&MessageDescriptor::for_type::<Empty>()))
         );
+    }
+
+    fn mock_provider(
+        result: SdvResult<Vec<AvailabilityChangeEvent>>,
+    ) -> Option<Box<dyn VsidlConfigProvider>> {
+        let mut mock_provider = MockVsidlConfigProvider::new();
+        mock_provider.expect_subscribe_availability_change_by_vm().returning(
+            move |_| match &result {
+                Ok(events) => Ok(Box::pin(stream::iter(events.clone())) as AvailabilityStream),
+                Err(e) => Err(SdvStatus::new(e.status_code())),
+            },
+        );
+        Some(Box::new(mock_provider))
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_success() {
+        let fqin_str = "test_vm";
+
+        let mock_factory = mock_factory(
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Available])),
+            None,
+            None,
+            None,
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let mut stream =
+            vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await.unwrap();
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Available));
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_multiple_providers() {
+        let fqin_str = "test_vm";
+
+        let mock_factory = mock_factory(
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Available])),
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Available])),
+            None,
+            None,
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let mut stream =
+            vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await.unwrap();
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Available));
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_mixed_providers() {
+        let fqin_str = "test_vm";
+
+        let mock_factory = mock_factory(
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Available])),
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Unavailable])),
+            None,
+            None,
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let mut stream =
+            vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await.unwrap();
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_error_propagation() {
+        let fqin_str = "test_vm";
+
+        let mock_factory = mock_factory(
+            mock_provider(Err(SdvStatus::new(SdvStatusCode::Internal))),
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Available])),
+            None,
+            None,
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let result = vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await;
+        match result {
+            Ok(_) => panic!("Expected error, but got Ok"),
+            Err(e) => assert_that!(e.status_code(), eq(SdvStatusCode::Internal)),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_not_found() {
+        let fqin_str = "test_vm";
+
+        let mock_factory = mock_factory(None, None, None, None);
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let result = vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await;
+        match result {
+            Ok(_) => panic!("Expected error, but got Ok"),
+            Err(e) => assert_that!(e.status_code(), eq(SdvStatusCode::NotFound)),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_one_stream_empty() {
+        let fqin_str = "test_vm";
+
+        let mock_factory = mock_factory(
+            mock_provider(Ok(vec![AvailabilityChangeEvent::Available])),
+            mock_provider(Ok(vec![])),
+            None,
+            None,
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let mut stream =
+            vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await.unwrap();
+        assert_eq!(stream.next().await, None);
+    }
+
+    fn channel_provider() -> (
+        futures::channel::mpsc::UnboundedSender<AvailabilityChangeEvent>,
+        Box<dyn VsidlConfigProvider>,
+    ) {
+        let (tx, rx) = futures::channel::mpsc::unbounded();
+        let mut mock = MockVsidlConfigProvider::new();
+        mock.expect_subscribe_availability_change_by_vm().return_once(move |_| Ok(Box::pin(rx)));
+        (tx, Box::new(mock))
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_interleaved_1() {
+        let fqin_str = "test_vm";
+
+        let (tx1, provider1) = channel_provider();
+        let (tx2, provider2) = channel_provider();
+
+        let mock_factory = mock_factory(Some(provider1), Some(provider2), None, None);
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let mut stream =
+            vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await.unwrap();
+
+        // 1. P1: Available
+        tx1.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
+
+        // 2. P2: Unavailable
+        tx2.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
+        // P1=Av, P2=Un -> Unavailable
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
+
+        // 3. P2: Available
+        tx2.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
+        // P1=Av, P2=Av -> Available
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Available));
+
+        // 4. P1: Unavailable
+        tx1.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
+        // P1=Un, P2=Av -> Unavailable
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm_interleaved_2() {
+        let fqin_str = "test_vm";
+
+        let (tx1, provider1) = channel_provider();
+        let (tx2, provider2) = channel_provider();
+
+        let mock_factory = mock_factory(Some(provider1), Some(provider2), None, None);
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let mut stream =
+            vsidl_provider.subscribe_availability_change_by_vm(fqin_str).await.unwrap();
+
+        // 1. P1: Available
+        tx1.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
+
+        // 2. P2: Unavailable
+        tx2.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
+        // P1=Av, P2=Un -> Unavailable
+        assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
+
+        // 3. P1: Unavailable
+        tx1.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
+        // P1=Un, P2=Un -> Unavailable (No change)
+
+        // 4. P2: Available
+        tx2.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
+        // P1=Un, P2=Av -> Unavailable (No change)
+
+        drop(tx1);
+        drop(tx2);
+        assert_eq!(stream.next().await, None);
     }
 }

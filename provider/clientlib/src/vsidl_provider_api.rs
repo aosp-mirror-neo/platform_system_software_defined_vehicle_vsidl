@@ -16,6 +16,7 @@
 //! API declarations for VSIDL configuration provider.
 
 use async_trait::async_trait;
+use futures::Stream;
 use log::error;
 use mockall::mock;
 use protobuf::reflect::MessageDescriptor;
@@ -25,8 +26,10 @@ use sdv_comms::sd::UnitType;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::marker::{Send, Sync};
+use std::pin::Pin;
 use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
 use vsidl_v1::someip::SomeIpMapping;
+
 /// Trait for VSIDL config provider.
 ///
 /// Allows to retrieve metadata from VSIDL catalog, as well as SOME/IP and Diagnostics-specific metadata.
@@ -66,11 +69,38 @@ pub trait VsidlConfigProviderV1: Sync + Send + Display {
     ) -> Option<DiagnosticsDeclaration>;
 }
 
+/// Event indicating a change in availability.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AvailabilityChangeEvent {
+    /// An Event fired when a new Service Unit was registered.
+    /// This corresponds to the ServiceUnitChangeEvent::Registered event from SDV Comms.
+    Available,
+    /// An Event fired when a new Service Unit was unregistered.
+    /// This corresponds to the ServiceUnitChangeEvent::Unregistered event from SDV Comms.
+    Unavailable,
+}
+
+/// Type alias for availability stream.
+pub type AvailabilityStream = Pin<Box<dyn Stream<Item = AvailabilityChangeEvent> + Send>>;
+
 /// Trait for VSIDL config provider.
 ///
 /// Allows to retrieve metadata from VSIDL catalog, as well as SOME/IP and Diagnostics-specific metadata.
 #[async_trait]
 pub trait VsidlConfigProvider: Sync + Send + Display {
+    /// Returns an availability stream for the specified virtual machine.
+    ///
+    /// This method serves as a fallback mechanism. It is intended to be utilized
+    /// in scenarios where VSIDL Provider API calls are unsuccessful, specifically
+    /// when those calls return `SdvStatusCode::Unavailable`.
+    ///
+    /// The stream will immediately emmit the current availability.
+    /// The stream behaves the same way as subscribe_service_unit_change_by_name of ServiceDiscoveryManager
+    async fn subscribe_availability_change_by_vm(
+        &self,
+        vm_name: &str,
+    ) -> SdvResult<AvailabilityStream>;
+
     /// Returns metadata for a publication, provided by source [ServiceFqin].
     async fn get_publication_descriptor(
         &self,
@@ -231,6 +261,11 @@ mock! {
 
     #[async_trait]
     impl VsidlConfigProvider for VsidlConfigProvider {
+        async fn subscribe_availability_change_by_vm(
+            &self,
+            vm_name: &str,
+        ) -> SdvResult<AvailabilityStream>;
+
         /// Returns metadata for a publication, provided by source [ServiceFqin].
         async fn get_publication_descriptor(
             &self,

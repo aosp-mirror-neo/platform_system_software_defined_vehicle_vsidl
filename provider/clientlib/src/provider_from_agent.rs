@@ -462,6 +462,35 @@ impl VsidlConfigProvider for ProviderFromAgent {
         })
         .await
     }
+
+    async fn subscribe_availability_change_by_vm(
+        &self,
+        vm_name: &str,
+    ) -> SdvResult<AvailabilityStream> {
+        let args = UnitNameDiscoveryArgs::new_builder()
+            .set_sdv_vm_name(vm_name)
+            .set_sdv_package_name(api::PACKAGE_NAME)
+            .set_service_bundle_name(api::BUNDLE_NAME)
+            .set_service_unit_name(api::SERVICE_UNIT_NAME)
+            .build()?;
+
+        let stream = ServiceDiscoveryManager::new(self.ctx)
+            .subscribe_service_unit_change_by_name(&args)
+            .await?
+            .filter_map(|event| async move {
+                match event {
+                    ServiceUnitChangeEvent::Registered(_) => {
+                        Some(AvailabilityChangeEvent::Available)
+                    }
+                    ServiceUnitChangeEvent::Unregistered(_) => {
+                        Some(AvailabilityChangeEvent::Unavailable)
+                    }
+                    ServiceUnitChangeEvent::Changed(_) => None,
+                }
+            });
+
+        Ok(Box::pin(stream))
+    }
 }
 
 #[cfg(test)]
