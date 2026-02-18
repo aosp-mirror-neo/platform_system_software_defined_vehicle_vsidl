@@ -26,7 +26,7 @@ use sdv_comms::rpc::{Server, ServerOptions, UnaryRpcMethod};
 use sdv_comms::sd::UnitRegistrationArgs;
 use sdv_comms::ContextRef;
 use sdv_config_provider::vsidl_provider_api::PublicationDescriptor;
-use sdv_config_provider::{vsidl_provider, vsidl_provider_api::VsidlConfigProviderV1};
+use sdv_config_provider::{vsidl_provider, vsidl_provider_api::VsidlConfigProvider};
 use sdv_dump::DumpBinderConnection;
 use sdv_status_rs::SdvResult;
 use sdv_status_rs::SdvStatus;
@@ -72,7 +72,7 @@ pub fn publication_descriptor_to_proto(
 // Sets up the RPC Server
 async fn create_server(
     ctx: ContextRef,
-    vsidl_provider: Arc<dyn VsidlConfigProviderV1>,
+    vsidl_provider: Arc<dyn VsidlConfigProvider>,
 ) -> SdvResult<Server> {
     let mut unit_registration_args = UnitRegistrationArgs::new();
     unit_registration_args.set_unit_name(api::SERVICE_UNIT_NAME);
@@ -108,12 +108,7 @@ async fn create_server(
             let cloned_vsidl_provider = cloned_vsidl_provider.clone();
             Box::pin(async move {
                 let vsidl_provider = cloned_vsidl_provider;
-                let Some(diag) = vsidl_provider.get_diagnostics_declaration(&fqin).await else {
-                    return Err(SdvStatus::with_message(
-                        SdvStatusCode::Internal,
-                        "No Diagnostics found",
-                    ));
-                };
+                let diag = vsidl_provider.get_diagnostics_declaration(&fqin).await?;
 
                 Ok(GetDiagnosticsDeclarationResponse {
                     declaration: MessageField::some(diag),
@@ -157,14 +152,8 @@ async fn create_server(
             Box::pin(async move {
                 let vsidl_provider = cloned_vsidl_provider;
 
-                let Some(message_descriptor) =
-                    vsidl_provider.get_message_descriptor(&source_fqin, &message_name).await
-                else {
-                    return Err(SdvStatus::with_message(
-                        SdvStatusCode::Internal,
-                        format!("No message descriptor for {source_fqin:#?} found"),
-                    ));
-                };
+                let message_descriptor =
+                    vsidl_provider.get_message_descriptor(&source_fqin, &message_name).await?;
 
                 Ok(GetMessageDescriptorResponse {
                     message_descriptor: MessageField::some(api::message_descriptor_to_proto(
@@ -217,14 +206,8 @@ async fn create_server(
             Box::pin(async move {
                 let vsidl_provider = cloned_vsidl_provider;
 
-                let Some(publication_descriptor) =
-                    vsidl_provider.get_publication_descriptor(&source_fqin, &unit_type).await
-                else {
-                    return Err(SdvStatus::with_message(
-                        SdvStatusCode::Internal,
-                        format!("No publication descriptor for {source_fqin:#?} found"),
-                    ));
-                };
+                let publication_descriptor =
+                    vsidl_provider.get_publication_descriptor(&source_fqin, &unit_type).await?;
 
                 Ok(GetPublicationDescriptorResponse {
                     publication_descriptor: MessageField::some(publication_descriptor_to_proto(
@@ -277,15 +260,9 @@ async fn create_server(
             Box::pin(async move {
                 let vsidl_provider = cloned_vsidl_provider;
 
-                let Some(rpc_method_descriptor) = vsidl_provider
+                let rpc_method_descriptor = vsidl_provider
                     .get_rpc_method_descriptor(&source_fqin, &unit_type, &request.method_name)
-                    .await
-                else {
-                    return Err(SdvStatus::with_message(
-                        SdvStatusCode::Internal,
-                        format!("No rpc method descriptor for {source_fqin:#?} found"),
-                    ));
-                };
+                    .await?;
 
                 Ok(GetRpcMethodDescriptorResponse {
                     request_message_descriptor: MessageField::from_option(
