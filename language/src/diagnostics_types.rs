@@ -192,7 +192,7 @@ impl EventInfo {
     fn from(context: &mut DiagnosticsContext, event_proto: &Event) -> anyhow::Result<Self> {
         let publisher_unit_name = if event_proto.service_unit_name.is_empty() {
             format!(
-                "com-sdv-google-diagnostics-event-event-{}",
+                "com-android-sdv-diagnostics-event-event-{}",
                 event_proto.id.replace('.', "-").to_kebab_case()
             )
         } else {

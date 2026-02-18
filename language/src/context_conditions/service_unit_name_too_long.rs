@@ -103,7 +103,7 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
             // Check generated name
             self.check(
                 format!(
-                    "com-sdv-google-diagnostics-event-event-{}",
+                    "com-android-sdv-diagnostics-event-event-{}",
                     node.id.replace('.', "-").to_kebab_case()
                 ),
                 "diagnostics event",

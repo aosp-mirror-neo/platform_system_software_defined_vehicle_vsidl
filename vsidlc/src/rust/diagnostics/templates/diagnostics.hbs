@@ -40,22 +40,22 @@ use sdv::diagnostics::event::EventPublisher;
 {{#if data_items}}
 use sdv::diagnostics::data_item::*;
 use sdv::diagnostics::api::data_item_service::*;
-use com_sdv_google_diagnostics_data_item_data_item_service_rpc::Interface as DataItemService;
+use com_android_sdv_diagnostics_data_item_data_item_service_rpc::Interface as DataItemService;
 {{/if}}
 {{#if routine_controls}}
 use sdv::diagnostics::routine::*;
 use sdv::diagnostics::api::routine_control_service::*;
-use com_sdv_google_diagnostics_routine_control_routine_control_service_rpc::Interface as RoutineControlService;
+use com_android_sdv_diagnostics_routine_control_routine_control_service_rpc::Interface as RoutineControlService;
 {{/if}}
 {{#if io_controls}}
 use sdv::diagnostics::io_control::*;
 use sdv::diagnostics::api::io_control_service::*;
-use com_sdv_google_diagnostics_io_control_io_control_service_rpc::Interface as IoControlService;
+use com_android_sdv_diagnostics_io_control_io_control_service_rpc::Interface as IoControlService;
 {{/if}}
 {{#if has_fault_listeners}}
 use sdv::diagnostics::fault_listener::*;
 use sdv::diagnostics::api::fault_listener_service::*;
-use com_sdv_google_diagnostics_fault_fault_listener_service_rpc::Interface as FaultListenerService;
+use com_android_sdv_diagnostics_fault_fault_listener_service_rpc::Interface as FaultListenerService;
 {{/if}}
 
 #[allow(unused_imports)]
