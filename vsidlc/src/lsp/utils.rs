@@ -50,6 +50,7 @@ pub(crate) fn get_symbol_table_for_file<'a>(
             catalog: Catalog::new(),
             active_findings: HashMap::new(),
             shadow_workspace: None,
+            recovered_syntax_errors: HashMap::new(),
         })
         .symbol_table
 }
@@ -107,12 +108,9 @@ pub(crate) fn location_from_span<F: FileProvider>(
 /// # Returns
 /// * `(PathBuf, Cli)` - A tuple containing the resolved catalog root path and the modified CLI configuration.
 pub(crate) fn resolve_context(path: &Path, default_cli: &Cli) -> (PathBuf, Cli) {
-    if let Some((root, deps)) = find_catalog_configuration(path) {
+    let (mut root, deps) = if let Some((root, deps)) = find_catalog_configuration(path) {
         eprintln!("Using catalog configuration from {:?} for file {:?}", root, path);
-        let mut c = default_cli.clone();
-        c.catalog_path = Some(root.clone());
-        c.dependency_catalog_path = deps;
-        (root, c)
+        (root, deps)
     } else {
         let root = if path.is_dir() {
             path.to_path_buf()
@@ -120,12 +118,18 @@ pub(crate) fn resolve_context(path: &Path, default_cli: &Cli) -> (PathBuf, Cli) 
             path.parent().map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from("."))
         };
         eprintln!("No CATALOG_UPDATE found. Using file directory as catalog root: {:?}", root);
-        let mut c = default_cli.clone();
-        c.catalog_path = Some(root.clone());
-        // We preserve the default_cli dependencies here instead of clearing them,
-        // matching the "copy of the CLI struct" requirement.
-        (root, c)
+        (root, default_cli.dependency_catalog_path.clone())
+    };
+
+    // Try to canonicalize root to avoid redundant contexts
+    if let Ok(canonical) = std::fs::canonicalize(&root) {
+        root = canonical;
     }
+
+    let mut c = default_cli.clone();
+    c.catalog_path = Some(root.clone());
+    c.dependency_catalog_path = deps;
+    (root, c)
 }
 
 /// Searches for "CATALOG_UPDATE" in the current directory and parent directories.

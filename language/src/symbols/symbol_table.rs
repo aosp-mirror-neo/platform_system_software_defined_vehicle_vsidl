@@ -770,6 +770,9 @@ impl SymbolTable {
                     s.servers.retain(|id| !deleted_ids.contains(id));
                     s.clients.retain(|id| !deleted_ids.contains(id));
                 }
+                SymbolKind::ProtoMessage(s) => {
+                    s.topics.retain(|id| !deleted_ids.contains(id));
+                }
                 _ => {}
             }
         }

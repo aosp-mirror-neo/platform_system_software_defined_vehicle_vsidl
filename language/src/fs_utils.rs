@@ -140,11 +140,19 @@ pub fn line_col_to_offset<F: FileProvider>(
     for line in reader.lines() {
         let line_content = line?;
         if current_line_number == target_line {
-            let mut char_indices = line_content.char_indices();
             let byte_offset_in_line = if target_column > 1 {
-                char_indices.nth(target_column - 1).map(|(idx, _)| idx).ok_or_else(|| {
-                    io::Error::new(io::ErrorKind::InvalidInput, "Column out of bounds")
-                })?
+                let mut char_indices = line_content.char_indices();
+                if let Some((idx, _)) = char_indices.nth(target_column - 1) {
+                    idx
+                } else if target_column == line_content.chars().count() + 1 {
+                    line_content.len()
+                } else {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "Column out of bounds",
+                    )
+                    .into());
+                }
             } else {
                 0
             };

@@ -291,11 +291,16 @@ fn update_document_store(state: &ServerState, uri: Url, text: String) {
 }
 
 fn process_doc_update(state: &ServerState, uri: &Url) {
-    if let Ok(mut contexts) = state.contexts.lock() {
-        if let Ok(path) = uri.to_file_path() {
-            if let Err(e) = process_document_internal(state, &mut contexts, uri, Some(&path)) {
-                eprintln!("Error processing document: {:?}", e);
-            }
+    let mut contexts = match state.contexts.lock() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("CRITICAL: Context lock poisoned: {:?}", e);
+            return;
+        }
+    };
+    if let Ok(path) = uri.to_file_path() {
+        if let Err(e) = process_document_internal(state, &mut contexts, uri, Some(&path)) {
+            eprintln!("Error processing document: {:?}", e);
         }
     }
 }
@@ -328,6 +333,7 @@ fn process_document_internal(
         catalog: Catalog::new(),
         active_findings: HashMap::new(),
         shadow_workspace: None,
+        recovered_syntax_errors: HashMap::new(),
     });
 
     // Initialize shadow workspace if needed
@@ -354,15 +360,16 @@ fn process_document_internal(
     if let Ok(content) = state.file_provider.read_to_string(&path) {
         let current_hash = calculate_hash(&content);
 
-        // Update the current file in shadow workspace
-        if let Some(ws) = &context.shadow_workspace {
-            if let Err(e) = ws.update_file(&path, &content) {
-                eprintln!("Failed to update shadow file: {:?}", e);
-            }
-        }
-
         if current_hash != last_hash || path.extension() == Some(std::ffi::OsStr::new("proto")) {
             eprintln!("File content changed, reprocessing incrementally: {:?}", path);
+
+            // Update the current file in shadow workspace
+            if let Some(ws) = &context.shadow_workspace {
+                if let Err(e) = ws.update_file(&path, &content) {
+                    eprintln!("Failed to update shadow file: {:?}", e);
+                }
+            }
+
             state.file_provider.update_hash(path.to_path_buf(), current_hash);
             validate_and_publish_diagnostics(
                 context,

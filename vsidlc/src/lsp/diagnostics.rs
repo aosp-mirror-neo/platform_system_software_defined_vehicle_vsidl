@@ -17,18 +17,18 @@
 use crate::lsp::catalog_context::CatalogContext;
 use crate::lsp::file_diagnostics::FindingsByStage;
 use crate::lsp::lsp_file_provider::LspFileProvider;
+use crate::lsp::recovering_parser::parse_vsidl_with_recovery;
 use crate::lsp::span_source_remapper::SpanSourceRemapper;
 use anyhow::Result;
 use lsp_server::{Connection, Message};
 use lsp_types::{PublishDiagnosticsParams, Url};
 use pest::error::Error as PestError;
-use pest::Parser;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use vsidl_v1::syntax::Span;
 use vsidl_v1_parser::converter::convert_to_vsidl_entry;
 use vsidl_v1_parser::file_provider::FileProvider;
-use vsidl_v1_parser::pest_parser::{Rule, VsidlParser};
+use vsidl_v1_parser::pest_parser::{format_pest_error, Rule};
 use vsidl_v1_parser::visitors::keyword_converter::KeywordConverter;
 use vsidl_v1_parser::visitors::visitor_mut::AstNodeMut;
 use vsidl_v1_parser::AstNode;
@@ -53,6 +53,7 @@ struct DiagnosticSession<'a> {
     connection: &'a Connection,
     provider: &'a LspFileProvider,
     cli: VsidlcCommonCli,
+    touched_files: HashSet<String>,
 }
 
 #[allow(clippy::unnecessary_unwrap)]
@@ -64,26 +65,53 @@ impl<'a> DiagnosticSession<'a> {
     ) -> Self {
         let mut cli = VsidlcCommonCli::from(context.cli.clone());
 
+        if let Some(ref p) = context.cli.catalog_path {
+            cli.catalog_path = provider.canonicalize(p).unwrap_or_else(|_| p.to_path_buf());
+        }
+
         cli.dependency_catalog_path = cli
             .dependency_catalog_path
             .iter()
             .map(|p| provider.canonicalize(p).unwrap_or_else(|_| p.to_path_buf()))
             .collect();
 
-        Self { context, connection, provider, cli }
+        Self { context, connection, provider, cli, touched_files: HashSet::new() }
     }
 
     fn run(&mut self, changed_path: Option<&Path>) -> Result<()> {
-        // 1. Update Catalog
-        let update_result = self.update_catalog(changed_path)?;
-        if let Some(incremental) = update_result {
-            // 2. Prepare Symbols
-            let creator = self.prepare_symbols(changed_path, incremental);
-            // 3. Collect Findings
-            let findings = self.collect_findings(creator);
-            // 4. Publish
-            self.publish(findings)?;
+        let changed_path =
+            changed_path.map(|p| self.provider.canonicalize(p).unwrap_or_else(|_| p.to_path_buf()));
+
+        if let Some(ref p) = changed_path {
+            let source_path = self.map_to_source(&p.to_string_lossy());
+            self.touched_files.insert(source_path);
         }
+
+        let mut findings =
+            FindingsByStage { ast: vec![], unlinked: Some(vec![]), linked: Some(vec![]) };
+
+        // 1. Update Catalog
+        let update_result = self.update_catalog(changed_path.as_deref())?;
+
+        if let Some(incremental) = update_result {
+            // Check if ANY file in the catalog now has a persistent syntax error.
+            if self.context.recovered_syntax_errors.is_empty() {
+                // All files in the catalog are touched during a semantic project check.
+                for (path, _) in &self.context.catalog.catalog_vsidl_files {
+                    let abs = self.cli.catalog_path.join(path).to_string_lossy().to_string();
+                    let source = self.map_to_source(&abs);
+                    self.touched_files.insert(source);
+                }
+
+                // 2. Prepare Symbols
+                let creator = self.prepare_symbols(changed_path.as_deref(), incremental);
+                // 3. Collect Findings
+                findings = self.collect_findings(creator);
+            }
+        }
+
+        // 4. Publish (Always call if an update was attempted)
+        self.publish(findings)?;
         Ok(())
     }
 
@@ -116,6 +144,23 @@ impl<'a> DiagnosticSession<'a> {
         self.perform_full_update()
     }
 
+    /// Attempts to perform an incremental update of the catalog for a single file.
+    ///
+    /// This method tries to parse the file at `path`, re-mapping spans if a shadow
+    /// workspace is active. If parsing succeeds (or recovers from errors), it
+    /// updates the catalog's entry for that file.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating if the operation was technically successful (no I/O crashes).
+    /// The inner `Option<Option<bool>>` represents the outcome:
+    ///
+    /// * `Ok(Some(Some(true)))` - **Handled Incremental**: The file was successfully updated
+    ///   in the catalog. The caller should proceed with incremental symbol updates.
+    /// * `Ok(Some(None))` - **Handled Error**: A syntax error occurred in the file and was
+    ///   reported. Downstream processing (linking) should be skipped.
+    /// * `Ok(None)` - **Not Handled**: The file is not eligible for incremental update
+    ///   (e.g., not in the catalog path). The caller should fallback to a full update.
     fn try_update_incremental(&mut self, path: &Path) -> Result<Option<Option<bool>>> {
         let abs_path = self.provider.canonicalize(path).unwrap_or(path.to_path_buf());
         eprintln!("Incremental catalog update for: {:?}", abs_path);
@@ -133,7 +178,7 @@ impl<'a> DiagnosticSession<'a> {
             path_to_read = shadow.map_to_shadow(&path_to_read);
         }
 
-        let content = match self.provider.read_to_string(&path_to_read) {
+        let mut content = match self.provider.read_to_string(&path_to_read) {
             Ok(c) => c,
             Err(e) => {
                 eprintln!("Failed to read file: {:?}", e);
@@ -141,9 +186,15 @@ impl<'a> DiagnosticSession<'a> {
             }
         };
 
-        match VsidlParser::parse(Rule::vsidl_file, &content) {
+        let (result, recovered_errors) = parse_vsidl_with_recovery(&mut content);
+        let file_path_key = self.map_to_source(&abs_path.to_string_lossy());
+        self.touched_files.insert(file_path_key.clone());
+
+        match result {
             Ok(mut pairs) => {
-                let pair = pairs.next().unwrap();
+                let Some(pair) = pairs.next() else {
+                    return Ok(Some(Some(true))); // Empty file or something similar
+                };
                 let mut entry = convert_to_vsidl_entry(pair, abs_path.to_str().unwrap_or_default());
                 if let Some(shadow) = self.context.shadow_workspace.as_deref() {
                     let mut updater = SpanSourceRemapper { shadow_workspace: Some(shadow) };
@@ -151,55 +202,163 @@ impl<'a> DiagnosticSession<'a> {
                 }
                 self.context.catalog.catalog_vsidl_files.retain(|(p, _)| p != rel);
                 self.context.catalog.catalog_vsidl_files.push((rel.to_path_buf(), entry));
+
+                if !recovered_errors.is_empty() {
+                    self.store_recovered_syntax_errors(&abs_path, recovered_errors)?;
+                    // Put the patched version into the shadow workspace so other tools see it as valid.
+                    if let Some(shadow) = self.context.shadow_workspace.as_ref() {
+                        let _shadow_path = shadow.map_to_shadow(&abs_path);
+                        let _ = shadow.update_file(&abs_path, &content);
+                    }
+                } else {
+                    self.context.recovered_syntax_errors.remove(&file_path_key);
+                }
+
                 Ok(Some(Some(true))) // Handled, is_incremental=true
             }
             Err(e) => {
-                self.report_syntax_error(&abs_path, e)?;
+                let mut errors_to_report = recovered_errors;
+                if errors_to_report.is_empty() {
+                    errors_to_report.push(e);
+                }
+                let path = errors_to_report[0]
+                    .path()
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| abs_path.clone());
+                self.store_recovered_syntax_errors(&path, errors_to_report)?;
                 Ok(Some(None)) // Handled, but error occurred, stop.
             }
         }
     }
 
+    /// Performs a full update of the VSIDL catalog by scanning the disk.
+    ///
+    /// This clears the current catalog and performs a complete re-read of all
+    /// files in the catalog and dependency paths. If a syntax error is encountered,
+    /// it attempts to use the recovering parser and a shadow workspace to
+    /// continue diagnostics.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` indicating if the operation was technically successful. The inner
+    /// `Option<bool>` represents the outcome:
+    ///
+    /// * `Ok(Some(false))` - **Full Update**: The entire catalog was successfully rebuilt.
+    ///   The caller must rebuild the entire symbol table.
+    /// * `Ok(None)` - **Abort**: A syntax error was reported; downstream processing
+    ///   (linking) should be skipped.
     fn perform_full_update(&mut self) -> Result<Option<bool>> {
         let syntax_path =
             vsidl_v1_parser::get_vsidl_syntax_default_path().unwrap_or_else(|_| PathBuf::from("."));
 
-        // Choose catalog path based on shadow workspace or canonicalization
-        let mut catalog_path = self.cli.catalog_path.clone();
-        if let Some(shadow) = self.context.shadow_workspace.as_deref() {
-            catalog_path = shadow.root_path().clone();
-        } else if let Ok(p) = self.provider.canonicalize(&self.cli.catalog_path) {
-            catalog_path = p.clone();
-        }
+        // Clear all previously recovered syntax errors for the main catalog
+        // before starting a full update.
+        self.context.recovered_syntax_errors.clear();
 
-        let result = vsidl_v1_parser::read_catalog_internal(
-            self.provider,
-            &catalog_path,
-            &self.cli.dependency_catalog_path.iter().map(AsRef::as_ref).collect::<Vec<_>>(),
-            &syntax_path,
-            true,
-        );
+        // Track files we have already attempted to recover to avoid infinite loops
+        // if the recovery parser produces content that the strict parser still rejects.
+        let mut recovered_files = HashSet::new();
 
-        match result {
-            Ok(mut new_catalog) => {
-                // Hide shadow workspace, by converting back to the original paths
-                if let Some(shadow) = self.context.shadow_workspace.as_deref() {
-                    let mut updater = SpanSourceRemapper { shadow_workspace: Some(shadow) };
-                    AstNodeMut::accept(&mut new_catalog, &mut updater);
-                    new_catalog.catalog_path = Some(self.cli.catalog_path.clone());
-                }
-                eprintln!("✅ Successfully created catalog!");
-                self.context.catalog = new_catalog;
-                Ok(Some(false)) // Success, is_incremental=false
+        loop {
+            // Choose catalog path based on shadow workspace or canonicalization
+            let mut catalog_path = self.cli.catalog_path.clone();
+            if let Some(shadow) = self.context.shadow_workspace.as_deref() {
+                catalog_path = shadow.root_path().clone();
+            } else if let Ok(p) = self.provider.canonicalize(&self.cli.catalog_path) {
+                catalog_path = p.clone();
             }
-            Err(e) => {
-                if let Some(pest_err) = e.downcast_ref::<PestError<Rule>>() {
-                    let path = pest_err.path().map(PathBuf::from).unwrap_or_default();
-                    self.report_syntax_error(&path, pest_err.clone())?;
-                } else {
-                    eprintln!("❌ Error creating catalog: {:#?}", e);
+
+            let result = vsidl_v1_parser::read_catalog_internal(
+                self.provider,
+                &catalog_path,
+                &self.cli.dependency_catalog_path.iter().map(AsRef::as_ref).collect::<Vec<_>>(),
+                &syntax_path,
+                true,
+            );
+
+            match result {
+                Ok(mut new_catalog) => {
+                    // Hide shadow workspace, by converting back to the original paths
+                    if let Some(shadow) = self.context.shadow_workspace.as_deref() {
+                        let mut updater = SpanSourceRemapper { shadow_workspace: Some(shadow) };
+                        AstNodeMut::accept(&mut new_catalog, &mut updater);
+                        new_catalog.catalog_path = Some(self.cli.catalog_path.clone());
+                    }
+                    eprintln!("✅ Successfully created catalog!");
+                    self.context.catalog = new_catalog;
+
+                    // All files in the catalog are touched during a full update.
+                    for (path, _) in &self.context.catalog.catalog_vsidl_files {
+                        let abs = self.cli.catalog_path.join(path).to_string_lossy().to_string();
+                        self.touched_files.insert(self.map_to_source(&abs));
+                    }
+
+                    return Ok(Some(false)); // Success, is_incremental=false
                 }
-                Ok(None) // Stop
+                Err(e) => {
+                    if let Some(pest_err) = e.downcast_ref::<PestError<Rule>>() {
+                        let error_path_str = pest_err.path().unwrap_or_default();
+                        let source_path_str = self.map_to_source(error_path_str);
+                        let source_path = PathBuf::from(&source_path_str);
+
+                        // If we've already tried to recover this file in this specific session
+                        // and it's failing again, the recovery logic is insufficient for the
+                        // strict parser. Stop to avoid an infinite loop.
+                        if !recovered_files.insert(source_path.clone()) {
+                            eprintln!(
+                                "❌ Recovery failed to fix syntax in {:?}; stopping.",
+                                source_path
+                            );
+                            self.store_recovered_syntax_errors(
+                                &source_path,
+                                vec![pest_err.clone()],
+                            )?;
+                            return Ok(None);
+                        }
+
+                        if let Some(shadow) = self.context.shadow_workspace.as_ref().cloned() {
+                            // Read the current (possibly dirty) content
+                            if let Ok(mut content) = self.provider.read_to_string(&source_path) {
+                                let (recovery_result, recovered_errors) =
+                                    parse_vsidl_with_recovery(&mut content);
+
+                                match recovery_result {
+                                    Ok(_) => {
+                                        // Update shadow workspace with the RECOVERED content
+                                        let _ = shadow.update_file(&source_path, &content);
+
+                                        if !recovered_errors.is_empty() {
+                                            self.store_recovered_syntax_errors(
+                                                &source_path,
+                                                recovered_errors,
+                                            )?;
+                                        }
+                                        // Retry the catalog scan with the updated shadow file
+                                        continue;
+                                    }
+                                    Err(recovery_err) => {
+                                        // Even the recovering parser gave up on this file.
+                                        let mut all_errors = recovered_errors;
+                                        if all_errors.is_empty() {
+                                            all_errors.push(recovery_err);
+                                        }
+                                        self.store_recovered_syntax_errors(
+                                            &source_path,
+                                            all_errors,
+                                        )?;
+                                        return Ok(None);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Fallback if no shadow workspace or failed to read/recover
+                        self.store_recovered_syntax_errors(&source_path, vec![pest_err.clone()])?;
+                    } else {
+                        eprintln!("❌ Error creating catalog: {:#?}", e);
+                    }
+                    return Ok(None); // Stop
+                }
             }
         }
     }
@@ -256,6 +415,15 @@ impl<'a> DiagnosticSession<'a> {
             checker.enable_warnings();
         }
 
+        use vsidl_v1_parser::visitors::detect_input_version::DetectInputVersion;
+        let mut version_detector = DetectInputVersion::default();
+        self.context.catalog.accept(&mut version_detector);
+        if version_detector.uses_pdk29 {
+            checker.enable_pdk29();
+        } else {
+            checker.enable_latest();
+        }
+
         // 1. AST Check
         KeywordConverter::traverse(&mut self.context.catalog);
         let _ = checker.check_ast(&self.context.catalog);
@@ -286,31 +454,36 @@ impl<'a> DiagnosticSession<'a> {
     }
 
     fn publish(&mut self, findings: FindingsByStage) -> Result<()> {
-        let total = findings.ast.len()
+        let _total = findings.ast.len()
             + findings.unlinked.as_ref().map_or(0, |v| v.len())
             + findings.linked.as_ref().map_or(0, |v| v.len());
-        eprintln!("All findings: {}", total);
 
-        let ast_map = self.group_findings(Some(findings.ast));
-        let unlinked_map = self.group_findings(findings.unlinked);
-        let linked_map = self.group_findings(findings.linked);
+        let mut ast_map = self.group_findings(Some(findings.ast));
 
-        // Ensure we clear diagnostics for files that no longer have issues
-        let mut targets: HashSet<String> = self.context.active_findings.keys().cloned().collect();
-
-        // Add all catalog files (so clean files get cleared)
-        for (path, _) in &self.context.catalog.catalog_vsidl_files {
-            let abs = self.cli.catalog_path.join(path).to_string_lossy().to_string();
-            targets.insert(self.map_to_source(&abs));
+        // Merge persistent recovered syntax errors
+        for (path, errors) in &self.context.recovered_syntax_errors {
+            ast_map.entry(path.clone()).or_default().extend(errors.clone());
         }
+
+        let unlinked_map = findings.unlinked.as_ref().map(|f| self.group_findings(Some(f.clone())));
+        let linked_map = findings.linked.as_ref().map(|f| self.group_findings(Some(f.clone())));
+
+        // Targets for diagnostic updates.
+        let mut targets: HashSet<String> = HashSet::new();
+        targets.extend(self.touched_files.clone());
         targets.extend(ast_map.keys().cloned());
-        targets.extend(unlinked_map.keys().cloned());
-        targets.extend(linked_map.keys().cloned());
+        if let Some(ref m) = unlinked_map {
+            targets.extend(m.keys().cloned());
+        }
+        if let Some(ref m) = linked_map {
+            targets.extend(m.keys().cloned());
+        }
 
         for path in targets {
             let ast = Some(ast_map.get(&path).cloned().unwrap_or_default());
-            let unlinked = Some(unlinked_map.get(&path).cloned().unwrap_or_default());
-            let linked = Some(linked_map.get(&path).cloned().unwrap_or_default());
+            let unlinked = unlinked_map.as_ref().map(|m| m.get(&path).cloned().unwrap_or_default());
+            let linked = linked_map.as_ref().map(|m| m.get(&path).cloned().unwrap_or_default());
+
             self.send_diagnostics(&path, ast, unlinked, linked)?;
         }
         Ok(())
@@ -321,7 +494,8 @@ impl<'a> DiagnosticSession<'a> {
         if let Some(findings) = findings {
             for f in findings {
                 if let Some(path) = f.spans.iter().flatten().next().map(|s| s.file_path.clone()) {
-                    map.entry(self.map_to_source(&path)).or_insert_with(Vec::new).push(f);
+                    let mapped_path = self.map_to_source(&path);
+                    map.entry(mapped_path).or_insert_with(Vec::new).push(f);
                 }
             }
         }
@@ -329,11 +503,13 @@ impl<'a> DiagnosticSession<'a> {
     }
 
     fn map_to_source(&self, path: &str) -> String {
-        self.context
+        let mapped = self
+            .context
             .shadow_workspace
             .as_deref()
             .map(|s| s.map_to_source(path))
-            .unwrap_or_else(|| path.to_string())
+            .unwrap_or_else(|| path.to_string());
+        mapped
     }
 
     fn send_diagnostics(
@@ -361,10 +537,11 @@ impl<'a> DiagnosticSession<'a> {
         all_findings.extend(entry.linked.iter().cloned());
 
         if all_findings != entry.last_sent {
-            eprintln!("Sending diagnostics for {}: {} findings", path, all_findings.len());
+            eprintln!("    Sending notification for {}: {} findings", path, all_findings.len());
+            let uri =
+                Url::from_file_path(path).map_err(|_| anyhow::anyhow!("Invalid URL: {}", path))?;
             let params = PublishDiagnosticsParams {
-                uri: Url::from_file_path(path)
-                    .map_err(|_| anyhow::anyhow!("Invalid URL: {}", path))?,
+                uri,
                 diagnostics: all_findings.iter().map(|f| f.to_diagnostic(self.provider)).collect(),
                 version: None,
             };
@@ -373,31 +550,40 @@ impl<'a> DiagnosticSession<'a> {
                 method: "textDocument/publishDiagnostics".into(),
                 params: serde_json::to_value(params)?,
             }))?;
-            entry.last_sent = all_findings;
+            entry.last_sent = all_findings.clone();
         }
         Ok(())
     }
 
-    fn report_syntax_error(&mut self, path: &Path, e: PestError<Rule>) -> Result<()> {
-        eprintln!("❌ Syntax Error: {:#?}", e);
+    fn store_recovered_syntax_errors(
+        &mut self,
+        path: &Path,
+        errors: Vec<PestError<Rule>>,
+    ) -> Result<()> {
         let file_path = self.map_to_source(&path.to_string_lossy());
-        let start = match e.location {
-            pest::error::InputLocation::Pos(pos) => pos as u32,
-            pest::error::InputLocation::Span((start, _)) => start as u32,
-        };
+        let mut findings = Vec::new();
 
-        let finding = Finding {
-            severity: FindingSeverity::Fatal,
-            id: FindingId::ParserError,
-            message: format!("Syntax Error: {}", e.variant.message()),
-            spans: vec![Some(Span {
-                file_path: file_path.clone(),
-                start,
-                end: start,
-                ..Default::default()
-            })],
-        };
+        for e in errors {
+            let (start, end) = match e.location {
+                pest::error::InputLocation::Pos(pos) => (pos as u32, pos as u32),
+                pest::error::InputLocation::Span((start, end)) => (start as u32, end as u32),
+            };
 
-        self.send_diagnostics(&file_path, Some(vec![finding]), None, None)
+            let message = format!("Syntax Error: {}", format_pest_error(&e));
+
+            findings.push(Finding {
+                severity: FindingSeverity::Fatal,
+                id: FindingId::ParserError,
+                message: message.clone(),
+                spans: vec![Some(Span {
+                    file_path: file_path.clone(),
+                    start,
+                    end,
+                    ..Default::default()
+                })],
+            });
+        }
+        self.context.recovered_syntax_errors.insert(file_path, findings);
+        Ok(())
     }
 }
