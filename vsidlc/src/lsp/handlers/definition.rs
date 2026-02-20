@@ -50,11 +50,11 @@ pub(crate) fn go_to_definition<F: FileProvider>(
         if let Some(symbol_under_cursor) = symbol_table.get_symbol_at_location(&path, offset) {
             definition_location = match symbol_under_cursor {
                 SymbolKind::Publisher(publisher) => {
-                    if !publisher.channel_span.is_empty()
-                        && offset >= publisher.channel_span[0].start as usize
-                        && offset <= publisher.channel_span[0].end as usize
+                    if !publisher.topic_span.is_empty()
+                        && offset >= publisher.topic_span[0].start as usize
+                        && offset <= publisher.topic_span[0].end as usize
                     {
-                        publisher.channel_symbols(symbol_table)[0].span()
+                        publisher.topic_symbols(symbol_table)[0].span()
                     } else if offset >= publisher.message_span.start as usize
                         && offset <= publisher.message_span.end as usize
                     {
@@ -66,11 +66,11 @@ pub(crate) fn go_to_definition<F: FileProvider>(
                     }
                 }
                 SymbolKind::Subscriber(subscriber) => {
-                    if !subscriber.channel_span.is_empty()
-                        && offset >= subscriber.channel_span[0].start as usize
-                        && offset <= subscriber.channel_span[0].end as usize
+                    if !subscriber.topic_span.is_empty()
+                        && offset >= subscriber.topic_span[0].start as usize
+                        && offset <= subscriber.topic_span[0].end as usize
                     {
-                        subscriber.channel_symbols(symbol_table)[0].span()
+                        subscriber.topic_symbols(symbol_table)[0].span()
                     } else if offset >= subscriber.message_span.start as usize
                         && offset <= subscriber.message_span.end as usize
                     {

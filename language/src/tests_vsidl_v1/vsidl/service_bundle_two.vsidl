@@ -19,7 +19,7 @@ package: "sdv.test"
 service_bundle {
     name: "ServiceBundleTwo"
 
-    subscriber { message: "Pressure" channel: "TWO" }
+    subscriber { message: "Pressure" channel: "TWO" topic: "two" }
 
     server { service: "DummyRpc" }
 

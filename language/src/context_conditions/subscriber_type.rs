@@ -17,11 +17,11 @@
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
-use vsidl_v1_symbols::channel_symbol::ChannelSymbol;
 use vsidl_v1_symbols::specific_symbols::proto_message_symbol::ProtoMessageSymbol;
 use vsidl_v1_symbols::specific_symbols::subscriber_symbol::SubscriberSymbol;
 use vsidl_v1_symbols::symbol_table::SymbolTable;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
+use vsidl_v1_symbols::topic_symbol::TopicSymbol;
 
 #[derive(Default)]
 pub struct SubscriberType {
@@ -53,8 +53,8 @@ impl SymbolTableChecker for SubscriberType {
         }
 
         for (index, channel) in subscriber.channel.iter().enumerate() {
-            let channels: Vec<ChannelSymbol> =
-                subscriber.enclosing_scope(symbol_table).resolve_channel(symbol_table, channel);
+            let channels: Vec<TopicSymbol> =
+                subscriber.enclosing_scope(symbol_table).resolve_topic(symbol_table, channel);
 
             // ERROR: Channel specified by subscriber does not exist for message
             if channels.is_empty() {

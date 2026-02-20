@@ -46,7 +46,7 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
         }
 
         // Case 2: Subscriber has explicit channels, some of them are not published
-        let message_channels = subscriber.message(symbol_table).channels(symbol_table);
+        let message_channels = subscriber.message(symbol_table).topics(symbol_table);
         for (index, channel) in subscriber.channels(symbol_table).iter().enumerate() {
             if !message_channels.iter().any(|c| c.name() == *channel) {
                 // ERROR: There's no publisher for the channel requested by the subscriber

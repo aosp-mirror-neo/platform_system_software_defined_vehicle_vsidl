@@ -55,7 +55,7 @@ impl VsidlRedundantExplicitChannelListing {
             explicit_channels.entry(full_name.clone()).or_default();
             all_channels.insert(
                 full_name.clone(),
-                publisher.message(symbol_table).channels(symbol_table).len(),
+                publisher.message(symbol_table).topics(symbol_table).len(),
             );
 
             for channel in &publisher.channel {
@@ -105,7 +105,7 @@ impl VsidlRedundantExplicitChannelListing {
             explicit_channels.entry(full_name.clone()).or_default();
             all_channels.insert(
                 full_name.clone(),
-                subscriber.message(symbol_table).channels(symbol_table).len(),
+                subscriber.message(symbol_table).topics(symbol_table).len(),
             );
 
             for channel in &subscriber.channel {

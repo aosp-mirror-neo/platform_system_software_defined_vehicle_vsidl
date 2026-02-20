@@ -72,9 +72,9 @@ impl SymbolTableLinker {
         self.link_publishers_to_messages();
         self.link_subscribers_to_messages();
         self.link_clients_to_rpc_services();
-        self.link_publishers_to_channels();
-        self.link_channels_to_proto_messages();
-        self.link_subscribers_to_channels();
+        self.link_publishers_to_topics();
+        self.link_topics_to_proto_messages();
+        self.link_subscribers_to_topics();
         self.symbol_table.set_state(SymbolTableState::Linked)
     }
 
@@ -266,7 +266,7 @@ impl SymbolTableLinker {
                         .filter(|symbol| matches!(symbol, SymbolKind::ProtoEnum(_)))
                         .collect();
                     if !resolved_symbols.is_empty() {
-                        // In well-defined Proto files, there can only be one channels enum per publication
+                        // In well-defined Proto files, there can only be one topics enum per publication
                         links.insert((
                             proto_publication_symbol.id().clone(),
                             resolved_symbols[0].id().clone(),
@@ -426,8 +426,8 @@ impl SymbolTableLinker {
         }
     }
 
-    /// Links [PublisherSymbol]s to the [ChannelSymbol]s they publish to.
-    fn link_publishers_to_channels(&mut self) {
+    /// Links [PublisherSymbol]s to the [TopicSymbol]s they publish to.
+    fn link_publishers_to_topics(&mut self) {
         // Find links
         let mut links = HashSet::new();
         let unlinked = self.symbol_table.get_unlinked_symbols();
@@ -437,13 +437,13 @@ impl SymbolTableLinker {
             .into_iter()
             .filter(|s| unlinked.contains(&s.id()))
         {
-            for channel_name in &publisher.ast_node.channel {
-                // Resolve the channel name in global scope
+            for topic_name in &publisher.ast_node.topic {
+                // Resolve the topic name in global scope
                 let resolved_symbols: Vec<_> = self
                     .symbol_table
-                    .resolve(&GLOBAL_SCOPE_ID, channel_name, false)
+                    .resolve(&GLOBAL_SCOPE_ID, topic_name, false)
                     .into_iter()
-                    .filter(|symbol| matches!(symbol, SymbolKind::Channel(_)))
+                    .filter(|symbol| matches!(symbol, SymbolKind::Topic(_)))
                     .collect();
 
                 if !resolved_symbols.is_empty() {
@@ -453,83 +453,83 @@ impl SymbolTableLinker {
         }
 
         // Create links
-        for (publisher_id, channel_id) in links {
+        for (publisher_id, topic_id) in links {
             if let Some(SymbolKind::Publisher(publisher_symbol)) =
                 self.symbol_table.get_symbol_mut(&publisher_id)
             {
-                if !publisher_symbol.channels.contains(&channel_id) {
-                    publisher_symbol.channels.push(channel_id.clone());
+                if !publisher_symbol.topics.contains(&topic_id) {
+                    publisher_symbol.topics.push(topic_id.clone());
                 }
             }
-            if let Some(channel_symbol) = self.symbol_table.get_channel_symbol_mut(&channel_id) {
-                if !channel_symbol.publishers.contains(&publisher_id) {
-                    channel_symbol.publishers.push(publisher_id.clone());
+            if let Some(topic_symbol) = self.symbol_table.get_topic_symbol_mut(&topic_id) {
+                if !topic_symbol.publishers.contains(&publisher_id) {
+                    topic_symbol.publishers.push(publisher_id.clone());
                 }
             }
         }
     }
 
-    /// Links [ChannelSymbol]s to the [ProtoMessageSymbol] they carry.
-    fn link_channels_to_proto_messages(&mut self) {
-        let mut message_to_channels = HashSet::new();
+    /// Links [TopicSymbol]s to the [ProtoMessageSymbol] they carry.
+    fn link_topics_to_proto_messages(&mut self) {
+        let mut message_to_topics = HashSet::new();
 
-        // Iterate through all publishers to find all message-channel associations
+        // Iterate through all publishers to find all message-topic associations
         for publisher in self.symbol_table.get_all_publisher_symbols() {
             if let Some(message_id) = &publisher.message {
-                for channel_id in &publisher.channels {
-                    message_to_channels.insert((message_id.clone(), channel_id.clone()));
+                for topic_id in &publisher.topics {
+                    message_to_topics.insert((message_id.clone(), topic_id.clone()));
                 }
             }
         }
 
         // Create links
-        for (proto_message_id, channel_id) in message_to_channels {
-            // Link Channel to Message
-            if let Some(channel_symbol) = self.symbol_table.get_channel_symbol_mut(&channel_id) {
-                if channel_symbol.message.is_none() {
-                    channel_symbol.message = Some(proto_message_id.clone());
-                } else if channel_symbol.message != Some(proto_message_id.clone()) {
-                    // This scenario, where the same channel name is used for different message types,
+        for (proto_message_id, topic_id) in message_to_topics {
+            // Link Topic to Message
+            if let Some(topic_symbol) = self.symbol_table.get_topic_symbol_mut(&topic_id) {
+                if topic_symbol.message.is_none() {
+                    topic_symbol.message = Some(proto_message_id.clone());
+                } else if topic_symbol.message != Some(proto_message_id.clone()) {
+                    // This scenario, where the same topic name is used for different message types,
                     // should ideally be caught by another context condition.
                     eprintln!(
-                        "Warning: ChannelSymbol {:?} ({}) is already linked to message {:?}, ignoring link to {:?}",
-                        channel_id,
-                        channel_symbol.name(),
-                        channel_symbol.message,
+                        "Warning: TopicSymbol {:?} ({}) is already linked to message {:?}, ignoring link to {:?}",
+                        topic_id,
+                        topic_symbol.name(),
+                        topic_symbol.message,
                         proto_message_id
                     );
                 }
             }
 
-            // Link Message to Channel
+            // Link Message to Topic
             if let Some(message_symbol) =
                 self.symbol_table.get_proto_message_symbol_mut(&proto_message_id)
             {
-                if !message_symbol.channels.contains(&channel_id) {
-                    message_symbol.channels.push(channel_id);
+                if !message_symbol.topics.contains(&topic_id) {
+                    message_symbol.topics.push(topic_id);
                 }
             }
         }
     }
 
-    /// Links [SubscriberSymbol]s to the [ChannelSymbol]s they subscribe to.
+    /// Links [SubscriberSymbol]s to the [TopicSymbol]s they subscribe to.
     ///
     /// This function re-evaluates all subscriber symbols, not just unlinked ones.
-    /// This is necessary because ChannelSymbols are implicitly generated from Publishers
-    /// in VSIDL files. Unlike symbols derived from .proto files, ChannelSymbols
+    /// This is necessary because TopicSymbols are implicitly generated from Publishers
+    /// in VSIDL files. Unlike symbols derived from .proto files, TopicSymbols
     /// can be removed and recreated with new IDs during incremental file processing.
-    /// Therefore, existing subscribers may have stale Channel IDs that need to be updated.
-    fn link_subscribers_to_channels(&mut self) {
+    /// Therefore, existing subscribers may have stale Topic IDs that need to be updated.
+    fn link_subscribers_to_topics(&mut self) {
         let mut links = HashSet::new();
-        // Iterate through ALL subscribers, as existing ones might need relinking to new ChannelSymbol instances.
+        // Iterate through ALL subscribers, as existing ones might need relinking to new TopicSymbol instances.
         for subscriber in self.symbol_table.get_all_subscriber_symbols().into_iter() {
-            for channel_name in &subscriber.channel {
-                // Resolve the channel name in global scope
+            for topic_name in &subscriber.topic {
+                // Resolve the topic name in global scope
                 let resolved_symbols: Vec<_> = self
                     .symbol_table
-                    .resolve(&GLOBAL_SCOPE_ID, channel_name, false)
+                    .resolve(&GLOBAL_SCOPE_ID, topic_name, false)
                     .into_iter()
-                    .filter(|symbol| matches!(symbol, SymbolKind::Channel(_)))
+                    .filter(|symbol| matches!(symbol, SymbolKind::Topic(_)))
                     .collect();
 
                 if !resolved_symbols.is_empty() {
@@ -538,29 +538,29 @@ impl SymbolTableLinker {
             }
         }
 
-        // Clear old channel links for all subscribers involved in the new links.
-        // This is crucial to remove stale IDs from channels that might have been recreated.
+        // Clear old topic links for all subscribers involved in the new links.
+        // This is crucial to remove stale IDs from topics that might have been recreated.
         let subscriber_ids_to_update: HashSet<_> = links.iter().map(|(s, _)| s).collect();
         for subscriber_id in subscriber_ids_to_update {
             if let Some(subscriber_symbol) =
                 self.symbol_table.get_subscriber_symbol_mut(subscriber_id)
             {
-                subscriber_symbol.channels.clear();
+                subscriber_symbol.topics.clear();
             }
         }
 
         // Create links
-        for (subscriber_id, channel_id) in links {
+        for (subscriber_id, topic_id) in links {
             if let Some(subscriber_symbol) =
                 self.symbol_table.get_subscriber_symbol_mut(&subscriber_id)
             {
-                if !subscriber_symbol.channels.contains(&channel_id) {
-                    subscriber_symbol.channels.push(channel_id.clone());
+                if !subscriber_symbol.topics.contains(&topic_id) {
+                    subscriber_symbol.topics.push(topic_id.clone());
                 }
             }
-            if let Some(channel_symbol) = self.symbol_table.get_channel_symbol_mut(&channel_id) {
-                if !channel_symbol.subscribers.contains(&subscriber_id) {
-                    channel_symbol.subscribers.push(subscriber_id.clone());
+            if let Some(topic_symbol) = self.symbol_table.get_topic_symbol_mut(&topic_id) {
+                if !topic_symbol.subscribers.contains(&subscriber_id) {
+                    topic_symbol.subscribers.push(subscriber_id.clone());
                 }
             }
         }
@@ -753,70 +753,70 @@ mod tests {
     }
 
     #[test]
-    fn test_link_channels_to_proto_messages() {
+    fn test_link_topics_to_proto_messages() {
         // GIVEN a symbol table from catalog
         let creator = setup();
 
-        // WHEN linking (VSIDL) channels to (Proto) messages
+        // WHEN linking (VSIDL) topics to (Proto) messages
         let mut linker = SymbolTableLinker::from(creator);
-        linker.link_publishers_to_messages(); // This is required before linking channels
-        linker.link_channels_to_proto_messages();
+        linker.link_publishers_to_messages(); // This is required before linking topics
+        linker.link_topics_to_proto_messages();
         let symbol_table = linker.symbol_table;
 
-        // THEN each channel used in a publisher or subscriber shall have a corresponding message
-        let all_channel_symbols = symbol_table.get_all_channel_symbols();
-        assert!(!all_channel_symbols.is_empty());
+        // THEN each topic used in a publisher or subscriber shall have a corresponding message
+        let all_topic_symbols = symbol_table.get_all_topic_symbols();
+        assert!(!all_topic_symbols.is_empty());
 
-        let mut pubsub_channel_ids = std::collections::HashSet::new();
+        let mut pubsub_topic_ids = std::collections::HashSet::new();
         for pub_symbol in symbol_table.get_all_publisher_symbols() {
-            pubsub_channel_ids.extend(pub_symbol.channels.iter());
+            pubsub_topic_ids.extend(pub_symbol.topics.iter());
         }
         for sub_symbol in symbol_table.get_all_subscriber_symbols() {
-            pubsub_channel_ids.extend(sub_symbol.channels.iter());
+            pubsub_topic_ids.extend(sub_symbol.topics.iter());
         }
 
-        for channel_symbol in all_channel_symbols {
-            if pubsub_channel_ids.contains(&channel_symbol.id()) {
+        for topic_symbol in all_topic_symbols {
+            if pubsub_topic_ids.contains(&topic_symbol.id()) {
                 assert!(
-                    channel_symbol.message.is_some(),
-                    "Channel {:?} linked to Pub/Sub should have a message",
-                    channel_symbol.id()
+                    topic_symbol.message.is_some(),
+                    "Topic {:?} linked to Pub/Sub should have a message",
+                    topic_symbol.id()
                 );
                 if let SymbolKind::ProtoMessage(proto_message_symbol) =
-                    &symbol_table.get_symbol(&channel_symbol.message.clone().unwrap()).unwrap()
+                    &symbol_table.get_symbol(&topic_symbol.message.clone().unwrap()).unwrap()
                 {
                     assert_eq!(
                         proto_message_symbol.name.clone().expect("Message should have a name"),
                         "Pressure"
                     );
                 } else {
-                    panic!("channel_symbol.message is not a ProtoMessage");
+                    panic!("topic_symbol.message is not a ProtoMessage");
                 }
             }
         }
     }
 
     #[test]
-    fn test_link_subscribers_to_channels() {
+    fn test_link_subscribers_to_topics() {
         // GIVEN a symbol table from catalog
         let creator = setup();
 
-        // WHEN linking (VSIDL) subscribers to (VSIDL) channels
+        // WHEN linking (VSIDL) subscribers to (VSIDL) topics
         let mut linker = SymbolTableLinker::from(creator);
-        linker.link_subscribers_to_channels();
+        linker.link_subscribers_to_topics();
         let symbol_table = linker.symbol_table;
 
-        // THEN each subscriber shall have a corresponding channel
+        // THEN each subscriber shall have a corresponding topic
         let all_subscriber_symbols = symbol_table.get_all_subscriber_symbols();
         assert!(!all_subscriber_symbols.is_empty());
         for subscriber_symbol in all_subscriber_symbols {
-            // ServiceBundleTwo subscribes to channel "TWO" of "Pressure"
+            // ServiceBundleTwo subscribes to topic "two" of "Pressure"
             if subscriber_symbol.ast_node.message == "Pressure" {
-                assert!(!subscriber_symbol.channels.is_empty());
-                let channel_id = &subscriber_symbol.channels[0];
-                let channel_symbol = symbol_table.get_channel_symbol(channel_id).unwrap();
-                assert_eq!(channel_symbol.name(), "TWO");
-                assert!(channel_symbol.subscribers.contains(&subscriber_symbol.id()));
+                assert!(!subscriber_symbol.topics.is_empty());
+                let topic_id = &subscriber_symbol.topics[0];
+                let topic_symbol = symbol_table.get_topic_symbol(topic_id).unwrap();
+                assert_eq!(topic_symbol.name(), "two");
+                assert!(topic_symbol.subscribers.contains(&subscriber_symbol.id()));
             }
         }
     }
@@ -887,19 +887,19 @@ mod tests {
             .subscribers
             .contains(&vsidl_subscriber_symbol.id()));
 
-        // THEN Check Channel to Publication link
-        let channel_one_symbol =
-            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "ONE").unwrap();
+        // THEN Check Topic to Publication link
+        let topic_one_symbol =
+            symbol_table.get_all_topic_symbols().into_iter().find(|s| s.name() == "one").unwrap();
         assert_eq!(
-            channel_one_symbol.message.as_ref().unwrap(),
+            topic_one_symbol.message.as_ref().unwrap(),
             vsidl_subscriber_symbol.message.as_ref().unwrap()
         );
 
-        // THEN Check Subscriber to Channel link
-        let channel_two_symbol =
-            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "TWO").unwrap();
-        assert!(vsidl_subscriber_symbol.channels.contains(&channel_two_symbol.id()));
-        assert!(channel_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
+        // THEN Check Subscriber to Topic link
+        let topic_two_symbol =
+            symbol_table.get_all_topic_symbols().into_iter().find(|s| s.name() == "two").unwrap();
+        assert!(vsidl_subscriber_symbol.topics.contains(&topic_two_symbol.id()));
+        assert!(topic_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
     }
 
     #[test]
@@ -923,25 +923,25 @@ mod tests {
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
 
-        // THEN Check Channel to Message link
+        // THEN Check Topic to Message link
         let symbol_table = linker.symbol_table.clone();
         let proto_message_symbol_from_subscriber =
             symbol_table.resolve_proto_message_fqn("sdv.test.Pressure")[0].clone();
         let vsidl_subscriber_symbol =
             symbol_table.resolve_subscriber_fqn("sdv.test.Pressure")[0].clone();
 
-        let channel_one_symbol =
-            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "ONE").unwrap();
+        let topic_one_symbol =
+            symbol_table.get_all_topic_symbols().into_iter().find(|s| s.name() == "one").unwrap();
         assert_eq!(
-            channel_one_symbol.message.as_ref().unwrap(),
+            topic_one_symbol.message.as_ref().unwrap(),
             &proto_message_symbol_from_subscriber.id()
         );
 
-        // THEN Check Subscriber to Channel link
-        let channel_two_symbol =
-            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "TWO").unwrap();
-        assert!(vsidl_subscriber_symbol.channels.contains(&channel_two_symbol.id()));
-        assert!(channel_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
+        // THEN Check Subscriber to Topic link
+        let topic_two_symbol =
+            symbol_table.get_all_topic_symbols().into_iter().find(|s| s.name() == "two").unwrap();
+        assert!(vsidl_subscriber_symbol.topics.contains(&topic_two_symbol.id()));
+        assert!(topic_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
 
         // WHEN removing a file from the symbol table
         let file_to_reprocess = vsidl_v1_test_data::VSIDL_BUNDLE_ONE_VALID.clone().0;
@@ -1018,18 +1018,18 @@ mod tests {
             .subscribers
             .contains(&vsidl_subscriber_symbol.id()));
 
-        // THEN Check Channel to Message link
-        let channel_one_symbol =
-            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "ONE").unwrap();
+        // THEN Check Topic to Message link
+        let topic_one_symbol =
+            symbol_table.get_all_topic_symbols().into_iter().find(|s| s.name() == "one").unwrap();
         assert_eq!(
-            channel_one_symbol.message.as_ref().unwrap(),
+            topic_one_symbol.message.as_ref().unwrap(),
             vsidl_subscriber_symbol.message.as_ref().unwrap()
         );
 
-        // THEN Check Subscriber to Channel link
-        let channel_two_symbol =
-            symbol_table.get_all_channel_symbols().into_iter().find(|s| s.name() == "TWO").unwrap();
-        assert!(vsidl_subscriber_symbol.channels.contains(&channel_two_symbol.id()));
-        assert!(channel_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
+        // THEN Check Subscriber to Topic link
+        let topic_two_symbol =
+            symbol_table.get_all_topic_symbols().into_iter().find(|s| s.name() == "two").unwrap();
+        assert!(vsidl_subscriber_symbol.topics.contains(&topic_two_symbol.id()));
+        assert!(topic_two_symbol.subscribers.contains(&vsidl_subscriber_symbol.id()));
     }
 }

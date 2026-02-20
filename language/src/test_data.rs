@@ -456,7 +456,7 @@ vsidl_file!(
 );
 vsidl_file!(VSIDL_PUBLICATION_MULTIPUB, "tests_vsidl_v1/vsidl", "publication_multipub.vsidl");
 vsidl_file!(VSIDL_DEPRECATED_KEYWORDS, "tests_vsidl_v1/vsidl", "deprecated_keywords.vsidl");
-vsidl_file!(VSIDL_TIRE_PRESSURE_PUBLISHER, "tests_vsidl_v1/vsidl", "tire_pressure_channel.vsidl");
+vsidl_file!(VSIDL_TIRE_PRESSURE_PUBLISHER, "tests_vsidl_v1/vsidl", "tire_pressure_topic.vsidl");
 vsidl_file!(VSIDL_CHANNEL_NAME_CONFLICT, "tests_vsidl_v1/vsidl", "channel_name_conflict.vsidl");
 vsidl_file!(VSIDL_DESCRIPTOR_MESSAGE_LOOP, "tests_vsidl_v1/vsidl", "proto_message_loop.vsidl");
 vsidl_file!(

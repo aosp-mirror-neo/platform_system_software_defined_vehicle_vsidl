@@ -22,7 +22,7 @@ service_bundle {
 
   publisher {
     message: "TirePressure"
-    channel: "test"
+    topic: "test"
     capacity: 8
   }
 }

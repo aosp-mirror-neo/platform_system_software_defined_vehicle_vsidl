@@ -19,8 +19,8 @@ package: "sdv.test"
 service_bundle {
     name: "ServiceBundleOne"
 
-    publisher { message: "Pressure" channel: "ONE" capacity: 8 }
-    publisher { message: "Pressure" channel: "TWO" capacity: 8 }
+    publisher { message: "Pressure" channel: "ONE" topic: "one" capacity: 8 }
+    publisher { message: "Pressure" channel: "TWO" topic: "two" capacity: 8 }
 
     client { service: "DummyRpc" }
 
@@ -60,7 +60,7 @@ service_bundle {
 service_bundle {
     name: "ServiceBundleTwo"
 
-    subscriber { message: "Pressure" channel: "TWO" }
+    subscriber { message: "Pressure" channel: "TWO" topic: "two" }
 
     server { service: "DummyRpc" }
 

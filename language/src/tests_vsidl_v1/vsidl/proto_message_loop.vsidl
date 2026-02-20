@@ -22,31 +22,31 @@ service_bundle {
 
   publisher {
     message: "LoopSinglePubMessageA"
-    channel: "test"
+    topic: "test"
     capacity: 8
   }
 
   publisher {
     message: "LoopSinglePubMessageB"
-    channel: "test2"
+    topic: "test2"
     capacity: 8
   }
 
   publisher {
     message: "LoopSinglePubMessageC"
-    channel: "test3"
+    topic: "test3"
     capacity: 8
   }
 
   publisher {
     message: "LoopMultiPubMessageA"
-    channel: "test4"
+    topic: "test4"
     capacity: 8
   }
 
   publisher {
     message: "LoopMultiPubMessageB"
-    channel: "test5"
+    topic: "test5"
     capacity: 8
   }
 }

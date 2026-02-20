@@ -35,7 +35,7 @@ impl VsidlVisitor for ProtoMessageExceedsMaxSize {}
 
 impl SymbolTableChecker for ProtoMessageExceedsMaxSize {
     fn check_proto_message(&mut self, symbol_table: &SymbolTable, message: &ProtoMessageSymbol) {
-        if message.channels(symbol_table).is_empty() {
+        if message.topics(symbol_table).is_empty() {
             // Only messages used by at least one channel are
             // required to have a maximum size
             return;

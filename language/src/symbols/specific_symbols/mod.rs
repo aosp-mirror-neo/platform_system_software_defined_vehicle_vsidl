@@ -15,8 +15,6 @@
  */
 
 // VSIDL
-/// Module containing the [ChannelSymbol].
-pub mod channel_symbol;
 /// Module containing the [PublisherSymbol].
 pub mod publisher_symbol;
 /// Module containing the [RpcClientSymbol].
@@ -27,6 +25,8 @@ pub mod rpc_server_symbol;
 pub mod service_bundle_symbol;
 /// Module containing the [SubscriberSymbol].
 pub mod subscriber_symbol;
+/// Module containing the [TopicSymbol].
+pub mod topic_symbol;
 
 // PROTO
 /// Module containing the [ProtoEnumSymbol].

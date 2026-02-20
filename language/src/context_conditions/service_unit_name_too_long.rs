@@ -141,7 +141,7 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
             return;
         }
         let proto_message_symbol: ProtoMessageSymbol = proto_message_symbols[0].clone();
-        let channels = proto_message_symbol.channels(symbol_table);
+        let channels = proto_message_symbol.topics(symbol_table);
 
         // Validate generated name
         for channel in &channels {
@@ -169,7 +169,7 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
             return;
         }
         let proto_message_symbol: ProtoMessageSymbol = proto_message_symbols[0].clone();
-        let channels = proto_message_symbol.channels(symbol_table);
+        let channels = proto_message_symbol.topics(symbol_table);
 
         // Validate generated name
         for channel in &channels {
