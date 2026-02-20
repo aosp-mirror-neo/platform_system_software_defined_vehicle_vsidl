@@ -24,7 +24,7 @@ use log::info;
 use sdv_comms::id::ServiceFqin;
 use sdv_comms::sd::UnitType;
 use sdv_comms::ContextRef;
-use sdv_config_provider::{vsidl_provider, vsidl_provider_api::VsidlConfigProviderV1};
+use sdv_config_provider::{vsidl_provider, vsidl_provider_api::VsidlConfigProvider};
 use sdv_dump::DumpBinderConnection;
 use sdv_dump::DumpStateReporter;
 use std::future;
@@ -89,23 +89,27 @@ struct Args {
 
 async fn query_diagnostics_declaration(
     ctx: ContextRef,
-    provider: &Arc<impl VsidlConfigProviderV1>,
+    provider: &Arc<impl VsidlConfigProvider>,
     server_fqin: &ServiceFqin,
 ) -> Option<String> {
-    provider.get_diagnostics_declaration(server_fqin).await.map(|diagnostics_declaration| {
-        format!(
-            "Querying VSIDL Provider Diagnostics from VM {} to VM {}. Received response: {:?}",
-            ctx.get_self_fqin().get_sdv_vm_name(),
-            server_fqin.get_sdv_vm_name(),
-            diagnostics_declaration
-        )
-    })
+    provider
+        .get_diagnostics_declaration(server_fqin)
+        .await
+        .map(|diagnostics_declaration| {
+            format!(
+                "Querying VSIDL Provider Diagnostics from VM {} to VM {}. Received response: {:?}",
+                ctx.get_self_fqin().get_sdv_vm_name(),
+                server_fqin.get_sdv_vm_name(),
+                diagnostics_declaration
+            )
+        })
+        .ok()
 }
 
 async fn query_message_descriptor(
     args: &Args,
     ctx: ContextRef,
-    provider: &Arc<impl VsidlConfigProviderV1>,
+    provider: &Arc<impl VsidlConfigProvider>,
     server_fqin: &ServiceFqin,
 ) -> Option<String> {
     let Some(message_name) = args.message_name.as_ref() else {
@@ -120,7 +124,7 @@ async fn query_message_descriptor(
             server_fqin.get_sdv_vm_name(),
             diagnostics_declaration
         )
-    })
+    }).ok()
 }
 
 fn get_unit_type(args: &Args) -> Option<UnitType> {
@@ -139,7 +143,7 @@ fn get_unit_type(args: &Args) -> Option<UnitType> {
 async fn query_publication_descriptor(
     args: &Args,
     ctx: ContextRef,
-    provider: &Arc<impl VsidlConfigProviderV1>,
+    provider: &Arc<impl VsidlConfigProvider>,
     server_fqin: &ServiceFqin,
 ) -> Option<String> {
     let Some(unit_type) = get_unit_type(args) else {
@@ -154,13 +158,13 @@ async fn query_publication_descriptor(
             server_fqin.get_sdv_vm_name(),
             diagnostics_declaration
         )
-    })
+    }).ok()
 }
 
 async fn query_rpc_method_descriptor(
     args: &Args,
     ctx: ContextRef,
-    provider: &Arc<impl VsidlConfigProviderV1>,
+    provider: &Arc<impl VsidlConfigProvider>,
     server_fqin: &ServiceFqin,
 ) -> Option<String> {
     let (Some(unit_type), Some(method_name)) = (get_unit_type(args), args.method_name.as_ref())
@@ -176,7 +180,7 @@ async fn query_rpc_method_descriptor(
             server_fqin.get_sdv_vm_name(),
             diagnostics_declaration
         )
-    })
+    }).ok()
 }
 
 struct QueryTester {
@@ -200,7 +204,7 @@ impl DumpStateReporter for QueryTester {
 impl QueryTester {
     async fn query_diagnostics_declaration(
         ctx: ContextRef,
-        provider: &Arc<impl VsidlConfigProviderV1>,
+        provider: &Arc<impl VsidlConfigProvider>,
         server_fqin: &ServiceFqin,
     ) -> Self {
         Self {
@@ -211,7 +215,7 @@ impl QueryTester {
     async fn query_message_descriptor(
         args: &Args,
         ctx: ContextRef,
-        provider: &Arc<impl VsidlConfigProviderV1>,
+        provider: &Arc<impl VsidlConfigProvider>,
         server_fqin: &ServiceFqin,
     ) -> Self {
         Self {
@@ -222,7 +226,7 @@ impl QueryTester {
     async fn query_publication_descriptor(
         args: &Args,
         ctx: ContextRef,
-        provider: &Arc<impl VsidlConfigProviderV1>,
+        provider: &Arc<impl VsidlConfigProvider>,
         server_fqin: &ServiceFqin,
     ) -> Self {
         Self {
@@ -234,7 +238,7 @@ impl QueryTester {
     async fn query_rpc_method_descriptor(
         args: &Args,
         ctx: ContextRef,
-        provider: &Arc<impl VsidlConfigProviderV1>,
+        provider: &Arc<impl VsidlConfigProvider>,
         server_fqin: &ServiceFqin,
     ) -> Self {
         Self {

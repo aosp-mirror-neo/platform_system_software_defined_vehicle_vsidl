@@ -192,6 +192,14 @@ impl Context {
             let proto_message = subscriber.message(symbol_table);
             dependencies
                 .insert(proto_message.proto_metadata.rust_build_target_name.clone().unwrap());
+
+            // PDK29 compatibility
+            if symbol_table.uses_pdk29() {
+                let publication = subscriber.publication(symbol_table);
+                for proto_dependency in &publication.proto_dependencies {
+                    dependencies.insert(proto_dependency.rust_build_target_name.clone().unwrap());
+                }
+            }
         }
 
         for publisher in &service_bundle.publishers(symbol_table) {
@@ -201,6 +209,14 @@ impl Context {
             // Dependencies required for registering message metadata used in reflection:
             if service_bundle.ast_node.register_reflection_metadata {
                 for proto_dependency in &proto_message.proto_dependencies {
+                    dependencies.insert(proto_dependency.rust_build_target_name.clone().unwrap());
+                }
+            }
+
+            // PDK29 compatibility
+            if symbol_table.uses_pdk29() {
+                let publication = publisher.publication(symbol_table);
+                for proto_dependency in &publication.proto_dependencies {
                     dependencies.insert(proto_dependency.rust_build_target_name.clone().unwrap());
                 }
             }

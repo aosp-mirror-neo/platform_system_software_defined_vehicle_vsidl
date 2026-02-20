@@ -33,6 +33,7 @@ rust_library {
         "libsdv_rs",
         "libfutures",
         "libsdv_vsidlc_goldens_with_subfolder_folder_b_catalog",
+        "libvsidl_v1_stdlib_proto_rs",
         "libsdv_proto_reflection_rs",
     ],
     apex_available: [
