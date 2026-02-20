@@ -325,6 +325,10 @@ impl ContextConditionChecker {
             Box::new(ServiceUnitNameTooLong::default()),
         )
         .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(UserDefinedNamesOnlyOneChannel::default()), // Checks user_defined_name usage
+        )
+        .add_context_condition(
             SymbolTableState::CreatedNotLinked,
             Box::new(ChannelNameUnique::default()),
         )
@@ -335,6 +339,10 @@ impl ContextConditionChecker {
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,
             Box::new(SubscriberType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(NoUserDefinedNamesForMultiChannelPublishers::default()),
         )
         .add_context_condition(
             SymbolTableState::Linked,
@@ -351,6 +359,10 @@ impl ContextConditionChecker {
         .add_context_condition(
             SymbolTableState::Linked,
             Box::new(ServiceUnitNameDuplicate::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(SubscriberChannelsRedeclaration::default()),
         )
         .add_context_condition(
             SymbolTableState::Linked,
@@ -372,6 +384,10 @@ impl ContextConditionChecker {
         .add_context_condition(
             SymbolTableState::NotCreated,
             Box::new(pdk29::SdvPublication::default()), // Checks proto options
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(pdk29::UserDefinedNamesOnlyOneChannel::default()), // Checks user_defined_name usage
         );
 
         // CreatedNotLinked
@@ -403,6 +419,10 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::Linked,
+            Box::new(pdk29::NoUserDefinedNamesForMultiChannelPublishers::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
             Box::new(pdk29::ProtoMessageRequireAnnotationType::default()),
         )
         .add_context_condition(
@@ -416,6 +436,10 @@ impl ContextConditionChecker {
         .add_context_condition(
             SymbolTableState::Linked,
             Box::new(pdk29::SubscriberRequiresPublisher::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(pdk29::SubscriberChannelsRedeclaration::default()),
         )
         .add_context_condition(
             SymbolTableState::Linked,
@@ -491,10 +515,6 @@ impl Default for ContextConditionChecker {
             )
             .add_context_condition(
                 SymbolTableState::NotCreated,
-                Box::new(UserDefinedNamesOnlyOneChannel::default()), // Checks user_defined_name usage
-            )
-            .add_context_condition(
-                SymbolTableState::NotCreated,
                 Box::new(UserDefinedTargetNameConvention::default()), // Checks rust_library naming convention
             )
             .add_context_condition(SymbolTableState::NotCreated, Box::new(RpcStreaming::default()))
@@ -514,15 +534,6 @@ impl Default for ContextConditionChecker {
             .add_context_condition(
                 SymbolTableState::CreatedNotLinked,
                 Box::new(RpcServerType::default()),
-            )
-            // Conditions requiring a linked symbol table
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(NoUserDefinedNamesForMultiChannelPublishers::default()),
-            )
-            .add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(SubscriberChannelsRedeclaration::default()),
             );
         checker
     }
@@ -549,10 +560,6 @@ mod tests {
             .context_conditions
             .iter()
             .any(|(state, _)| *state == SymbolTableState::CreatedNotLinked));
-        assert!(checker
-            .context_conditions
-            .iter()
-            .any(|(state, _)| *state == SymbolTableState::Linked));
     }
 
     #[test]
