@@ -34,7 +34,7 @@ use std::sync::Arc;
 use vsidl_provider_agent_protos::messages::*;
 
 /// Package name of VSIDL provider agent.
-pub const PACKAGE_NAME: &str = "com.sdv.google.vsidl_provider";
+pub const PACKAGE_NAME: &str = "com.android.sdv.vsidl_provider";
 
 /// Service bundle name of VSIDL provider agent.
 pub const BUNDLE_NAME: &str = "Agent";

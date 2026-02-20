@@ -67,7 +67,7 @@ fn get_vm_name(ctx: Option<ContextRef>) -> String {
 
 fn diag_fqin(ctx: Option<ContextRef>, subpackage: &Subpackage) -> ServiceFqin {
     ServiceFqin::from_str(&format!(
-        "{}:com.sdv.google.sample.vsidl_provider.{}.DiagService/ignored",
+        "{}:com.android.sdv.sample.vsidl_provider.{}.DiagService/ignored",
         get_vm_name(ctx),
         subpackage
     ))
@@ -87,21 +87,21 @@ fn non_existent_fqin(ctx: Option<ContextRef>) -> ServiceFqin {
 
 fn source_fqin_hello_service(ctx: Option<ContextRef>) -> ServiceFqin {
     ServiceFqin::from_str(
-        &(get_vm_name(ctx) + ":com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService/ignored"),
+        &(get_vm_name(ctx) + ":com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService/ignored"),
     )
     .unwrap()
 }
 
 fn source_fqin_manager_service(ctx: Option<ContextRef>) -> ServiceFqin {
     ServiceFqin::from_str(
-        &(get_vm_name(ctx) + ":com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager/ignored"),
+        &(get_vm_name(ctx) + ":com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager/ignored"),
     )
     .unwrap()
 }
 
 fn source_fqin_monitor_service(ctx: Option<ContextRef>) -> ServiceFqin {
     ServiceFqin::from_str(
-        &(get_vm_name(ctx) + ":com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor/ignored"),
+        &(get_vm_name(ctx) + ":com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor/ignored"),
     )
     .unwrap()
 }
