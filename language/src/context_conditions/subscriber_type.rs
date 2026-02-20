@@ -52,21 +52,21 @@ impl SymbolTableChecker for SubscriberType {
             return;
         }
 
-        for (index, channel) in subscriber.channel.iter().enumerate() {
-            let channels: Vec<TopicSymbol> =
-                subscriber.enclosing_scope(symbol_table).resolve_topic(symbol_table, channel);
+        for (index, topic) in subscriber.topic.iter().enumerate() {
+            let topics: Vec<TopicSymbol> =
+                subscriber.enclosing_scope(symbol_table).resolve_topic(symbol_table, topic);
 
             // ERROR: Channel specified by subscriber does not exist for message
-            if channels.is_empty() {
+            if topics.is_empty() {
                 self.finding_collector.error(
                     FindingId::SubscriberTypeDoesNotHaveRequestedChannel,
                     format!(
-                        "Subscriber '{}' uses undefined channel '{}' for message '{}'",
+                        "Subscriber '{}' uses undefined topic '{}' for message '{}'",
                         subscriber.full_name(symbol_table),
-                        channel,
+                        topic,
                         subscriber.message
                     ),
-                    vec![subscriber.channel_span.get(index).cloned()],
+                    vec![subscriber.topic_span.get(index).cloned()],
                 );
             }
         }
@@ -83,8 +83,8 @@ mod tests {
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
 
     #[test]
-    fn test_should_accept_subscriber_with_valid_channel() {
-        // GIVEN A catalog with a subscriber that has a valid channel
+    fn test_should_accept_subscriber_with_valid_topic() {
+        // GIVEN A catalog with a subscriber that has a valid topic
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone(),
@@ -105,8 +105,8 @@ mod tests {
     }
 
     #[test]
-    fn test_should_reject_subscriber_with_invalid_channel() {
-        // GIVEN A catalog with a subscriber that has a invalid channel
+    fn test_should_reject_subscriber_with_invalid_topic() {
+        // GIVEN A catalog with a subscriber that has a invalid topic
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone(),
@@ -116,7 +116,7 @@ mod tests {
         ]);
         catalog
             .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_NON_EXISTING_SUBSCRIBER_CHANNEL.clone());
+            .push(vsidl_v1_test_data::VSIDL_NON_EXISTING_SUBSCRIBER_TOPIC.clone());
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
 
@@ -126,7 +126,7 @@ mod tests {
 
         // THEN Should have found an error
         assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "INVALID_CHANNEL"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "invalid-topic"));
     }
 
     #[test]

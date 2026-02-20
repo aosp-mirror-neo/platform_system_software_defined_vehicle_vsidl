@@ -298,10 +298,6 @@ impl ContextConditionChecker {
         .add_context_condition(
             SymbolTableState::Linked,
             Box::new(VsidlUnnecessaryFullyQualifiedName::default()),
-        )
-        .add_context_condition(
-            SymbolTableState::Linked,
-            Box::new(VsidlRedundantExplicitChannelListing::default()),
         );
     }
 
@@ -309,7 +305,7 @@ impl ContextConditionChecker {
     pub fn enable_latest(&mut self) {
         self.add_context_condition(
             SymbolTableState::NotCreated,
-            Box::new(ChannelNameSnakeCase::default()),
+            Box::new(TopicNameSnakeCase::default()),
         )
         .add_context_condition(SymbolTableState::NotCreated, Box::new(PublisherCapacity::default()))
         .add_context_condition(
@@ -318,7 +314,7 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
-            Box::new(PublisherChannelMandatory::default()),
+            Box::new(PublisherTopicMandatory::default()),
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
@@ -326,11 +322,11 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
-            Box::new(UserDefinedNamesOnlyOneChannel::default()), // Checks user_defined_name usage
+            Box::new(UserDefinedNamesOnlyOneTopic::default()), // Checks user_defined_name usage
         )
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,
-            Box::new(ChannelNameUnique::default()),
+            Box::new(TopicNameUnique::default()),
         )
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,
@@ -372,6 +368,13 @@ impl ContextConditionChecker {
             SymbolTableState::Linked,
             Box::new(UniqueUserDefinedServiceUnitNamesPerType::default()),
         );
+
+        if self.print_warnings {
+            self.add_context_condition(
+                SymbolTableState::Linked,
+                Box::new(VsidlRedundantExplicitTopicListing::default()),
+            );
+        }
     }
 
     /// Enables CoCos for PDK29.

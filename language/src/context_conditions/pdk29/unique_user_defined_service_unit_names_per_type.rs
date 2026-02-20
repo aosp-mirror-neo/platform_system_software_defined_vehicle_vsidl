@@ -136,6 +136,7 @@ mod test {
     use vsidl_v1_common::{AstNode, Catalog};
     use vsidl_v1_symbols::SymbolTableCreator;
     use vsidl_v1_symbols::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
     fn test_should_reject_catalog_with_duplicated_rpc_name() {
@@ -172,6 +173,7 @@ mod test {
             .push(vsidl_v1_test_data::VSIDL_DUPLICATED_USER_DEFINED_PUB_NAME_PER_TYPE.clone());
 
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Pdk29);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();

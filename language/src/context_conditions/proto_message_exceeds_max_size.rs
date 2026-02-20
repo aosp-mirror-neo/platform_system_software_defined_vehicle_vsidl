@@ -36,7 +36,7 @@ impl VsidlVisitor for ProtoMessageExceedsMaxSize {}
 impl SymbolTableChecker for ProtoMessageExceedsMaxSize {
     fn check_proto_message(&mut self, symbol_table: &SymbolTable, message: &ProtoMessageSymbol) {
         if message.topics(symbol_table).is_empty() {
-            // Only messages used by at least one channel are
+            // Only messages used by at least one topic are
             // required to have a maximum size
             return;
         }
@@ -70,6 +70,7 @@ mod test {
     use vsidl_v1_common::{AstNode, Catalog};
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
     fn test_proto_message_exceeds_max_size_error() {
@@ -81,6 +82,7 @@ mod test {
         catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.clone());
 
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -107,6 +109,7 @@ mod test {
         catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.clone());
 
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();

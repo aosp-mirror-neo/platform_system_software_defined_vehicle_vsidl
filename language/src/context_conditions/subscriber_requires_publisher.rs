@@ -33,7 +33,7 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
     fn check_subscriber(&mut self, symbol_table: &SymbolTable, subscriber: &SubscriberSymbol) {
         // Case 1: The message has no publishers at all
         if subscriber.message(symbol_table).publishers(symbol_table).is_empty() {
-            // ERROR: There's no publisher for the channel requested by the subscriber
+            // ERROR: There's no publisher for the topic requested by the subscriber
             self.finding_collector.error(
                 FindingId::SubscriberRequiresPublisher,
                 format!(
@@ -45,18 +45,18 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
             return;
         }
 
-        // Case 2: Subscriber has explicit channels, some of them are not published
-        let message_channels = subscriber.message(symbol_table).topics(symbol_table);
-        for (index, channel) in subscriber.channels(symbol_table).iter().enumerate() {
-            if !message_channels.iter().any(|c| c.name() == *channel) {
-                // ERROR: There's no publisher for the channel requested by the subscriber
+        // Case 2: Subscriber has explicit topics, some of them are not published
+        let message_topics = subscriber.message(symbol_table).topics(symbol_table);
+        for (index, topic) in subscriber.topics(symbol_table).iter().enumerate() {
+            if !message_topics.iter().any(|c| c.name() == *topic) {
+                // ERROR: There's no publisher for the topic requested by the subscriber
                 self.finding_collector.error(
                     FindingId::SubscriberRequiresPublisher,
                     format!(
-                        "Channel '{channel}' of subscriber '{}' does not have a corresponding publisher",
+                        "Topic '{topic}' of subscriber '{}' does not have a corresponding publisher",
                         subscriber.full_name(symbol_table)
                     ),
-                    vec![subscriber.channel_span.get(index).cloned()],
+                    vec![subscriber.topic_span.get(index).cloned()],
                 );
             }
         }
@@ -72,6 +72,7 @@ mod test {
     use vsidl_v1_common::Catalog;
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
     fn test_should_reject_subscriber_without_publisher() {
@@ -82,6 +83,7 @@ mod test {
             .catalog_vsidl_files
             .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_WITHOUT_PUBLISHER.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -96,14 +98,15 @@ mod test {
     }
 
     #[test]
-    fn test_should_reject_subscriber_without_publisher_for_one_channel() {
-        // GIVEN A catalog with a service bundle that contains a subscriber with no publishers for one of the requested channels
+    fn test_should_reject_subscriber_without_publisher_for_topic_one() {
+        // GIVEN A catalog with a service bundle that contains a subscriber with no publishers for one of the requested topics
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
         catalog
             .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_WITHOUT_PUBLISHER_FOR_ONE_CHANNEL.clone());
+            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_WITHOUT_PUBLISHER_FOR_TOPIC_ONE.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -115,11 +118,11 @@ mod test {
         // THEN Should have found errors
         assert!(check.is_err());
         assert!(check.any_finding_contains(FindingSeverity::Error, "sdv.test.Pressure"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "ONE"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "one"));
     }
 
     #[test]
-    fn test_should_accept_valid_service_bundle_with_explicit_publisher_channels() {
+    fn test_should_accept_valid_service_bundle_with_explicit_publisher_topics() {
         // GIVEN A valid catalog
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
@@ -130,6 +133,7 @@ mod test {
         ]);
         catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -143,7 +147,7 @@ mod test {
     }
 
     #[test]
-    fn test_should_accept_valid_service_bundle_with_implicit_publisher_channels() {
+    fn test_should_accept_valid_service_bundle_with_implicit_publisher_topics() {
         // GIVEN A valid catalog
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
@@ -156,6 +160,7 @@ mod test {
             .catalog_vsidl_files
             .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_REQUIRES_PUBLISHER_VALID.clone());
         let mut creator: SymbolTableCreator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker: SymbolTableLinker = SymbolTableLinker::from(creator);
         linker.execute();

@@ -360,6 +360,11 @@ vsidl_file!(
     "nonexisting_subscriber_channel.vsidl"
 );
 vsidl_file!(
+    VSIDL_NON_EXISTING_SUBSCRIBER_TOPIC,
+    "tests_vsidl_v1/vsidl",
+    "nonexisting_subscriber_topic.vsidl"
+);
+vsidl_file!(
     VSIDL_PUBLICATION_AS_RPC_SERVER_SERVICE,
     "tests_vsidl_v1/vsidl",
     "publication_as_rpc_server_service.vsidl"
@@ -378,6 +383,11 @@ vsidl_file!(
     VSIDL_SUBSCRIBER_WITHOUT_PUBLISHER,
     "tests_vsidl_v1/vsidl",
     "subscriber_without_publisher.vsidl"
+);
+vsidl_file!(
+    VSIDL_SUBSCRIBER_WITHOUT_PUBLISHER_FOR_TOPIC_ONE,
+    "tests_vsidl_v1/vsidl",
+    "subscriber_without_publisher_for_topic_one.vsidl"
 );
 vsidl_file!(
     VSIDL_SUBSCRIBER_WITHOUT_PUBLISHER_FOR_ONE_CHANNEL,
@@ -430,14 +440,34 @@ vsidl_file!(
     "pubsub_explicit_channel_listing_separate.vsidl"
 );
 vsidl_file!(
+    VSIDL_EXPLICIT_TOPIC_LISTING,
+    "tests_vsidl_v1/vsidl",
+    "pubsub_explicit_topic_listing.vsidl"
+);
+vsidl_file!(
+    VSIDL_EXPLICIT_TOPIC_LISTING_SEPARATE,
+    "tests_vsidl_v1/vsidl",
+    "pubsub_explicit_topic_listing_separate.vsidl"
+);
+vsidl_file!(
     VSIDL_IMPLICIT_CHANNEL_LISTING,
     "tests_vsidl_v1/vsidl",
     "pubsub_implicit_channel_listing.vsidl"
 );
 vsidl_file!(
+    VSIDL_IMPLICIT_TOPIC_LISTING,
+    "tests_vsidl_v1/vsidl",
+    "pubsub_implicit_topic_listing.vsidl"
+);
+vsidl_file!(
     VSIDL_EXPLICIT_CHANNEL_LISTING_OK,
     "tests_vsidl_v1/vsidl",
     "pubsub_explicit_channel_listing_ok.vsidl"
+);
+vsidl_file!(
+    VSIDL_EXPLICIT_TOPIC_LISTING_OK,
+    "tests_vsidl_v1/vsidl",
+    "pubsub_explicit_topic_listing_ok.vsidl"
 );
 vsidl_file!(
     VSIDL_SUBSCRIBER_CHANNELS_REDECLARATION,
@@ -450,6 +480,16 @@ vsidl_file!(
     "subscriber_channels_redeclaration_separate.vsidl"
 );
 vsidl_file!(
+    VSIDL_SUBSCRIBER_TOPICS_REDECLARATION,
+    "tests_vsidl_v1/vsidl",
+    "subscriber_topics_redeclaration.vsidl"
+);
+vsidl_file!(
+    VSIDL_SUBSCRIBER_TOPICS_REDECLARATION_SEPARATE,
+    "tests_vsidl_v1/vsidl",
+    "subscriber_topics_redeclaration_separate.vsidl"
+);
+vsidl_file!(
     VSIDL_PUBLICATION_MULTIPUB_MISUSE,
     "tests_vsidl_v1/vsidl",
     "publication_multipub_misuse.vsidl"
@@ -457,6 +497,7 @@ vsidl_file!(
 vsidl_file!(VSIDL_PUBLICATION_MULTIPUB, "tests_vsidl_v1/vsidl", "publication_multipub.vsidl");
 vsidl_file!(VSIDL_DEPRECATED_KEYWORDS, "tests_vsidl_v1/vsidl", "deprecated_keywords.vsidl");
 vsidl_file!(VSIDL_TIRE_PRESSURE_PUBLISHER, "tests_vsidl_v1/vsidl", "tire_pressure_topic.vsidl");
+vsidl_file!(VSIDL_TOPIC_NAME_CONFLICT, "tests_vsidl_v1/vsidl", "topic_name_conflict.vsidl");
 vsidl_file!(VSIDL_CHANNEL_NAME_CONFLICT, "tests_vsidl_v1/vsidl", "channel_name_conflict.vsidl");
 vsidl_file!(VSIDL_DESCRIPTOR_MESSAGE_LOOP, "tests_vsidl_v1/vsidl", "proto_message_loop.vsidl");
 vsidl_file!(

@@ -23,6 +23,8 @@ service_bundle {
     message: "Pressure"
     channel: "ONE"
     channel: "TWO"
+    topic: "one"
+    topic: "two"
     # Error: User-defined name cannot be used if there are multiple channels in the same publisher
     service_unit_name: "my-pub"
   }

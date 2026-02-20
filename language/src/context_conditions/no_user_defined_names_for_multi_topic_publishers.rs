@@ -27,25 +27,25 @@ pub struct NoUserDefinedNamesForMultiChannelPublishers {
 impl_context_condition_symtab!(NoUserDefinedNamesForMultiChannelPublishers);
 impl VsidlVisitor for NoUserDefinedNamesForMultiChannelPublishers {}
 
-/// Issues an error if a publisher uses user-defined name without specifying a channel if the type has multiple channels
+/// Issues an error if a publisher uses user-defined name without specifying a topic if the type has multiple topics
 impl SymbolTableChecker for NoUserDefinedNamesForMultiChannelPublishers {
     fn check_publisher(&mut self, symbol_table: &SymbolTable, publisher: &PublisherSymbol) {
-        // Check if unit type as channels
-        let channels: Vec<String> = publisher.channels(symbol_table);
-        let type_has_multiple_channels = channels.len() > 1;
+        // Check if unit type as topics
+        let topics: Vec<String> = publisher.topics(symbol_table);
+        let type_has_multiple_topics = topics.len() > 1;
 
         // Check if publisher a has user-defined name
         let has_user_defined_name = !publisher.service_unit_name.is_empty();
 
-        // Check if the publisher specifies at least one channel
-        let channel_specified = !publisher.channel.is_empty();
+        // Check if the publisher specifies at least one topic
+        let topic_specified = !publisher.topic.is_empty();
 
-        if type_has_multiple_channels && !channel_specified && has_user_defined_name {
+        if type_has_multiple_topics && !topic_specified && has_user_defined_name {
             self.finding_collector.error(FindingId::NoUserDefinedNamesForMultiChannelPublishers, format!(
-                    "Service Bundle '{}': Service unit '{}' may not have a user-defined name without specifying the used channel. Possible channels: {:?}",
+                    "Service Bundle '{}': Service unit '{}' may not have a user-defined name without specifying the used topic. Possible topics: {:?}",
                     publisher.owning_service_bundle(symbol_table).full_name(symbol_table),
                     publisher.service_unit_name,
-                    channels,
+                    topics,
                 ),
                 vec![publisher.message_span.clone().into_option()]
             );
@@ -56,22 +56,24 @@ impl SymbolTableChecker for NoUserDefinedNamesForMultiChannelPublishers {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;
+    use crate::no_user_defined_names_for_multi_topic_publishers::NoUserDefinedNamesForMultiChannelPublishers;
     use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
-    fn test_should_reject_catalog_user_defined_publisher_name_without_channel() {
-        // Given: A catalog with a publisher that uses a unit type with channels and specifies a user-defined name without specifying the channel
+    fn test_should_reject_catalog_user_defined_publisher_name_without_topic() {
+        // Given: A catalog with a publisher that uses a unit type with topics and specifies a user-defined name without specifying the topic
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
         catalog
             .catalog_vsidl_files
             .push(vsidl_v1_test_data::VSIDL_USER_DEFINED_NAME_WITHOUT_CHANNEL.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -82,9 +84,9 @@ mod test {
 
         // Then: Should have found error
         assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "Service Bundle 'sdv.test.UserDefinedNameWithoutChannel': Service unit 'my-pub' may not have a user-defined name without specifying the used channel. Possible channels:"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "ONE"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "TWO"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "Service Bundle 'sdv.test.UserDefinedNameWithoutChannel': Service unit 'my-pub' may not have a user-defined name without specifying the used topic. Possible topics:"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "one"));
+        assert!(check.any_finding_contains(FindingSeverity::Error, "two"));
     }
 
     #[test]
@@ -96,6 +98,7 @@ mod test {
             .catalog_vsidl_files
             .push(vsidl_v1_test_data::VSIDL_USER_DEFINED_NAME_MULTI_CHANNEL.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();

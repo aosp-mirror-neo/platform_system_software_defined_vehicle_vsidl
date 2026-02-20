@@ -56,8 +56,8 @@ impl SymbolTableChecker for UniqueUserDefinedServiceUnitNamesPerType {
     fn check_publisher(&mut self, symbol_table: &SymbolTable, publisher: &PublisherSymbol) {
         let publication_type_name = publisher.message(symbol_table).full_name(symbol_table);
 
-        for channel_name in publisher.channels(symbol_table) {
-            let publisher_name = publisher.service_unit_name(symbol_table, &channel_name);
+        for topic in publisher.topics(symbol_table) {
+            let publisher_name = publisher.service_unit_name(symbol_table, &topic);
             if publisher.has_user_defined_name() {
                 append(
                     &mut self.seen_pub_names,
@@ -136,6 +136,7 @@ mod test {
     use vsidl_v1_common::{AstNode, Catalog};
     use vsidl_v1_symbols::SymbolTableCreator;
     use vsidl_v1_symbols::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
     fn test_should_reject_catalog_with_duplicated_rpc_name() {
@@ -172,6 +173,7 @@ mod test {
             .push(vsidl_v1_test_data::VSIDL_DUPLICATED_USER_DEFINED_PUB_NAME_PER_TYPE.clone());
 
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();

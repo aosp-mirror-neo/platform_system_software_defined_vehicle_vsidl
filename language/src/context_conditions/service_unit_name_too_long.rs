@@ -58,11 +58,11 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
     }
 
     fn start_visit_publisher(&mut self, node: &Publisher) {
-        // if there's no service unit name and channels are not defined, length check is covered in check_publisher()
-        if node.service_unit_name.is_empty() && !node.channel.is_empty() {
+        // if there's no service unit name and topics are not defined, length check is covered in check_publisher()
+        if node.service_unit_name.is_empty() && !node.topic.is_empty() {
             // Validate generated name
-            for channel in &node.channel {
-                let generated_name = channel.to_string().to_kebab_case();
+            for topic in &node.topic {
+                let generated_name = topic.to_string().to_kebab_case();
                 self.check(generated_name, "publisher", node.span.clone().into_option());
             }
         } else {
@@ -76,11 +76,11 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
     }
 
     fn start_visit_subscriber(&mut self, node: &Subscriber) {
-        // if there are no explicit channels, length check is covered in check_subscriber()
-        if !node.channel.is_empty() {
+        // if there are no explicit topics, length check is covered in check_subscriber()
+        if !node.topic.is_empty() {
             // Validate generated name
-            for channel in &node.channel {
-                let generated_name = channel.to_string().to_kebab_case();
+            for topic in &node.topic {
+                let generated_name = topic.to_string().to_kebab_case();
                 self.check(generated_name, "subscriber", node.span.clone().into_option());
             }
         }
@@ -127,8 +127,8 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
             return;
         }
 
-        // Explicit channels are checked in start_visit_publisher()
-        if !publisher.channel.is_empty() {
+        // Explicit topics are checked in start_visit_publisher()
+        if !publisher.topic.is_empty() {
             return;
         }
 
@@ -141,11 +141,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
             return;
         }
         let proto_message_symbol: ProtoMessageSymbol = proto_message_symbols[0].clone();
-        let channels = proto_message_symbol.topics(symbol_table);
+        let topics = proto_message_symbol.topics(symbol_table);
 
         // Validate generated name
-        for channel in &channels {
-            let generated_name = channel.name().to_kebab_case();
+        for topic in &topics {
+            let generated_name = topic.name().to_kebab_case();
             self.check(generated_name, "publisher", publisher.span());
         }
     }
@@ -155,8 +155,8 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         symbol_table: &vsidl_v1_symbols::symbol_table::SymbolTable,
         subscriber: &vsidl_v1_symbols::specific_symbols::subscriber_symbol::SubscriberSymbol,
     ) {
-        // Explicit channels are checked in start_visit_subscriber()
-        if !subscriber.channel.is_empty() {
+        // Explicit topics are checked in start_visit_subscriber()
+        if !subscriber.topic.is_empty() {
             return;
         }
 
@@ -169,11 +169,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
             return;
         }
         let proto_message_symbol: ProtoMessageSymbol = proto_message_symbols[0].clone();
-        let channels = proto_message_symbol.topics(symbol_table);
+        let topics = proto_message_symbol.topics(symbol_table);
 
         // Validate generated name
-        for channel in &channels {
-            let generated_name = channel.name().to_kebab_case();
+        for topic in &topics {
+            let generated_name = topic.name().to_kebab_case();
             self.check(generated_name, "subscriber", subscriber.span());
         }
     }
@@ -209,10 +209,11 @@ mod test {
     use vsidl_v1_common::Catalog;
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
     fn test_should_reject_long_user_defined_name() {
-        // Given: A catalog with a publisher that has two channels and a user-defined name
+        // Given: A catalog with a publisher that has two topics and a user-defined name
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors
@@ -241,6 +242,7 @@ mod test {
         catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_GENERATED_NAME_TOO_LONG.clone());
 
         let mut creator: SymbolTableCreator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker: SymbolTableLinker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -254,12 +256,12 @@ mod test {
         assert!(coco.is_err());
         eprintln!("Findings: {:?}", coco.finding_collector.findings());
 
-        // THEN publisher with implicit channels was detected
+        // THEN publisher with implicit topics was detected
         assert!(coco.any_finding_contains(FindingSeverity::Error, "for publisher 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-three"));
         assert!(coco.any_finding_contains(FindingSeverity::Error, "for publisher 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-four"));
-        // THEN subscriber with explicit channels was detected
+        // THEN subscriber with explicit topics was detected
         assert!(coco.any_finding_contains(FindingSeverity::Error, "for subscriber 'sdv-test-this-is-a-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-five"));
-        // THEN subscriber with implicit channels was detected
+        // THEN subscriber with implicit topics was detected
         assert!(coco.any_finding_contains(FindingSeverity::Error, "for subscriber 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-three"));
         assert!(coco.any_finding_contains(FindingSeverity::Error, "for subscriber 'sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-four"));
         // THEN RPC server was detected
@@ -270,13 +272,14 @@ mod test {
 
     #[test]
     fn test_should_reject_long_user_defined_name_in_diagnostics() {
-        // Given: A catalog with a publisher that has two channels and a user-defined name
+        // Given: A catalog with a publisher that has two topics and a user-defined name
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
         catalog
             .catalog_vsidl_files
             .push(vsidl_v1_test_data::VSIDL_USER_DEFINED_NAME_TOO_LONG_IN_DIAGNOSTICS.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -300,6 +303,7 @@ mod test {
             .catalog_vsidl_files
             .push(vsidl_v1_test_data::VSIDL_INVALID_PUBLICATION_TYPE_GENERATED_NAME.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
 
         // When: Executing CoCo
@@ -322,6 +326,7 @@ mod test {
         );
 
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
