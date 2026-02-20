@@ -75,10 +75,12 @@ message ServiceBundle {
     string service_unit_name = 3;
     // Required. The type of data being published.
     string message = 4;
-    // Specific channel(s) on which the data is being published.
+    // Deprecated. Specific channel(s) on which the data is being published.
     repeated string channel = 5;
     // The number of messages a publication queue can hold.
     int64 capacity = 6;
+    // Specific topic(s) on which the data is being published.
+    repeated string topic = 7;
 
     // Parsing metadata that describes where the syntax element was found in the
     // input. Do not fill fields of this type manually.
@@ -87,6 +89,7 @@ message ServiceBundle {
     Span message_span = 10004;
     repeated Span channel_span = 10005;
     Span capacity_span = 10006;
+    repeated Span topic_span = 10007;
   }
 
   // Represents a subscriber within a service bundle.
@@ -97,14 +100,17 @@ message ServiceBundle {
     repeated string instance = 2 [ deprecated = true ];
     // Required. The type of data being published.
     string message = 4;
-    // Specific channel(s) of the message to subscribe to.
+    // Deprecated. Specific channel(s) of the message to subscribe to.
     repeated string channel = 5;
+    // Specific topic(s) of the message to subscribe to.
+    repeated string topic = 6;
 
     // Parsing metadata that describes where the syntax element was found in the
     // input. Do not fill fields of this type manually.
     Span span = 10000;
     Span message_span = 10004;
     repeated Span channel_span = 10005;
+    repeated Span topic_span = 10006;
   }
 
   // Represents an RPC server within a service bundle.

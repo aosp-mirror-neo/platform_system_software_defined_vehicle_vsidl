@@ -19,9 +19,9 @@ package: "sdv.test"
 service_bundle {
     name: "AllAstNodeTypes"
 
-    publisher { message: "Pressure" channel: "ONE" }
-    publisher { message: "Pressure" channel: "TWO" }
-    subscriber { message: "Pressure" channel: "TWO" }
+    publisher { message: "Pressure" channel: "ONE" topic: "one" }
+    publisher { message: "Pressure" channel: "TWO" topic: "two" }
+    subscriber { message: "Pressure" channel: "TWO" topic: "two" }
 
     server { service: "DummyRpc" }
     client { service: "DummyRpc" }

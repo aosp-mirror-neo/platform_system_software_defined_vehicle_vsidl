@@ -165,6 +165,11 @@ pub fn convert_to_publisher(pair: Pair<Rule>, file_path: &str) -> Publisher {
                 publisher.message = unquote(inner.as_str());
                 publisher.message_span = proto_span(inner, file_path);
             }
+            Rule::publisher_topic => {
+                let inner = get_inner_pair(item);
+                publisher.topic.push(unquote(inner.as_str()));
+                publisher.topic_span.push(proto_span(inner, file_path).unwrap());
+            }
             Rule::publisher_channel => {
                 let inner = get_inner_pair(item);
                 publisher.channel.push(unquote(inner.as_str()));
@@ -200,6 +205,11 @@ pub fn convert_to_subscriber(pair: Pair<Rule>, file_path: &str) -> Subscriber {
                 let inner = get_inner_pair(item);
                 subscriber.message = unquote(inner.as_str());
                 subscriber.message_span = proto_span(inner, file_path);
+            }
+            Rule::subscriber_topic => {
+                let inner = get_inner_pair(item);
+                subscriber.topic.push(unquote(inner.as_str()));
+                subscriber.topic_span.push(proto_span(inner, file_path).unwrap());
             }
             Rule::subscriber_channel => {
                 let inner = get_inner_pair(item);
@@ -1386,13 +1396,16 @@ mod test {
         // THEN the publishers are correct
         assert_eq!(service_bundle.publisher.len(), 2);
         assert_eq!(service_bundle.publisher[0].message, "Pressure");
+        assert_eq!(service_bundle.publisher[0].topic, vec!["one"]);
         assert_eq!(service_bundle.publisher[0].channel, vec!["ONE"]);
         assert_eq!(service_bundle.publisher[1].message, "Pressure");
+        assert_eq!(service_bundle.publisher[1].topic, vec!["two"]);
         assert_eq!(service_bundle.publisher[1].channel, vec!["TWO"]);
 
         // THEN the subscribers are correct
         assert_eq!(service_bundle.subscriber.len(), 1);
         assert_eq!(service_bundle.subscriber[0].message, "Pressure");
+        assert_eq!(service_bundle.subscriber[0].topic, vec!["two"]);
         assert_eq!(service_bundle.subscriber[0].channel, vec!["TWO"]);
 
         // THEN the servers are correct
