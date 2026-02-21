@@ -56,15 +56,17 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.size_limit.MessageWithSizeLimit'
-        pub const UNIQUE: &Self = &Self {
+        /// Publication channel 'message_with_size_limit' of 'sdv.golden.size_limit.MessageWithSizeLimit'
+        pub const MESSAGE_WITH_SIZE_LIMIT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
-            service_unit: "sdv-golden-size-limit-message-with-size-limit-unique",
+            name: "message_with_size_limit",
+            service_unit: "message-with-size-limit",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.size_limit.MessageWithSizeLimit' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::MESSAGE_WITH_SIZE_LIMIT,
+        ];
     }
 }
 /// Service bundle

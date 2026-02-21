@@ -74,14 +74,17 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        /// Publication channel 'REAR_LEFT' of 'sdv.golden.TireTemperature'
-        pub const REAR_LEFT: &Self = &Self {
+        /// Publication channel 'TIRE_TEMPERATURE_REAR_LEFT' of 'sdv.golden.TireTemperature'
+        pub const TIRE_TEMPERATURE_REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: sdv_vsidlc_goldens_catalog::tire::Location::REAR_LEFT as i32,
-            service_unit: "sdv-golden-tire-temperature-rear-left",
+            id: sdv_vsidlc_goldens_catalog::tire::TireTemperatureLocation::TIRE_TEMPERATURE_REAR_LEFT
+                as i32,
+            service_unit: "sdv-golden-tire-temperature-tire-temperature-rear-left",
         };
         /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::REAR_LEFT];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::TIRE_TEMPERATURE_REAR_LEFT,
+        ];
     }
 }
 /// Service bundle

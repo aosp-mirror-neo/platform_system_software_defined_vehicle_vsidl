@@ -17,11 +17,16 @@ syntax = "proto3";
 package sdv.golden;
 import "sdv/vsidl/v1/annotations.proto";
 
+enum VehicleSpeedBChannels {
+  VEHICLE_SPEED_B = 0;
+}
+
 // Example of Unique topics to be generated
 message VehicleSpeedB {
   option (sdv.vsidl.v1.publication) = {
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "VehicleSpeedBChannels"
+    message_count : 8
+    model : SINGLE_PUB
   };
   float speed = 1;
 }

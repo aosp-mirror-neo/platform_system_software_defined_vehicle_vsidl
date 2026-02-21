@@ -20,10 +20,15 @@ import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 import "sdv/vsidl/v1/annotations.proto";
 
+enum MessageWithSizeLimitChannels {
+  MESSAGE_WITH_SIZE_LIMIT = 0;
+}
+
 message MessageWithSizeLimit {
   option (sdv.vsidl.v1.publication) = {
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "MessageWithSizeLimitChannels"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   repeated int32 repeated_ints = 1 [(sdv.vsidl.v1.repeated_field_max_count) = 5];

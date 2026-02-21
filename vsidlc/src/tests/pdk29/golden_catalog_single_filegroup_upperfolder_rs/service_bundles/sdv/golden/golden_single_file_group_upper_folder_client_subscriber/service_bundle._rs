@@ -69,16 +69,17 @@ pub mod subscriber {
     impl Channel<
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_a::VehicleSpeedA,
     > {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeedA'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'VEHICLE_SPEED_A' of 'sdv.golden.VehicleSpeedA'
+        pub const VEHICLE_SPEED_A: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
+            id: sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_a::VehicleSpeedAChannels::VEHICLE_SPEED_A
+                as i32,
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenSingleFileGroupUpperFolderServerPublisher",
-            service_unit: "sdv-golden-vehicle-speed-a-unique",
+            service_unit: "sdv-golden-vehicle-speed-a-vehicle-speed-a",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_A];
     }
     impl Metadata
     for sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedB {
@@ -87,16 +88,17 @@ pub mod subscriber {
     impl Channel<
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedB,
     > {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeedB'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'VEHICLE_SPEED_B' of 'sdv.golden.VehicleSpeedB'
+        pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
+            id: sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedBChannels::VEHICLE_SPEED_B
+                as i32,
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenSingleFileGroupUpperFolderServerPublisher",
-            service_unit: "sdv-golden-vehicle-speed-b-unique",
+            service_unit: "sdv-golden-vehicle-speed-b-vehicle-speed-b",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_B];
     }
 }
 /// Service bundle

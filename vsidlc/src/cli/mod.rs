@@ -95,6 +95,7 @@ impl From<Cli> for VsidlcCommonCli {
             no_pest: cli.no_pest,
             no_warn: cli.no_warn,
             genrule: cli.genrule,
+            target_api: cli.target_api,
         };
         if cli.lsp {
             common_cli.no_pest = false;

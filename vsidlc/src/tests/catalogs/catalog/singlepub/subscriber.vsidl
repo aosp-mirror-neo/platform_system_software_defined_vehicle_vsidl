@@ -25,9 +25,5 @@ service_bundle {
 
     subscriber {
         message: "TirePressureExplicitInstances"
-        channel: "FRONT_LEFT"
-        channel: "FRONT_RIGHT"
-        channel: "REAR_LEFT"
-        channel: "REAR_RIGHT"
     }
 }

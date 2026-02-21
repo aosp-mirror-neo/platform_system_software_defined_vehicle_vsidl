@@ -62,14 +62,17 @@ pub mod publisher {
         const IS_MULTIPUB: bool = false;
     }
     impl Channel<sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit> {
-        /// Publication channel 'UNIQUE' of 'sdv.golden.size_limit.MessageWithSizeLimit'
-        pub const UNIQUE: &Self = &Self {
+        /// Publication channel 'MESSAGE_WITH_SIZE_LIMIT' of 'sdv.golden.size_limit.MessageWithSizeLimit'
+        pub const MESSAGE_WITH_SIZE_LIMIT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
-            service_unit: "sdv-golden-size-limit-message-with-size-limit-unique",
+            id: sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimitChannels::MESSAGE_WITH_SIZE_LIMIT
+                as i32,
+            service_unit: "sdv-golden-size-limit-message-with-size-limit-message-with-size-limit",
         };
         /// List of all publication channels of 'sdv.golden.size_limit.MessageWithSizeLimit' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[
+            Self::MESSAGE_WITH_SIZE_LIMIT,
+        ];
     }
 }
 /// Service bundle

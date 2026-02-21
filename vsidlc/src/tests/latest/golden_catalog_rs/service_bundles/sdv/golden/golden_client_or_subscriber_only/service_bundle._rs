@@ -61,16 +61,16 @@ pub mod subscriber {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-        /// Enables access to subscription channel 'UNIQUE' of 'sdv.golden.VehicleSpeed'
-        pub const UNIQUE: &Self = &Self {
+        /// Enables access to subscription channel 'vehicle_speed' of 'sdv.golden.VehicleSpeed'
+        pub const VEHICLE_SPEED: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "unique",
+            name: "vehicle_speed",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "sdv-golden-vehicle-speed-unique",
+            service_unit: "vehicle-speed",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];
+        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];
     }
 }
 /// Service bundle

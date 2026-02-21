@@ -309,7 +309,24 @@ impl ContextConditionChecker {
     pub fn enable_latest(&mut self) {
         self.add_context_condition(
             SymbolTableState::NotCreated,
+            Box::new(ChannelNameSnakeCase::default()),
+        )
+        .add_context_condition(SymbolTableState::NotCreated, Box::new(PublisherCapacity::default()))
+        .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(PublisherCapacityMandatory::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(PublisherChannelMandatory::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
             Box::new(ServiceUnitNameTooLong::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(ChannelNameUnique::default()),
         )
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,

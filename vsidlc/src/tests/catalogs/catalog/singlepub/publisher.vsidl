@@ -25,6 +25,11 @@ service_bundle {
     # will be published by this ServiceBundle.
     publisher {
         message: ".sdv.golden.TIREPressure"
+        channel: "TIRE_PRESSURE_FRONT_LEFT"
+        channel: "TIRE_PRESSURE_FRONT_RIGHT"
+        channel: "TIRE_PRESSURE_REAR_LEFT"
+        channel: "TIRE_PRESSURE_REAR_RIGHT"
+        capacity: 8
     }
 
     # publisher of owned type TirePressureExplicitInstances
@@ -32,10 +37,11 @@ service_bundle {
     # will be published by this ServiceBundle.
     publisher {
         message: "TirePressureExplicitInstances"
-        channel: "FRONT_LEFT"
-        channel: "FRONT_RIGHT"
-        channel: "REAR_LEFT"
-        channel: "REAR_RIGHT"
+        channel: "TIRE_PRESSURE_EXPLICIT_FRONT_LEFT"
+        channel: "TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT"
+        channel: "TIRE_PRESSURE_EXPLICIT_REAR_LEFT"
+        channel: "TIRE_PRESSURE_EXPLICIT_REAR_RIGHT"
+        capacity: 8
     }
 
     # publisher of not-owned type TireTemperature
@@ -43,13 +49,16 @@ service_bundle {
     # only one is published by this ServiceBundle
     publisher {
         message: "TireTemperature"
-        channel: "FRONT_RIGHT"
+        channel: "TIRE_TEMPERATURE_FRONT_RIGHT"
+        capacity: 8
     }
 
     # publisher of owner type VehicleSpeed
     # VehicleSpeed has a unique topic
     publisher {
         message: "VehicleSpeed"
+        channel: "VEHICLE_SPEED"
+        capacity: 8
     }
 }
 
@@ -57,5 +66,7 @@ service_bundle {
     name: "GoldenSizeLimitPublisher"
     publisher {
         message: "sdv.golden.size_limit.MessageWithSizeLimit"
+        channel: "MESSAGE_WITH_SIZE_LIMIT"
+        capacity: 8
     }
 }

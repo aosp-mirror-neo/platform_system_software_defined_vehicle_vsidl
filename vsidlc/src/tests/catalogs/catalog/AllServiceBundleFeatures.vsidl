@@ -20,9 +20,9 @@ package: "sdv.golden"
 service_bundle {
     name: "AllServiceBundleFeatures"
 
-    publisher { message: "Pressure" channel: "ONE" }
-    publisher { message: "Pressure" channel: "TWO" }
-    subscriber { message: "Pressure" channel: "TWO" }
+    publisher { message: "Pressure" channel: "PRESSURE_ONE" capacity: 8 }
+    publisher { message: "Pressure" channel: "PRESSURE_TWO" capacity: 8 }
+    subscriber { message: "Pressure" channel: "PRESSURE_TWO" }
 
     server { service: "DummyRpc" }
     client { service: "DummyRpc" }

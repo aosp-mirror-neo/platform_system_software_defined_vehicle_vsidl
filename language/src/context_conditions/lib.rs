@@ -44,6 +44,13 @@ pub use empty_catalog::EmptyCatalog;
 
 // ERRORS
 
+// Channel names must be globally unique
+mod channel_name_unique;
+pub use channel_name_unique::ChannelNameUnique;
+
+mod channel_name_snake_case;
+pub use channel_name_snake_case::ChannelNameSnakeCase;
+
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
 mod no_user_defined_names_for_multi_channel_publishers;
 pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;
@@ -51,6 +58,15 @@ pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesFo
 /// Issues an error if the type of a publisher is either not defined at all or not a publication
 mod publication_type;
 pub use publication_type::PublicationType;
+
+mod publisher_capacity;
+pub use publisher_capacity::PublisherCapacity;
+
+mod publisher_capacity_mandatory;
+pub use publisher_capacity_mandatory::PublisherCapacityMandatory;
+
+mod publisher_channel_mandatory;
+pub use publisher_channel_mandatory::PublisherChannelMandatory;
 
 /// Issues an error if the unit type specified for an RPC client is unknown
 mod rpc_client_type;

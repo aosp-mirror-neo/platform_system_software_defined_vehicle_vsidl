@@ -33,8 +33,6 @@ service_bundle {
     name: "GoldenTireAlert"
     subscriber {
         message: "TIREPressure"
-        channel: "FRONT_RIGHT"
-        channel: "FRONT_LEFT"
     }
     subscriber {
         message: "VehicleSpeed"

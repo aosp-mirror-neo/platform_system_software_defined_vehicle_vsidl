@@ -26,6 +26,22 @@ enum TestVariants {
   TWO = 1;
 }
 
+enum PressureVariants {
+  PRESSURE_ONE = 0;
+  PRESSURE_TWO = 1;
+}
+
+enum TemperatureVariants {
+  TEMPERATURE_ONE = 0;
+  TEMPERATURE_TWO = 1;
+}
+
+enum BatteryLevelVariants {
+  option allow_alias = true;
+  BATTERY_MAIN = 0;
+  BATTERY_PRIMARY = 0;
+}
+
 extend google.protobuf.FileOptions {
   optional string my_file_option = 60000;
 }
@@ -65,9 +81,9 @@ message BatteryLevel {
   option (my_message_option) = 1234;
 
   option (sdv.vsidl.v1.publication) = {
-    instances_enum: "sdv.golden.BatteryVariants"
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "sdv.golden.BatteryLevelVariants"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   uint32 pressure = 1 [deprecated = true];
@@ -75,9 +91,9 @@ message BatteryLevel {
 
 message Temperature {
   option (sdv.vsidl.v1.publication) = {
-    instances_enum: "TestVariants"
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "TemperatureVariants"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   uint32 temperature = 1 [(my_field_option) = 4.5];
@@ -110,9 +126,9 @@ message DummyResponse {}
 
 message Pressure {
   option (sdv.vsidl.v1.publication) = {
-    instances_enum: "sdv.golden.TestVariants"
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "sdv.golden.PressureVariants"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   uint32 pressure = 1;

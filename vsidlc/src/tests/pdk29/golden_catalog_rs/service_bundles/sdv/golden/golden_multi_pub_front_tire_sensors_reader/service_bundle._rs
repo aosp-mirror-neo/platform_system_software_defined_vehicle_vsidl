@@ -66,7 +66,7 @@ pub mod publisher {
         pub const UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
             id: vsidl_v1_stdlib::annotations::UniqueInstance::UNIQUE as i32,
-            service_unit: "sdv-golden-tire-speed-unique",
+            service_unit: "tire-speed-front",
         };
         /// List of all publication channels of 'sdv.golden.TireSpeed' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::UNIQUE];

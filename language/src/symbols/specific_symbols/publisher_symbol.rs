@@ -317,6 +317,7 @@ mod tests {
         ]);
         catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.clone());
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(crate::TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();

@@ -17,21 +17,28 @@ syntax = "proto3";
 package sdv.golden;
 import "sdv/vsidl/v1/annotations.proto";
 
-enum Location {
-  FRONT_LEFT = 0;
-  FRONT_RIGHT = 1;
-  REAR_LEFT = 2;
-  REAR_RIGHT = 3;
+enum TirePressureLocation {
+  TIRE_PRESSURE_FRONT_LEFT = 0;
+  TIRE_PRESSURE_FRONT_RIGHT = 1;
+  TIRE_PRESSURE_REAR_LEFT = 2;
+  TIRE_PRESSURE_REAR_RIGHT = 3;
 }
 
 message TIREPressure {
   option (sdv.vsidl.v1.publication) = {
-    instances_enum: "Location"
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "TirePressureLocation"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   uint32 pressure = 1;
+}
+
+enum TirePressureExplicitLocation {
+  TIRE_PRESSURE_EXPLICIT_FRONT_LEFT = 0;
+  TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT = 1;
+  TIRE_PRESSURE_EXPLICIT_REAR_LEFT = 2;
+  TIRE_PRESSURE_EXPLICIT_REAR_RIGHT = 3;
 }
 
 // same as TIREPressure above
@@ -39,29 +46,41 @@ message TIREPressure {
 // vsidl publisher fully declare all the instances.
 message TirePressureExplicitInstances {
   option (sdv.vsidl.v1.publication) = {
-    instances_enum: "Location"
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "TirePressureExplicitLocation"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   uint32 pressure = 1;
 }
 
+enum TireTemperatureLocation {
+  TIRE_TEMPERATURE_FRONT_LEFT = 0;
+  TIRE_TEMPERATURE_FRONT_RIGHT = 1;
+  TIRE_TEMPERATURE_REAR_LEFT = 2;
+  TIRE_TEMPERATURE_REAR_RIGHT = 3;
+}
+
 message TireTemperature {
   option (sdv.vsidl.v1.publication) = {
-    instances_enum: "Location"
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "TireTemperatureLocation"
+    message_count : 8
+    model : SINGLE_PUB
   };
 
   uint32 temperature = 1;
 }
 
+enum VehicleSpeedChannels {
+  VEHICLE_SPEED = 0;
+}
+
 // Example of Unique topics to be generated
 message VehicleSpeed {
   option (sdv.vsidl.v1.publication) = {
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "VehicleSpeedChannels"
+    message_count : 8
+    model : SINGLE_PUB
   };
   float speed = 1;
 }
@@ -76,11 +95,16 @@ message TireSpeed {
   float speed = 1;
 }
 
+enum VehicleSpeedForOtherCatalogChannels {
+  VEHICLE_SPEED_FOR_OTHER_CATALOG = 0;
+}
+
 // message for catalog_without_androidbp test
 message VehicleSpeedForOtherCatalog {
   option (sdv.vsidl.v1.publication) = {
-    message_count: 8
-    model: SINGLE_PUB
+    instances_enum : "VehicleSpeedForOtherCatalogChannels"
+    message_count : 8
+    model : SINGLE_PUB
   };
   float speed = 1;
 }

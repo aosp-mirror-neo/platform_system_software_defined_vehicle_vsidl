@@ -90,6 +90,8 @@ macro_rules! finding_ids {
             E20B: (0x20B, ServiceBundleNamingConventionContinueChar),
             /// Service bundle names must not use reserved names such as Rust, Java, or C++ keywords as their name
             E20C: (0x20C, ServiceBundleNamingConventionForbiddenName),
+            /// Channel names must be in snake case
+            E20D: (0x20D, ChannelNameSnakeCase),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),
@@ -119,6 +121,8 @@ macro_rules! finding_ids {
             E312: (0x312, RpcDuplicateMethodName),
             /// Proto message or service has a duplicate fully qualified name
             E313: (0x313, ProtoFqnDuplicate),
+            /// Channel names must be globally unique across all publishers
+            E314: (0x314, ChannelNameUnique),
             // -- Structural Errors --
             /// SdvPublication annotation must include a positive message_count
             E401: (0x401, SdvPublicationMessageCountPositive),
@@ -130,6 +134,12 @@ macro_rules! finding_ids {
             E404: (0x404, OwnedUnitTypeProtoRpcServiceHasMultipleOwners),
             /// A service bundle may not own unit types from a different package
             E405: (0x405, UnitTypeOwnershipFromDifferentPackage),
+            /// Publisher capacity must be at least 2 and an even number
+            E406: (0x406, PublisherCapacity),
+            /// Publisher capacity is mandatory in latest VSIDL syntax
+            E407: (0x407, PublisherCapacityMandatory),
+            /// Publisher channel is mandatory in latest VSIDL syntax
+            E408: (0x408, PublisherChannelMandatory),
             // -- Limitations --
             /// Publishers using user-defined names must specify a channel if the type has multiple channels
             E501: (0x501, NoUserDefinedNamesForMultiChannelPublishers),
