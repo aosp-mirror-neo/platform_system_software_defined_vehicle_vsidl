@@ -461,18 +461,34 @@ impl ServiceBundleContext {
         for (publication_fqn, subscribers) in &subscribers_for_publication {
             let mut channel_contexts = Vec::new();
             for subscriber in subscribers {
-                for channel_name in subscriber.channels(symbol_table) {
-                    let publisher_for_channel =
-                        subscriber.publisher_for_channel(symbol_table, &channel_name);
-                    let publisher_service_bundle_symbol =
-                        publisher_for_channel.owning_service_bundle(symbol_table);
+                if symbol_table.uses_pdk29() {
+                    for channel_name in subscriber.channels(symbol_table) {
+                        let publisher_for_topic =
+                            subscriber.publisher_for_channel(symbol_table, &channel_name);
+                        let publisher_service_bundle_symbol =
+                            publisher_for_topic.owning_service_bundle(symbol_table);
 
-                    channel_contexts.push(SubscriptionChannelContext::new(
-                        channel_name.clone(),
-                        publisher_for_channel.service_unit_name(symbol_table, &channel_name),
-                        publisher_service_bundle_symbol.name.clone(),
-                        publisher_service_bundle_symbol.package(symbol_table),
-                    ));
+                        channel_contexts.push(SubscriptionChannelContext::new(
+                            channel_name.clone(),
+                            publisher_for_topic.service_unit_name(symbol_table, &channel_name),
+                            publisher_service_bundle_symbol.name.clone(),
+                            publisher_service_bundle_symbol.package(symbol_table),
+                        ));
+                    }
+                } else {
+                    for channel_name in subscriber.topics(symbol_table) {
+                        let publisher_for_channel =
+                            subscriber.publisher_for_topic(symbol_table, &channel_name);
+                        let publisher_service_bundle_symbol =
+                            publisher_for_channel.owning_service_bundle(symbol_table);
+
+                        channel_contexts.push(SubscriptionChannelContext::new(
+                            channel_name.clone(),
+                            publisher_for_channel.service_unit_name(symbol_table, &channel_name),
+                            publisher_service_bundle_symbol.name.clone(),
+                            publisher_service_bundle_symbol.package(symbol_table),
+                        ));
+                    }
                 }
             }
 
