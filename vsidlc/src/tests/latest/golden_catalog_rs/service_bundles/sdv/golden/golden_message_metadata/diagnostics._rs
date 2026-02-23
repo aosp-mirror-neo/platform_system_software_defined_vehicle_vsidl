@@ -36,7 +36,9 @@ impl Diagnostics {
             >::new_with_options(
                     comms.clone(),
                     &sdv::diagnostics::event::EventPublisherOptions::builder()
-                        .publication_name("com-sdv-google-diagnostics-event-event-event")
+                        .publication_name(
+                            "com-android-sdv-diagnostics-event-event-event",
+                        )
                         .data_size(6)
                         .register_reflection_metadata(true)
                         .build()?,

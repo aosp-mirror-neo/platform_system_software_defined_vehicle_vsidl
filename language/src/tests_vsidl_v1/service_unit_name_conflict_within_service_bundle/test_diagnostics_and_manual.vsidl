@@ -20,7 +20,7 @@ service_bundle {
     name: "TestConflictNameWithinServiceBundleDiagnostics"
     server {
         service: "TirePressureFrontLeft"
-        service_unit_name: "com-sdv-google-diagnostics-event-event-name"
+        service_unit_name: "com-android-sdv-diagnostics-event-event-name"
     }
 
     diagnostics_declaration {

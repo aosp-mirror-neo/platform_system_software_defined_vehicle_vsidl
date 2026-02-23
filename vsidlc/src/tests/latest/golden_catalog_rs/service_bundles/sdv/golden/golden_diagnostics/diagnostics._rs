@@ -20,16 +20,16 @@ use sdv::status::SdvResult;
 use sdv::diagnostics::event::EventPublisher;
 use sdv::diagnostics::data_item::*;
 use sdv::diagnostics::api::data_item_service::*;
-use com_sdv_google_diagnostics_data_item_data_item_service_rpc::Interface as DataItemService;
+use com_android_sdv_diagnostics_data_item_data_item_service_rpc::Interface as DataItemService;
 use sdv::diagnostics::routine::*;
 use sdv::diagnostics::api::routine_control_service::*;
-use com_sdv_google_diagnostics_routine_control_routine_control_service_rpc::Interface as RoutineControlService;
+use com_android_sdv_diagnostics_routine_control_routine_control_service_rpc::Interface as RoutineControlService;
 use sdv::diagnostics::io_control::*;
 use sdv::diagnostics::api::io_control_service::*;
-use com_sdv_google_diagnostics_io_control_io_control_service_rpc::Interface as IoControlService;
+use com_android_sdv_diagnostics_io_control_io_control_service_rpc::Interface as IoControlService;
 use sdv::diagnostics::fault_listener::*;
 use sdv::diagnostics::api::fault_listener_service::*;
-use com_sdv_google_diagnostics_fault_fault_listener_service_rpc::Interface as FaultListenerService;
+use com_android_sdv_diagnostics_fault_fault_listener_service_rpc::Interface as FaultListenerService;
 #[allow(unused_imports)]
 use sdv::diagnostics::api::response_code::ResponseCode::*;
 /// Diagnostics extension struct.
@@ -60,7 +60,9 @@ impl Diagnostics {
             >::new_with_options(
                     comms.clone(),
                     &sdv::diagnostics::event::EventPublisherOptions::builder()
-                        .publication_name("com-sdv-google-diagnostics-event-event-event")
+                        .publication_name(
+                            "com-android-sdv-diagnostics-event-event-event",
+                        )
                         .data_size(6)
                         .register_reflection_metadata(false)
                         .build()?,
@@ -83,7 +85,7 @@ impl Diagnostics {
                     comms.clone(),
                     &sdv::diagnostics::event::EventPublisherOptions::builder()
                         .publication_name(
-                            "com-sdv-google-diagnostics-event-event-event-with-dot",
+                            "com-android-sdv-diagnostics-event-event-event-with-dot",
                         )
                         .data_size(6)
                         .register_reflection_metadata(false)
@@ -96,7 +98,7 @@ impl Diagnostics {
                     comms.clone(),
                     &sdv::diagnostics::event::EventPublisherOptions::builder()
                         .publication_name(
-                            "com-sdv-google-diagnostics-event-event-event-with-uppercase",
+                            "com-android-sdv-diagnostics-event-event-event-with-uppercase",
                         )
                         .data_size(6)
                         .register_reflection_metadata(false)

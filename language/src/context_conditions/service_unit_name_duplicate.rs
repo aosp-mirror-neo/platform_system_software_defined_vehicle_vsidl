@@ -82,7 +82,7 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
             let service_unit_name = if event.service_unit_name.is_empty() {
                 // Check generated name
                 format!(
-                    "com-sdv-google-diagnostics-event-event-{}",
+                    "com-android-sdv-diagnostics-event-event-{}",
                     event.id.replace('.', "-").to_kebab_case()
                 )
             } else {
@@ -258,7 +258,7 @@ mod tests {
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "com-sdv-google-diagnostics-event-event-name"
+            "com-android-sdv-diagnostics-event-event-name"
         ));
     }
 

@@ -19,16 +19,16 @@ package: "diagnostics"
 service_bundle {
     name: "DiagnosticsService"
     server {
-        service: "com.sdv.google.diagnostics.data_item.DataItemService"
+        service: "com.android.sdv.diagnostics.data_item.DataItemService"
     }
     server {
-        service: "com.sdv.google.diagnostics.routine_control.RoutineControlService"
+        service: "com.android.sdv.diagnostics.routine_control.RoutineControlService"
     }
     server {
-        service: "com.sdv.google.diagnostics.io_control.IoControlService"
+        service: "com.android.sdv.diagnostics.io_control.IoControlService"
     }
     server {
-        service: "com.sdv.google.diagnostics.fault.FaultListenerService"
+        service: "com.android.sdv.diagnostics.fault.FaultListenerService"
     }
 
     diagnostics_declaration {
