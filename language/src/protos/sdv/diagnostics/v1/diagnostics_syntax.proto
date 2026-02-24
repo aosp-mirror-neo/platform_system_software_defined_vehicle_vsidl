@@ -26,7 +26,7 @@ package sdv.diagnostics.v1;
 message DiagnosticsDeclaration {
   // Diagnostics data item declaration.
   //
-  // See com.sdv.google.diagnostics.data_item.DataItemService service.
+  // See com.android.sdv.diagnostics.data_item.DataItemService service.
   message DataItem {
     // Required. Id of the data item.
     string id = 1;
@@ -45,7 +45,7 @@ message DiagnosticsDeclaration {
 
   // Declaration of diagnostics data for input/output control.
   //
-  // See com.sdv.google.diagnostics.io_control.IoControl service.
+  // See com.android.sdv.diagnostics.io_control.IoControl service.
   message InputOutputControlData {
     // Id of the input/output control data.
     string id = 1;
@@ -56,7 +56,7 @@ message DiagnosticsDeclaration {
 
   // Declaration of diagnostics routine.
   //
-  // See com.sdv.google.diagnostics.routine_control.RoutineControl.
+  // See com.android.sdv.diagnostics.routine_control.RoutineControl.
   message Routine {
     // Information about routine control method.
     message Method {
@@ -72,25 +72,25 @@ message DiagnosticsDeclaration {
 
     // Information about routine start method.
     //
-    // See com.sdv.google.diagnostics.routine_control.RoutineControl::Start.
+    // See com.android.sdv.diagnostics.routine_control.RoutineControl::Start.
     Method start = 2;
 
     // Information about routine stop method.
     //
-    // See com.sdv.google.diagnostics.routine_control.RoutineControl::Stop.
+    // See com.android.sdv.diagnostics.routine_control.RoutineControl::Stop.
     Method stop = 3;
 
     // Information about routine result method.
     //
     // See
-    // com.sdv.google.diagnostics.routine_control.RoutineControl::RequestResult.
+    // com.android.sdv.diagnostics.routine_control.RoutineControl::RequestResult.
     Method result = 4;
   }
 
   // Declaration of diagnostics event and corresponding fault listener.
   //
-  // See com.sdv.google.diagnostics.event.Event.
-  // See com.sdv.google.diagnostics.fault.FaultListener.
+  // See com.android.sdv.diagnostics.event.Event.
+  // See com.android.sdv.diagnostics.fault.FaultListener.
   message Event {
     // Id of the event.
     string id = 1;
@@ -100,7 +100,7 @@ message DiagnosticsDeclaration {
 
     // Fault status changes which service wants to be notified of.
     //
-    // See com.sdv.google.diagnostics.fault.FaultListener.StatusMask.
+    // See com.android.sdv.diagnostics.fault.FaultListener.StatusMask.
     uint32 fault_listener_mask = 3;
 
     // User-defined service unit name of a corresponding event publisher.
