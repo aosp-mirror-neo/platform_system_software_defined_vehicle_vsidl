@@ -305,7 +305,7 @@ impl ContextConditionChecker {
     pub fn enable_latest(&mut self) {
         self.add_context_condition(
             SymbolTableState::NotCreated,
-            Box::new(TopicNameSnakeCase::default()),
+            Box::new(TopicNameKebabCase::default()),
         )
         .add_context_condition(SymbolTableState::NotCreated, Box::new(PublisherCapacity::default()))
         .add_context_condition(

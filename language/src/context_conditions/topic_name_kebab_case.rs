@@ -20,13 +20,13 @@ use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
 #[derive(Debug, Default)]
-pub struct TopicNameSnakeCase {
+pub struct TopicNameKebabCase {
     finding_collector: FindingCollector,
 }
 
-impl_context_condition!(TopicNameSnakeCase);
+impl_context_condition!(TopicNameKebabCase);
 
-fn is_snake_case(s: &str) -> bool {
+fn is_kebab_case(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
@@ -40,31 +40,31 @@ fn is_snake_case(s: &str) -> bool {
     }
 
     while let Some(c) = chars.next() {
-        if c == '_' {
-            // Cannot have consecutive underscores
+        if c == '-' {
+            // Cannot have consecutive hyphens
             if let Some(&next) = chars.peek() {
-                if next == '_' {
+                if next == '-' {
                     return false;
                 }
             } else {
-                // Cannot end with an underscore
+                // Cannot end with a hyphen
                 return false;
             }
         } else if !c.is_ascii_lowercase() && !c.is_ascii_digit() {
-            // Only lowercase alphanumeric and underscores allowed
+            // Only lowercase alphanumeric and hyphens allowed
             return false;
         }
     }
     true
 }
 
-impl VsidlVisitor for TopicNameSnakeCase {
+impl VsidlVisitor for TopicNameKebabCase {
     fn start_visit_publisher(&mut self, node: &Publisher) {
         for topic in &node.topic {
-            if !is_snake_case(topic) {
+            if !is_kebab_case(topic) {
                 self.finding_collector.error(
-                    FindingId::TopicNameSnakeCase,
-                    format!("Topic '{}' must be in lowercase snake case", topic),
+                    FindingId::TopicNameKebabCase,
+                    format!("Topic '{}' must be in lowercase kebab case", topic),
                     vec![node.span.clone().into_option()],
                 );
             }
@@ -73,10 +73,10 @@ impl VsidlVisitor for TopicNameSnakeCase {
 
     fn start_visit_subscriber(&mut self, node: &Subscriber) {
         for topic in &node.topic {
-            if !is_snake_case(topic) {
+            if !is_kebab_case(topic) {
                 self.finding_collector.error(
-                    FindingId::TopicNameSnakeCase,
-                    format!("Topic '{}' must be in lowercase snake case", topic),
+                    FindingId::TopicNameKebabCase,
+                    format!("Topic '{}' must be in lowercase kebab case", topic),
                     vec![node.span.clone().into_option()],
                 );
             }
@@ -96,17 +96,17 @@ mod tests {
             "UPPERCASE",
             "camelCase",
             "PascalCase",
-            "kebab-case",
-            "trailing_",
-            "_leading",
-            "double__underscore",
+            "snake_case",
+            "trailing-",
+            "-leading",
+            "double--hyphen",
             "with space",
-            "1starting_with_digit",
+            "1starting-with-digit",
             "",
         ];
 
         for topic in test_cases {
-            let mut check = TopicNameSnakeCase::default();
+            let mut check = TopicNameKebabCase::default();
             let mut publisher = Publisher::default();
             publisher.topic.push(topic.to_string());
 
@@ -114,10 +114,10 @@ mod tests {
             assert!(check.is_err(), "Should have rejected invalid topic name: '{}'", topic);
             assert!(check.any_finding_contains(
                 FindingSeverity::Error,
-                &format!("Topic '{}' must be in lowercase snake case", topic)
+                &format!("Topic '{}' must be in lowercase kebab case", topic)
             ));
 
-            let mut check = TopicNameSnakeCase::default();
+            let mut check = TopicNameKebabCase::default();
             let mut subscriber = Subscriber::default();
             subscriber.topic.push(topic.to_string());
 
@@ -128,17 +128,17 @@ mod tests {
 
     #[test]
     fn test_should_accept_valid_topic_names() {
-        let test_cases = vec!["valid", "snake_case", "with_digits_123", "v1"];
+        let test_cases = vec!["valid", "kebab-case", "with-digits-123", "v1"];
 
         for topic in test_cases {
-            let mut check = TopicNameSnakeCase::default();
+            let mut check = TopicNameKebabCase::default();
             let mut publisher = Publisher::default();
             publisher.topic.push(topic.to_string());
 
             check.start_visit_publisher(&publisher);
             assert!(check.is_ok(), "Should have accepted valid topic name: '{}'", topic);
 
-            let mut check = TopicNameSnakeCase::default();
+            let mut check = TopicNameKebabCase::default();
             let mut subscriber = Subscriber::default();
             subscriber.topic.push(topic.to_string());
 

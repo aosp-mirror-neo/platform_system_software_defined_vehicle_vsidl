@@ -48,8 +48,8 @@ pub use empty_catalog::EmptyCatalog;
 mod topic_name_unique;
 pub use topic_name_unique::TopicNameUnique;
 
-mod topic_name_snake_case;
-pub use topic_name_snake_case::TopicNameSnakeCase;
+mod topic_name_kebab_case;
+pub use topic_name_kebab_case::TopicNameKebabCase;
 
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
 mod no_user_defined_names_for_multi_topic_publishers;
