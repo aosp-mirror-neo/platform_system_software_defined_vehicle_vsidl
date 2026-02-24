@@ -70,14 +70,14 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        /// Publication channel 'pressure_one' of 'sdv.golden.Pressure'
+        /// Publication channel 'pressure-one' of 'sdv.golden.Pressure'
         pub const PRESSURE_ONE: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "pressure_one",
             service_unit: "pressure-one",
             capacity: 8,
         };
-        /// Publication channel 'pressure_two' of 'sdv.golden.Pressure'
+        /// Publication channel 'pressure-two' of 'sdv.golden.Pressure'
         pub const PRESSURE_TWO: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "pressure_two",
@@ -138,7 +138,7 @@ pub mod subscriber {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        /// Enables access to subscription channel 'pressure_two' of 'sdv.golden.Pressure'
+        /// Enables access to subscription channel 'pressure-two' of 'sdv.golden.Pressure'
         pub const PRESSURE_TWO: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "pressure_two",

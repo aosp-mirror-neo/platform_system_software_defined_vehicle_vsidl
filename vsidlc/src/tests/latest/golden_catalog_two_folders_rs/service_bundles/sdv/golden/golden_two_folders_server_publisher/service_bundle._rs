@@ -62,7 +62,7 @@ pub mod publisher {
     impl Channel<
         sdv_vsidlc_goldens_two_folders_folder_a_catalog::speed_a::VehicleSpeedA,
     > {
-        /// Publication channel 'vehicle_speed_a' of 'sdv.golden.VehicleSpeedA'
+        /// Publication channel 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
         pub const VEHICLE_SPEED_A: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle_speed_a",

@@ -23,6 +23,7 @@ service_bundle {
     publisher {
         message: "TireTemperature"
         channel: "TIRE_TEMPERATURE_REAR_LEFT"
+        topic: "tire-temperature-rear-left"
         capacity: 8
     }
 

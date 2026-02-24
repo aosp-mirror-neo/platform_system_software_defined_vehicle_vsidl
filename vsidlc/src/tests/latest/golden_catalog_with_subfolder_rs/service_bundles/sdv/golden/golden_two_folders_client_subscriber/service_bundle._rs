@@ -67,7 +67,7 @@ pub mod subscriber {
     impl Channel<
         sdv_vsidlc_goldens_with_subfolder_folder_a_catalog::speed_a::VehicleSpeedA,
     > {
-        /// Enables access to subscription channel 'vehicle_speed_a' of 'sdv.golden.VehicleSpeedA'
+        /// Enables access to subscription channel 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
         pub const VEHICLE_SPEED_A: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle_speed_a",
@@ -99,7 +99,7 @@ pub mod subscriber {
     impl Channel<
         sdv_vsidlc_goldens_with_subfolder_folder_b_catalog::speed_b::VehicleSpeedB,
     > {
-        /// Enables access to subscription channel 'vehicle_speed_b' of 'sdv.golden.VehicleSpeedB'
+        /// Enables access to subscription channel 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
         pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle_speed_b",

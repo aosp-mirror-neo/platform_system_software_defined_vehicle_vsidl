@@ -25,6 +25,7 @@ service_bundle {
     publisher {
         message: "TireSpeed"
         channel: "UNIQUE"
+        topic: "tire-speed-unique"
         service_unit_name: "tire-speed-front"
         capacity: 8
     }
@@ -39,6 +40,7 @@ service_bundle {
     publisher {
         message: "TireSpeed"
         channel: "UNIQUE"
+        topic: "tire-speed-unique"
         service_unit_name: "tire-speed-rear"
         capacity: 8
     }

@@ -56,7 +56,7 @@ pub mod publisher {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog> {
-        /// Publication channel 'vehicle_speed_for_other_catalog' of 'sdv.golden.VehicleSpeedForOtherCatalog'
+        /// Publication channel 'vehicle-speed-for-other-catalog' of 'sdv.golden.VehicleSpeedForOtherCatalog'
         pub const VEHICLE_SPEED_FOR_OTHER_CATALOG: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle_speed_for_other_catalog",

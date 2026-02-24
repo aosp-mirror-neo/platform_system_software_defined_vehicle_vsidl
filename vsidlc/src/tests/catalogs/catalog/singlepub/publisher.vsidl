@@ -26,9 +26,13 @@ service_bundle {
     publisher {
         message: ".sdv.golden.TIREPressure"
         channel: "TIRE_PRESSURE_FRONT_LEFT"
+        topic: "tire-pressure-front-left"
         channel: "TIRE_PRESSURE_FRONT_RIGHT"
+        topic: "tire-pressure-front-right"
         channel: "TIRE_PRESSURE_REAR_LEFT"
+        topic: "tire-pressure-rear-left"
         channel: "TIRE_PRESSURE_REAR_RIGHT"
+        topic: "tire-pressure-rear-right"
         capacity: 8
     }
 
@@ -38,9 +42,13 @@ service_bundle {
     publisher {
         message: "TirePressureExplicitInstances"
         channel: "TIRE_PRESSURE_EXPLICIT_FRONT_LEFT"
+        topic: "tire-pressure-explicit-front-left"
         channel: "TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT"
+        topic: "tire-pressure-explicit-front-right"
         channel: "TIRE_PRESSURE_EXPLICIT_REAR_LEFT"
+        topic: "tire-pressure-explicit-rear-left"
         channel: "TIRE_PRESSURE_EXPLICIT_REAR_RIGHT"
+        topic: "tire-pressure-explicit-rear-right"
         capacity: 8
     }
 
@@ -50,6 +58,7 @@ service_bundle {
     publisher {
         message: "TireTemperature"
         channel: "TIRE_TEMPERATURE_FRONT_RIGHT"
+        topic: "tire-temperature-front-right"
         capacity: 8
     }
 
@@ -58,6 +67,7 @@ service_bundle {
     publisher {
         message: "VehicleSpeed"
         channel: "VEHICLE_SPEED"
+        topic: "vehicle-speed"
         capacity: 8
     }
 }
@@ -67,6 +77,7 @@ service_bundle {
     publisher {
         message: "sdv.golden.size_limit.MessageWithSizeLimit"
         channel: "MESSAGE_WITH_SIZE_LIMIT"
+        topic: "message-with-size-limit"
         capacity: 8
     }
 }
