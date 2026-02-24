@@ -32,7 +32,7 @@
 # proto-message: AclPolicy
 
 # ---------------------- Publications ----------------------
-{{#each acls.publication_unit_types}}
+{{#each acls.message_unit_types}}
 # ACL for all publishers of the {{this.name}} topic.
 acls {
     name: "{{this.acl_name}}"
@@ -48,7 +48,7 @@ unit_types {
 }
 {{/each}}
 
-{{#each acls.publication_service_units}}
+{{#each acls.message_service_units}}
 # ACL for subscribers of the {{this.name}} service unit.
 acls {
     name: "{{this.acl_name}}"
