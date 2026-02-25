@@ -499,7 +499,7 @@ mod tests {
             data_types,
         );
 
-        let fqin1 = ServiceFqin::from_str("instance1:com.sdv.google.vsidl_provider.Agent/default")
+        let fqin1 = ServiceFqin::from_str("instance1:com.android.sdv.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
 
         // do not create a cache entry if we are on the same vm
@@ -510,7 +510,7 @@ mod tests {
             .await;
         assert!(res.is_err());
 
-        let fqin2 = ServiceFqin::from_str("instance2:com.sdv.google.vsidl_provider.Agent/default")
+        let fqin2 = ServiceFqin::from_str("instance2:com.android.sdv.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
 
         // the passed closure should not be called because:
@@ -550,7 +550,7 @@ mod tests {
             data_types,
         );
 
-        let fqin1 = ServiceFqin::from_str("instance1:com.sdv.google.vsidl_provider.Agent/default")
+        let fqin1 = ServiceFqin::from_str("instance1:com.android.sdv.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
 
         // creates a cache entry, even if we are on the same vm
@@ -559,7 +559,7 @@ mod tests {
             .await;
         assert!(res.is_ok());
 
-        let fqin2 = ServiceFqin::from_str("instance2:com.sdv.google.vsidl_provider.Agent/default")
+        let fqin2 = ServiceFqin::from_str("instance2:com.android.sdv.vsidl_provider.Agent/default")
             .expect("Valid FQIN");
 
         // the passed closure should not be called because:

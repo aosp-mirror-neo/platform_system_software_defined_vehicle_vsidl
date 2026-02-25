@@ -17,27 +17,21 @@
 
 # ACL policies for Vsidl Provider Agent Unit Types.
 
-acls {
-    name: "Internal"
-    include: "com.sdv.google.vsidl_provider.Agent"
-}
+acls {name : "Internal" include : "com.android.sdv.vsidl_provider.Agent"}
 
 acls {
-    name: "VsidlProviderClients"
-    include: "com.sdv.someip.SomeIpBroker"
-    include: "com.sdv.oem.diagnostics.DiagnosticsAgent"
-    include: "com.google.sdv.telemetry.TelemetryService"
+  name : "VsidlProviderClients"
+  include : "com.sdv.someip.SomeIpBroker"
+  include : "com.sdv.oem.diagnostics.DiagnosticsAgent"
+  include : "com.google.sdv.telemetry.TelemetryService"
 
-    # this is for the tests:
-    include: "com.sdv.google.sample.*"
+  # this is for the tests:
+  include : "com.sdv.google.sample.*"
 }
 
-unit_types {
-    name: "VsidlProviderService"
-    acl_names: "Internal"
-}
+unit_types {name : "VsidlProviderService" acl_names : "Internal"}
 
 service_units {
-    name: "vsidl-provider-server"
-    acl_names: "VsidlProviderClients"
+  name : "vsidl-provider-server"
+  acl_names : "VsidlProviderClients"
 }

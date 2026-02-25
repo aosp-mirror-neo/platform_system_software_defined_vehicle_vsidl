@@ -22,21 +22,21 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.
 //
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file manifest declaration
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file manifest declaration
 // for each service bundle that is using this shared file:
 // + vsidl_schemas_path: "etc/vsidl_provider/vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb",
     filename: "vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_apex_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_apex_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_apex_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file",
+    name: "generate_vsidl_files_single_apex_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -47,27 +47,27 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file",
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.
 //
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file manifest declaration
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file manifest declaration
 // for each service bundle that is using this shared file:
 // + vsidl_schemas_path: "etc/vsidl_provider/vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb",
     filename: "vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_apex_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_apex_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_apex_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file",
+    name: "generate_vsidl_files_single_apex_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -78,39 +78,39 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file",
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with Diagnostics declaration for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService.
+// Pre-compiled file with Diagnostics declaration for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService.
 //
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService manifest declaration:
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService manifest declaration:
 // + diagnostics_config_path: "etc/vsidl_provider/DiagService-diag-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService-diag-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService-diag-config.binpb",
     filename: "DiagService-diag-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService{diagnostics-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService{diagnostics-config.binpb}",
     installable: false,
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/DiagService-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService-vsidl-config.binpb",
     filename: "DiagService-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.DiagService",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -121,7 +121,7 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
         " --service-bundle-name DiagService",
     out: [
         "diagnostics-config.binpb",
@@ -129,21 +129,21 @@ genrule {
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/HelloService-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService-vsidl-config.binpb",
     filename: "HelloService-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.HelloService",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -154,28 +154,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
         " --service-bundle-name HelloService",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/OtherManager-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager-vsidl-config.binpb",
     filename: "OtherManager-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherManager",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -186,28 +186,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
         " --service-bundle-name OtherManager",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/OtherMonitor-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor-vsidl-config.binpb",
     filename: "OtherMonitor-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.OtherMonitor",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -218,28 +218,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
         " --service-bundle-name OtherMonitor",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/Manager-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager-vsidl-config.binpb",
     filename: "Manager-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Manager",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -250,28 +250,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
         " --service-bundle-name Manager",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/Monitor-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor-vsidl-config.binpb",
     filename: "Monitor-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file.Monitor",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -282,40 +282,40 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
         " --service-bundle-name Monitor",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with Diagnostics declaration for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService.
+// Pre-compiled file with Diagnostics declaration for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService.
 //
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService manifest declaration:
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService manifest declaration:
 // + diagnostics_config_path: "etc/vsidl_provider/DiagService-diag-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService-diag-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService-diag-config.binpb",
     filename: "DiagService-diag-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService{diagnostics-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService{diagnostics-config.binpb}",
     installable: false,
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/DiagService-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService-vsidl-config.binpb",
     filename: "DiagService-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.DiagService",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.DiagService",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -326,7 +326,7 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
         " --service-bundle-name DiagService",
     out: [
         "diagnostics-config.binpb",
@@ -334,21 +334,21 @@ genrule {
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.HelloService.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.HelloService.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.HelloService manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.HelloService manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/HelloService-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.HelloService-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.HelloService-vsidl-config.binpb",
     filename: "HelloService-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.HelloService{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.HelloService{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.HelloService",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.HelloService",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -359,28 +359,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
         " --service-bundle-name HelloService",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherManager.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherManager.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherManager manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherManager manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/OtherManager-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherManager-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherManager-vsidl-config.binpb",
     filename: "OtherManager-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherManager{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherManager{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherManager",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherManager",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -391,28 +391,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
         " --service-bundle-name OtherManager",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/OtherMonitor-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor-vsidl-config.binpb",
     filename: "OtherMonitor-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.OtherMonitor",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -423,28 +423,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
         " --service-bundle-name OtherMonitor",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Manager.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Manager.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Manager manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Manager manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/Manager-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Manager-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Manager-vsidl-config.binpb",
     filename: "Manager-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Manager{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Manager{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Manager",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Manager",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -455,28 +455,28 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
         " --service-bundle-name Manager",
     out: [
         "vsidl-config.binpb",
     ],
 }
 
-// Pre-compiled file with VSIDL schemas for com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Monitor.
+// Pre-compiled file with VSIDL schemas for com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Monitor.
 //
-// DEPRECATED: you should use "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
-// Usage: add the following line to com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Monitor manifest declaration:
+// DEPRECATED: you should use "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file-vsidl-config.binpb" prebuilt_etc instead
+// Usage: add the following line to com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Monitor manifest declaration:
 // + vsidl_schemas_path: "etc/vsidl_provider/Monitor-vsidl-config.binpb"
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Monitor-vsidl-config.binpb",
+    name: "com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Monitor-vsidl-config.binpb",
     filename: "Monitor-vsidl-config.binpb",
     sub_dir: "vsidl_provider",
-    src: ":generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Monitor{vsidl-config.binpb}",
+    src: ":generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Monitor{vsidl-config.binpb}",
     installable: false,
 }
 
 genrule {
-    name: "generate_vsidl_files_single_bundle_com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file.Monitor",
+    name: "generate_vsidl_files_single_bundle_com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file.Monitor",
     tools: ["vsidl_rc_generator"],
     srcs: [
         ":sdv_v1_catalog_files",
@@ -487,7 +487,7 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.sdv.google.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
         " --service-bundle-name Monitor",
     out: [
         "vsidl-config.binpb",

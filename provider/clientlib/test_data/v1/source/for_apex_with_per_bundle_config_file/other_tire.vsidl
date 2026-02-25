@@ -14,7 +14,7 @@
 # proto-file: //system/software_defined_vehicle/vsidl/language/src/protos/sdv/vsidl/v1/syntax.proto
 # proto-message: VsidlEntry
 
-package: "com.sdv.google.sample.vsidl_provider.apex_with_per_bundle_config_file"
+package: "com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file"
 
 service_bundle {
     name: "OtherManager"
