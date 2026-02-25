@@ -21,8 +21,8 @@ use anyhow::anyhow;
 use std::path::PathBuf;
 
 use vsidl_v1_parser::{
-    AndroidBpDanglingFiles, AstNodeMut, Catalog, ChannelCase, ConvertChannelCase, FindingId,
-    HideChannelSyntax, HidePdk29Syntax, SymbolTable, SymbolTableState, TargetApi,
+    AndroidBpDanglingFiles, Catalog, ConvertChannelToTopic, FindingId, HideChannelSyntax,
+    HidePdk29Syntax, SymbolTable, SymbolTableState, TargetApi,
 };
 
 const BOLD_RED: &str = "\x1b[1;31m";
@@ -113,14 +113,12 @@ impl VsidlcCommonCli {
     fn apply_target_api_visitors(&self, catalog: &mut Catalog) {
         match self.target_api.as_str() {
             "pdk29" => {
+                ConvertChannelToTopic::traverse(catalog);
                 HideChannelSyntax::traverse(catalog);
-                let mut visitor = ConvertChannelCase { case: ChannelCase::Upper };
-                catalog.accept(&mut visitor);
             }
             "latest" => {
+                ConvertChannelToTopic::traverse(catalog);
                 HidePdk29Syntax::traverse(catalog);
-                let mut visitor = ConvertChannelCase { case: ChannelCase::Lower };
-                catalog.accept(&mut visitor);
             }
             _ => {}
         }
