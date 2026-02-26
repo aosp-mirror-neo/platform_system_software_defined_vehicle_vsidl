@@ -510,7 +510,7 @@ mod test {
 
             // THEN the Arc reference counts for proto_schemas are correct.
             for subpackage in Subpackage::all() {
-                let package_name = format!("com.sdv.google.sample.vsidl_provider.{subpackage}");
+                let package_name = format!("com.android.sdv.sample.vsidl_provider.{subpackage}");
 
                 let relevant_metadata: Vec<_> = provider
                     .bundle_metadata
