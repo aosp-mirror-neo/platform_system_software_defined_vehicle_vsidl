@@ -73,7 +73,7 @@ impl ServiceBundle for {{service_bundle_name}}ServiceBundle {
                         {{#if rpc_servers}}
                         (
                             {{#each rpc_servers}}
-                            Arc::new({{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl::new()),
+                            Arc::new({{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl::new()),
                             {{/each}}
                         )
                         {{/if}}
@@ -242,16 +242,16 @@ async fn handle_{{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{snak
 {{/each}}
 
 {{#each rpc_servers}}
-struct {{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl {}
+struct {{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl {}
 
-impl {{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl {
+impl {{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl {
     fn new() -> Self {
         Self {}
     }
 }
 
 #[async_trait::async_trait]
-impl {{unit_type.crate_name}}::Interface for {{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl {
+impl {{unit_type.crate_name}}::Interface for {{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl {
     {{#each unit_type.methods}}
     async fn {{this.name}}(
         &self,
