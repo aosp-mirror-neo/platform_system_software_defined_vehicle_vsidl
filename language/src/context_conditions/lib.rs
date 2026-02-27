@@ -190,3 +190,6 @@ pub use rpc_channel_naming_convention::RpcChannelNamingConvention;
 
 mod rpc_channel_mandatory;
 pub use rpc_channel_mandatory::RpcChannelMandatory;
+
+mod rpc_channel_unique_per_service;
+pub use rpc_channel_unique_per_service::RpcChannelUniquePerService;

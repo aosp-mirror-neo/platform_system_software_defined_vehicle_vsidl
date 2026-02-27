@@ -334,6 +334,10 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,
+            Box::new(RpcChannelUniquePerService::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
             Box::new(TopicNameUnique::default()),
         )
         .add_context_condition(

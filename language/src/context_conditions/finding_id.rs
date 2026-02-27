@@ -146,6 +146,8 @@ macro_rules! finding_ids {
             E409: (0x409, RpcChannelMandatory),
             /// RPC client channel maps to an existing server-side channel definition
             E40A: (0x40A, RpcClientChannelRequiresServerChannel),
+            /// RPC channel must only be used by one service
+            E40B: (0x40B, RpcChannelUniquePerService),
             // -- Limitations --
             /// Publishers using user-defined names must specify a channel if the type has multiple channels
             E501: (0x501, NoUserDefinedNamesForMultiChannelPublishers),
