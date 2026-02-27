@@ -30,6 +30,7 @@ pub struct ConvertChannelToTopic {
     package_name: String,
     vsidl_package: String,
     message_fqn_is_multipub: HashMap<String, bool>,
+    message_fqn_to_message_count: HashMap<String, i64>,
 }
 
 impl_traverse_catalog_mut!(ConvertChannelToTopic);
@@ -53,6 +54,10 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
             {
                 is_multipub = true;
             }
+            if publication.message_count > 0 {
+                self.message_fqn_to_message_count
+                    .insert(fqn.clone(), publication.message_count as i64);
+            }
         }
         self.message_fqn_is_multipub.insert(fqn, is_multipub);
     }
@@ -62,6 +67,19 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
     }
 
     fn start_visit_publisher(&mut self, node: &mut Publisher) {
+        // SOA publishers use a 'capacity' field that replaces the 'message_count' annotation
+        // that used to be attached to Protobuf messages used a publications.
+        if node.capacity == 0 && node.capacity_span.is_none() {
+            let fqn = format!("{}.{}", self.vsidl_package, node.message);
+            if let Some(&message_count) = self.message_fqn_to_message_count.get(&fqn) {
+                node.capacity = message_count;
+            } else if let Some(&message_count) =
+                self.message_fqn_to_message_count.get(&node.message)
+            {
+                node.capacity = message_count;
+            }
+        }
+
         // no user-defined topic but user-defined channel (i.e. variant/instance) means that pre-SOA syntax is used
         if node.topic.is_empty() && node.topic_span.is_empty() && !node.channel.is_empty() {
             let fqn = format!("{}.{}", self.vsidl_package, node.message);
@@ -121,6 +139,21 @@ mod test {
     use crate::test_data;
     use crate::Catalog;
     use std::path::PathBuf;
+
+    #[test]
+    fn test_should_set_capacity_from_message_count_if_unset() {
+        // GIVEN A catalog with a publisher having 0 capacity and NO capacity_span
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
+        catalog.catalog_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+
+        // WHEN executing the visitor
+        ConvertChannelToTopic::traverse(&mut catalog);
+
+        // THEN capacity field is set to 8 (from Pressure message in messages.proto)
+        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        assert_eq!(publisher.capacity, 8);
+    }
 
     #[test]
     fn test_should_convert_to_multipub_topic_if_message_is_multipub() {
