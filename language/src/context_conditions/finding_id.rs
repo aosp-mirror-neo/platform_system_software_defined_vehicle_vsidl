@@ -144,6 +144,8 @@ macro_rules! finding_ids {
             E408: (0x408, PublisherTopicMandatory),
             /// RPC channel is mandatory in latest VSIDL syntax
             E409: (0x409, RpcChannelMandatory),
+            /// RPC client channel maps to an existing server-side channel definition
+            E40A: (0x40A, RpcClientChannelRequiresServerChannel),
             // -- Limitations --
             /// Publishers using user-defined names must specify a channel if the type has multiple channels
             E501: (0x501, NoUserDefinedNamesForMultiChannelPublishers),

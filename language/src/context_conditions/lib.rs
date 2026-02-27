@@ -44,6 +44,9 @@ pub use empty_catalog::EmptyCatalog;
 
 // ERRORS
 
+mod rpc_client_channel_requires_server_channel;
+pub use rpc_client_channel_requires_server_channel::RpcClientChannelRequiresServerChannel;
+
 // Topics must be globally unique
 mod topic_name_unique;
 pub use topic_name_unique::TopicNameUnique;

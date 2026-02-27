@@ -358,6 +358,10 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::Linked,
+            Box::new(RpcClientChannelRequiresServerChannel::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
             Box::new(ServiceUnitNameTooLong::default()),
         )
         .add_context_condition(
