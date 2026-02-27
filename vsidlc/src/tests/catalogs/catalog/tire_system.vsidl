@@ -22,6 +22,7 @@ service_bundle {
 
     client {
         service: "sdv.golden.rpc.TireStatus"
+        channel: "sdv-golden-rpc-tire-status"
     }
 
     subscriber {
@@ -39,6 +40,7 @@ service_bundle {
     }
     client {
         service: "sdv.golden.rpc.TireStatus"
+        channel: "sdv-golden-rpc-tire-status"
     }
 
     #Validate generation with empty diagnostics declaration

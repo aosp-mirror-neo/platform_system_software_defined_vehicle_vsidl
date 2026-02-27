@@ -21,6 +21,7 @@ service_bundle {
     name: "DisabledServer"
     server {
         service: "sdv.golden.rpc.TireStatusInDisabledBundle"
+        channel: "sdv-golden-rpc-tire-status-in-disabled-bundle"
     }
     build_cfg {
         skip_codegen: true

@@ -22,6 +22,7 @@ service_bundle {
 
     client {
         service: "sdv.golden.rpc.TireStatus"
+        channel: "sdv-golden-rpc-tire-status"
     }
     subscriber {
         message: "VehicleSpeedA"
@@ -47,5 +48,6 @@ service_bundle {
     }
     server {
         service: "sdv.golden.rpc.TireStatus"
+        channel: "sdv-golden-rpc-tire-status"
     }
 }
