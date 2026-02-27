@@ -23,6 +23,7 @@ service_bundle {
     # Valid. Only exists for coverage.
     message: "ThisIsAVeryLongPublisherNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789"
     channel: "ONE"
+    topic: "one"
     service_unit_name: "my-pub"
     capacity: 8
   }
@@ -30,6 +31,7 @@ service_bundle {
   publisher {
     message: "ThisIsAVeryLongPublisherNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789"
     channel: "SdvTestThisIsAVeryLongPublisherNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789Two"
+    topic: "sdv-test-this-is-a-very-long-publisher-name-that-exceeds-our-limits-01234567890123456789012345678901234567890123456789012345678901234567890123456789-two"
     capacity: 8
   }
 
@@ -37,12 +39,15 @@ service_bundle {
     message: "ThisIsAnotherVeryLongPublisherNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789"
     channel: "SdvTestThisIsAnotherVeryLongPublisherNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789Three"
     channel: "SdvTestThisIsAnotherVeryLongPublisherNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789Four"
+    topic: "sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-three"
+    topic: "sdv-test-this-is-another-very-long-publisher-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-four"
     capacity: 8
   }
 
   subscriber {
     message: "ThisIsAVeryLongSubscriberNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789"
     channel: "SdvTestThisIsAVeryLongSubscriberNameThatExceedsOurLimits01234567890123456789012345678901234567890123456789012345678901234567890123456789Five"
+    topic: "sdv-test-this-is-a-very-long-subscriber-name-that-exceeds-our-limits01234567890123456789012345678901234567890123456789012345678901234567890123456789-five"
   }
 
   subscriber {

@@ -36,29 +36,26 @@ impl SymbolTableChecker for SubscriberChannelsRedeclaration {
         symbol_table: &SymbolTable,
         service_bundle: &ServiceBundleSymbol,
     ) {
-        let mut channel_spans: HashMap<(String, String), Vec<Option<Span>>> = HashMap::new();
+        let mut topic_spans: HashMap<(String, String), Vec<Option<Span>>> = HashMap::new();
 
-        // Pass 1: Collect all spans for every (subscriber, channel) pair
+        // Pass 1: Collect all spans for every (subscriber, topic) pair
         for subscriber in service_bundle.subscribers(symbol_table) {
             let full_name = subscriber.full_name(symbol_table);
-            for (index, channel_name) in subscriber.channel.iter().enumerate() {
-                let key = (full_name.clone(), channel_name.clone());
-                channel_spans
-                    .entry(key)
-                    .or_default()
-                    .push(subscriber.channel_span.get(index).cloned());
+            for (index, topic_name) in subscriber.topic.iter().enumerate() {
+                let key = (full_name.clone(), topic_name.clone());
+                topic_spans.entry(key).or_default().push(subscriber.topic_span.get(index).cloned());
             }
         }
 
-        // Pass 2: Report errors for duplicate channel declarations
-        for ((sub_name, channel_name), spans) in channel_spans {
+        // Pass 2: Report errors for duplicate topic declarations
+        for ((sub_name, topic_name), spans) in topic_spans {
             if spans.len() > 1 {
                 self.finding_collector.error(
                 FindingId::SubscriberChannelsRedeclaration,
                 format!(
-                    "Service Bundle: '{}', channel '{}' of subscriber '{}' is redeclared in this service bundle",
+                    "Service Bundle: '{}', topic '{}' of subscriber '{}' is redeclared in this service bundle",
                     service_bundle.full_name(symbol_table),
-                    channel_name,
+                    topic_name,
                     sub_name,
                 ),
                 spans,
@@ -71,7 +68,7 @@ impl SymbolTableChecker for SubscriberChannelsRedeclaration {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::subscriber_channels_redeclaration::SubscriberChannelsRedeclaration;
+    use crate::subscriber_topic_redeclaration::SubscriberChannelsRedeclaration;
     use crate::FindingSeverity;
     use vsidl_v1_common::AstNode;
     use vsidl_v1_common::Catalog;
@@ -79,15 +76,15 @@ mod test {
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
 
     #[test]
-    fn test_subscriber_channels_redeclaration_error() {
-        // GIVEN a catalog with subscriber channels redeclared in vsidl
+    fn test_subscriber_topics_redeclaration_error() {
+        // GIVEN a catalog with subscriber topics redeclared in vsidl
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_EXPLICIT_CHANNEL_LISTING.clone()]);
         catalog
             .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_CHANNELS_REDECLARATION.clone());
+            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_TOPICS_REDECLARATION.clone());
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
@@ -101,20 +98,20 @@ mod test {
         assert!(check.has_findings());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "Service Bundle: 'sdv.test.SubscribingBundle', channel 'FRONT_LEFT' of subscriber 'sdv.test.TirePressure' is redeclared in this service bundle"
+            "Service Bundle: 'sdv.test.SubscribingBundle', topic 'front-left' of subscriber 'sdv.test.TirePressure' is redeclared in this service bundle"
         ));
     }
 
     #[test]
-    fn test_subscriber_channels_redeclaration_separate_error() {
-        // GIVEN a catalog with subscriber channels redeclared in vsidl
+    fn test_subscriber_topics_redeclaration_separate_error() {
+        // GIVEN a catalog with subscriber topics redeclared in vsidl
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_EXPLICIT_CHANNEL_LISTING.clone()]);
         catalog
             .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_CHANNELS_REDECLARATION_SEPARATE.clone());
+            .push(vsidl_v1_test_data::VSIDL_SUBSCRIBER_TOPICS_REDECLARATION_SEPARATE.clone());
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
@@ -128,13 +125,13 @@ mod test {
         assert!(check.has_findings());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "Service Bundle: 'sdv.test.SubscribingBundle', channel 'FRONT_LEFT' of subscriber 'sdv.test.TirePressure' is redeclared in this service bundle"
+            "Service Bundle: 'sdv.test.SubscribingBundle', topic 'front-left' of subscriber 'sdv.test.TirePressure' is redeclared in this service bundle"
         ));
     }
 
     #[test]
-    fn test_subscriber_channels_no_redeclaration_ok() {
-        // GIVEN a catalog with no subscriber channels redeclared in vsidl
+    fn test_subscriber_topics_no_redeclaration_ok() {
+        // GIVEN a catalog with no subscriber topics redeclared in vsidl
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors

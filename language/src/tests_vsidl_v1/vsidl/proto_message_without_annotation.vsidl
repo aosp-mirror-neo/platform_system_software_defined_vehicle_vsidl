@@ -22,13 +22,13 @@ service_bundle {
 
   publisher {
     message: "NoAnnotationSinglePubMessage"
-    channel: "test"
+    topic: "test"
     capacity: 8
   }
 
   publisher {
     message: "NoAnnotationMultiPubMessage"
-    channel: "test2"
+    topic: "test2"
     capacity: 8
   }
 }

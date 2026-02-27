@@ -129,7 +129,13 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
         unit_type.members.push(format!("*:{}", publisher_bundle_fqn));
 
         // Service Unit for each channel of the Publisher
-        for channel in publisher.channels(symbol_table) {
+        let channels_or_topics = if symbol_table.uses_pdk29() {
+            publisher.channels(symbol_table)
+        } else {
+            publisher.topics(symbol_table)
+        };
+
+        for channel in channels_or_topics {
             let subscribers: Vec<String> = message
                 .subscribers(symbol_table)
                 .iter()

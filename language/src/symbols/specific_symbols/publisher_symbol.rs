@@ -24,8 +24,8 @@ use vsidl_v1::syntax::Span;
 use vsidl_v1_common::{constants::UNIQUE_CHANNEL, format_service_unit_name};
 
 use super::{
-    channel_symbol::ChannelSymbol, proto_publication_symbol::ProtoPublicationSymbol,
-    service_bundle_symbol::ServiceBundleSymbol,
+    proto_publication_symbol::ProtoPublicationSymbol, service_bundle_symbol::ServiceBundleSymbol,
+    topic_symbol::TopicSymbol,
 };
 
 /// Symbol representing a VSIDL Publisher definition within a service bundle.
@@ -46,8 +46,8 @@ pub struct PublisherSymbol {
     pub(crate) message: Option<SymbolId>,
     /// (PDK29 only) Symbol ID of the [ProtoPublicationSymbol] published by this publisher. Requires the symbol table to be linked.
     pub(crate) publication: Option<SymbolId>,
-    /// Symbol IDs of the [ChannelSymbol]s this publisher publishes to. Requires the symbol table to be linked.
-    pub(crate) channels: Vec<SymbolId>,
+    /// Symbol IDs of the [TopicSymbol]s this publisher publishes to. Requires the symbol table to be linked.
+    pub(crate) topics: Vec<SymbolId>,
     /// Symbol ID of the [ServiceBundleSymbol] that owns this publisher. Requires the symbol table to be linked.
     pub(crate) owning_service_bundle: Option<SymbolId>,
 }
@@ -139,16 +139,16 @@ impl PublisherSymbol {
         !self.service_unit_name.is_empty()
     }
 
-    /// Returns the service unit name for this publisher and a specific channel it publishes.
+    /// Returns the service unit name for this publisher and a specific channel / topic it publishes.
     ///
     /// If the publisher has a user-defined `service_unit_name` in the VSIDL, that name is returned.
     /// Otherwise, a service unit name is generated based on the publication's fully qualified name
-    /// and the provided `channel_name`. The generated name follows the kebab-case convention.
+    /// and the provided `channel_or_topic`. The generated name follows the kebab-case convention.
     ///
     /// # Parameters
     ///
     /// * `symbol_table` - The linked symbol table required for resolving names and channels.
-    /// * `channel_name` - The specific channel for which the service unit name is requested.
+    /// * `channel_or_topic` - The specific channel or topic for which the service unit name is requested.
     ///
     /// # Returns
     ///
@@ -158,13 +158,22 @@ impl PublisherSymbol {
     ///
     /// * If the symbol table is not linked.
     /// * If the provided `channel_name` is not one of the channels published by this publisher (see [channels]).
-    pub fn service_unit_name(&self, symbol_table: &SymbolTable, channel_name: &str) -> String {
+    pub fn service_unit_name(&self, symbol_table: &SymbolTable, channel_or_topic: &str) -> String {
         // Verify that requested channel exists
         symbol_table.panic_if_not_linked();
-        if !self.channels(symbol_table).contains(&channel_name.to_string()) {
-            panic!("service_unit_name: Channel '{channel_name}' not found for publisher '{}'. Available channels: {:?}",
+        if symbol_table.uses_pdk29()
+            && !self.channels(symbol_table).contains(&channel_or_topic.to_string())
+        {
+            panic!("service_unit_name: Channel '{channel_or_topic}' not found for publisher '{}'. Available channels: {:?}",
                 self.full_name(symbol_table),
                 self.channels(symbol_table)
+            );
+        } else if !symbol_table.uses_pdk29()
+            && !self.topics(symbol_table).contains(&channel_or_topic.to_string())
+        {
+            panic!("service_unit_name: Topic '{channel_or_topic}' not found for publisher '{}'. Available topics: {:?}",
+                self.full_name(symbol_table),
+                self.topics(symbol_table)
             );
         }
 
@@ -173,9 +182,9 @@ impl PublisherSymbol {
             self.service_unit_name.clone()
         } else if symbol_table.uses_pdk29() {
             let publication_fqn = self.publication(symbol_table).full_name(symbol_table);
-            format_service_unit_name(publication_fqn, channel_name.to_string())
+            format_service_unit_name(publication_fqn, channel_or_topic.to_string())
         } else {
-            channel_name.to_string().to_kebab_case()
+            channel_or_topic.to_string().to_kebab_case()
         }
     }
 
@@ -208,63 +217,74 @@ impl PublisherSymbol {
     /// A `Vec<String>` containing the names of the channels published.
     pub fn channels(&self, symbol_table: &SymbolTable) -> Vec<String> {
         symbol_table.panic_if_not_linked();
-        if symbol_table.uses_pdk29() {
-            // Case 1: Publisher defines explicit channels
-            let mut channels = self.channel.clone();
-            // Case 2: Publisher defines no channels, but publication has channels => use all
-            if channels.is_empty() {
-                channels = self.publication(symbol_table).channels(symbol_table).clone();
-            }
-            // Case 3: Publisher defines no channels and publication has no channels => use UNIQUE
-            if channels.is_empty() {
-                channels.push(UNIQUE_CHANNEL.to_string());
-            }
-            channels
-        } else {
-            // Case 1: Publisher defines explicit channels
-            let channels = if !self.channels.is_empty() {
-                self.channels.iter().map(|id| symbol_table.get_symbol(id).unwrap().name()).collect()
-            } else {
-                // Case 2: Publisher defines no channels, but message has channels => use all
-                let mut channels = Vec::new();
-                if let Some(message_id) = &self.message {
-                    if let Some(SymbolKind::ProtoMessage(message)) =
-                        symbol_table.get_symbol(message_id)
-                    {
-                        channels = message
-                            .channels(symbol_table)
-                            .iter()
-                            .map(|channel| channel.name())
-                            .collect();
-                    }
-                }
-                channels
-            };
+        assert!(symbol_table.uses_pdk29());
 
-            channels
+        // Case 1: Publisher defines explicit channels
+        let mut channels = self.channel.clone();
+        // Case 2: Publisher defines no channels, but publication has channels => use all
+        if channels.is_empty() {
+            channels = self.publication(symbol_table).channels(symbol_table).clone();
         }
+        // Case 3: Publisher defines no channels and publication has no channels => use UNIQUE
+        if channels.is_empty() {
+            channels.push(UNIQUE_CHANNEL.to_string());
+        }
+        channels
     }
 
-    /// Returns the [ChannelSymbol]s associated with this publisher.
+    /// Returns the list of topic names published by this publisher.
     ///
     /// # Parameters
     ///
-    /// * `symbol_table` - The linked symbol table to resolve the channel IDs.
+    /// * `symbol_table` - The linked symbol table required for resolving the topics.
     ///
     /// # Returns
     ///
-    /// A `Vec<&ChannelSymbol>` containing the channels for this publisher.
-    pub fn channel_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a ChannelSymbol> {
-        let mut channels: Vec<_> = self
-            .channels
+    /// A `Vec<String>` containing the names of the topics published.
+    pub fn topics(&self, symbol_table: &SymbolTable) -> Vec<String> {
+        symbol_table.panic_if_not_linked();
+        assert!(!symbol_table.uses_pdk29());
+
+        // Case 1: Publisher defines explicit topics
+        let topics = if !self.topics.is_empty() {
+            self.topics.iter().map(|id| symbol_table.get_symbol(id).unwrap().name()).collect()
+        } else {
+            // Case 2: Publisher defines no topics, but message has topics => use all
+            let mut topics = Vec::new();
+            if let Some(message_id) = &self.message {
+                if let Some(SymbolKind::ProtoMessage(message)) = symbol_table.get_symbol(message_id)
+                {
+                    topics =
+                        message.topics(symbol_table).iter().map(|topic| topic.name()).collect();
+                }
+            }
+            topics
+        };
+
+        topics
+    }
+
+    /// Returns the [TopicSymbol]s associated with this publisher.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol_table` - The linked symbol table to resolve the topic IDs.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<&TopicSymbol>` containing the topics for this publisher.
+    pub fn topic_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a TopicSymbol> {
+        assert!(!symbol_table.uses_pdk29());
+        let mut topics: Vec<_> = self
+            .topics
             .iter()
-            .map(|channel_id| symbol_table.get_channel_symbol(channel_id).unwrap())
+            .map(|topic_id| symbol_table.get_topic_symbol(topic_id).unwrap())
             .collect();
 
-        // Sorts the channels by name; necessary for a stable order in generated files
-        channels.sort_by_key(|channel| channel.name());
+        // Sorts the topics by name; necessary for a stable order in generated files
+        topics.sort_by_key(|topic| topic.name());
 
-        channels
+        topics
     }
 }
 
@@ -327,7 +347,7 @@ mod tests {
                 .symbol_table()
                 .resolve_publisher_fqn("sdv.test.Pressure")
                 .into_iter()
-                .find(|symbol| symbol.channel[0] == "ONE")
+                .find(|symbol| symbol.topic[0] == "one")
                 .unwrap()
                 .clone(),
         )
@@ -454,15 +474,15 @@ mod tests {
     }
 
     #[test]
-    fn test_channels_explicit_non_pdk29() {
+    fn test_topics_explicit() {
         // GIVEN a non-PDK29 symbol table
         let (symbol_table, publisher_symbol) = setup_test();
 
         // WHEN requesting channels
-        let result = publisher_symbol.channels(&symbol_table);
+        let result = publisher_symbol.topics(&symbol_table);
 
         // THEN channels should be ONE
-        assert_eq!(result, vec!["ONE"]);
+        assert_eq!(result, vec!["one"]);
     }
 
     #[test]

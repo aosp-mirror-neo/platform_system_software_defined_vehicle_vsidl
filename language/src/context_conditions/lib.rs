@@ -44,16 +44,16 @@ pub use empty_catalog::EmptyCatalog;
 
 // ERRORS
 
-// Channel names must be globally unique
-mod channel_name_unique;
-pub use channel_name_unique::ChannelNameUnique;
+// Topics must be globally unique
+mod topic_name_unique;
+pub use topic_name_unique::TopicNameUnique;
 
-mod channel_name_snake_case;
-pub use channel_name_snake_case::ChannelNameSnakeCase;
+mod topic_name_kebab_case;
+pub use topic_name_kebab_case::TopicNameKebabCase;
 
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
-mod no_user_defined_names_for_multi_channel_publishers;
-pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;
+mod no_user_defined_names_for_multi_topic_publishers;
+pub use no_user_defined_names_for_multi_topic_publishers::NoUserDefinedNamesForMultiChannelPublishers;
 
 /// Issues an error if the type of a publisher is either not defined at all or not a publication
 mod publication_type;
@@ -65,8 +65,8 @@ pub use publisher_capacity::PublisherCapacity;
 mod publisher_capacity_mandatory;
 pub use publisher_capacity_mandatory::PublisherCapacityMandatory;
 
-mod publisher_channel_mandatory;
-pub use publisher_channel_mandatory::PublisherChannelMandatory;
+mod publisher_topic_mandatory;
+pub use publisher_topic_mandatory::PublisherTopicMandatory;
 
 /// Issues an error if the unit type specified for an RPC client is unknown
 mod rpc_client_type;
@@ -125,8 +125,8 @@ mod service_bundle_naming_convention;
 pub use service_bundle_naming_convention::ServiceBundleNamingConvention;
 
 // User-defined service unit names may not be used in publishers with multiple channels
-mod user_defined_names_only_one_channel;
-pub use user_defined_names_only_one_channel::UserDefinedNamesOnlyOneChannel;
+mod user_defined_names_only_one_topic;
+pub use user_defined_names_only_one_topic::UserDefinedNamesOnlyOneTopic;
 
 // User-defined build_cfg target_name must be snake case
 mod user_defined_target_name_snake_case;
@@ -168,13 +168,13 @@ pub use vsidl_unnecessary_fully_qualified_name::VsidlUnnecessaryFullyQualifiedNa
 mod proto_message_exceeds_max_size;
 pub use proto_message_exceeds_max_size::ProtoMessageExceedsMaxSize;
 
-// VSIDL redundant explicit channel listing
-mod vsidl_redundant_explicit_channel_listing;
-pub use vsidl_redundant_explicit_channel_listing::VsidlRedundantExplicitChannelListing;
+// redundant explicit topic listing
+mod redundant_explicit_topic_listing;
+pub use redundant_explicit_topic_listing::VsidlRedundantExplicitTopicListing;
 
 // Subscriber channel should not redeclare in same service bundle
-mod subscriber_channels_redeclaration;
-pub use subscriber_channels_redeclaration::SubscriberChannelsRedeclaration;
+mod subscriber_topic_redeclaration;
+pub use subscriber_topic_redeclaration::SubscriberChannelsRedeclaration;
 
 mod rpc_streaming;
 pub use rpc_streaming::RpcStreaming;

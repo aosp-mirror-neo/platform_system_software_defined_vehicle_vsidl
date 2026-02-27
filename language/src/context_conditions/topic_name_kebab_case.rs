@@ -20,13 +20,13 @@ use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
 #[derive(Debug, Default)]
-pub struct ChannelNameSnakeCase {
+pub struct TopicNameKebabCase {
     finding_collector: FindingCollector,
 }
 
-impl_context_condition!(ChannelNameSnakeCase);
+impl_context_condition!(TopicNameKebabCase);
 
-fn is_snake_case(s: &str) -> bool {
+fn is_kebab_case(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
@@ -40,31 +40,31 @@ fn is_snake_case(s: &str) -> bool {
     }
 
     while let Some(c) = chars.next() {
-        if c == '_' {
-            // Cannot have consecutive underscores
+        if c == '-' {
+            // Cannot have consecutive hyphens
             if let Some(&next) = chars.peek() {
-                if next == '_' {
+                if next == '-' {
                     return false;
                 }
             } else {
-                // Cannot end with an underscore
+                // Cannot end with a hyphen
                 return false;
             }
         } else if !c.is_ascii_lowercase() && !c.is_ascii_digit() {
-            // Only lowercase alphanumeric and underscores allowed
+            // Only lowercase alphanumeric and hyphens allowed
             return false;
         }
     }
     true
 }
 
-impl VsidlVisitor for ChannelNameSnakeCase {
+impl VsidlVisitor for TopicNameKebabCase {
     fn start_visit_publisher(&mut self, node: &Publisher) {
-        for channel in &node.channel {
-            if !is_snake_case(channel) {
+        for topic in &node.topic {
+            if !is_kebab_case(topic) {
                 self.finding_collector.error(
-                    FindingId::ChannelNameSnakeCase,
-                    format!("Channel name '{}' must be in lowercase snake case", channel),
+                    FindingId::TopicNameKebabCase,
+                    format!("Topic '{}' must be in lowercase kebab case", topic),
                     vec![node.span.clone().into_option()],
                 );
             }
@@ -72,11 +72,11 @@ impl VsidlVisitor for ChannelNameSnakeCase {
     }
 
     fn start_visit_subscriber(&mut self, node: &Subscriber) {
-        for channel in &node.channel {
-            if !is_snake_case(channel) {
+        for topic in &node.topic {
+            if !is_kebab_case(topic) {
                 self.finding_collector.error(
-                    FindingId::ChannelNameSnakeCase,
-                    format!("Channel name '{}' must be in lowercase snake case", channel),
+                    FindingId::TopicNameKebabCase,
+                    format!("Topic '{}' must be in lowercase kebab case", topic),
                     vec![node.span.clone().into_option()],
                 );
             }
@@ -91,59 +91,59 @@ mod tests {
     use crate::finding_severity::FindingSeverity;
 
     #[test]
-    fn test_should_reject_invalid_channel_names() {
+    fn test_should_reject_invalid_topic_names() {
         let test_cases = vec![
             "UPPERCASE",
             "camelCase",
             "PascalCase",
-            "kebab-case",
-            "trailing_",
-            "_leading",
-            "double__underscore",
+            "snake_case",
+            "trailing-",
+            "-leading",
+            "double--hyphen",
             "with space",
-            "1starting_with_digit",
+            "1starting-with-digit",
             "",
         ];
 
-        for channel in test_cases {
-            let mut check = ChannelNameSnakeCase::default();
+        for topic in test_cases {
+            let mut check = TopicNameKebabCase::default();
             let mut publisher = Publisher::default();
-            publisher.channel.push(channel.to_string());
+            publisher.topic.push(topic.to_string());
 
             check.start_visit_publisher(&publisher);
-            assert!(check.is_err(), "Should have rejected invalid channel name: '{}'", channel);
+            assert!(check.is_err(), "Should have rejected invalid topic name: '{}'", topic);
             assert!(check.any_finding_contains(
                 FindingSeverity::Error,
-                &format!("Channel name '{}' must be in lowercase snake case", channel)
+                &format!("Topic '{}' must be in lowercase kebab case", topic)
             ));
 
-            let mut check = ChannelNameSnakeCase::default();
+            let mut check = TopicNameKebabCase::default();
             let mut subscriber = Subscriber::default();
-            subscriber.channel.push(channel.to_string());
+            subscriber.topic.push(topic.to_string());
 
             check.start_visit_subscriber(&subscriber);
-            assert!(check.is_err(), "Should have rejected invalid channel name: '{}'", channel);
+            assert!(check.is_err(), "Should have rejected invalid topic name: '{}'", topic);
         }
     }
 
     #[test]
-    fn test_should_accept_valid_channel_names() {
-        let test_cases = vec!["valid", "snake_case", "with_digits_123", "v1"];
+    fn test_should_accept_valid_topic_names() {
+        let test_cases = vec!["valid", "kebab-case", "with-digits-123", "v1"];
 
-        for channel in test_cases {
-            let mut check = ChannelNameSnakeCase::default();
+        for topic in test_cases {
+            let mut check = TopicNameKebabCase::default();
             let mut publisher = Publisher::default();
-            publisher.channel.push(channel.to_string());
+            publisher.topic.push(topic.to_string());
 
             check.start_visit_publisher(&publisher);
-            assert!(check.is_ok(), "Should have accepted valid channel name: '{}'", channel);
+            assert!(check.is_ok(), "Should have accepted valid topic name: '{}'", topic);
 
-            let mut check = ChannelNameSnakeCase::default();
+            let mut check = TopicNameKebabCase::default();
             let mut subscriber = Subscriber::default();
-            subscriber.channel.push(channel.to_string());
+            subscriber.topic.push(topic.to_string());
 
             check.start_visit_subscriber(&subscriber);
-            assert!(check.is_ok(), "Should have accepted valid channel name: '{}'", channel);
+            assert!(check.is_ok(), "Should have accepted valid topic name: '{}'", topic);
         }
     }
 }

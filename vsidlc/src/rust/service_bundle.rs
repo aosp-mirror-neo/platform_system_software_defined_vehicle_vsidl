@@ -201,7 +201,7 @@ impl PublicationTypeContext {
             // same type shared a common 'message_count'. Now, every publisher can set its own capacity.
             // For backwards compatibility, temporarily use the maximum of all channels.
             message_count: proto_message
-                .channels(symbol_table)
+                .topics(symbol_table)
                 .iter()
                 .map(|c| c.capacity as u32)
                 .max()
@@ -209,7 +209,7 @@ impl PublicationTypeContext {
             // TODO: b/477164517 - Set the is_multipub flag to true once all types of subscribers / observers
             // support the new channel concept. Then test with atest sdv_core_middleware_unit_vsidl_pubsub_e2e_test
             is_multipub: proto_message
-                .channels(symbol_table)
+                .topics(symbol_table)
                 .iter()
                 .any(|channel| channel.publishers(symbol_table).len() > 1),
             message_fqn: proto_message.full_name(symbol_table),
@@ -411,11 +411,11 @@ impl ServiceBundleContext {
                         ));
                     }
                 } else {
-                    for channel in &publisher.channel_symbols(symbol_table) {
+                    for topic in &publisher.topic_symbols(symbol_table) {
                         let service_unit_name =
-                            publisher.service_unit_name(symbol_table, &channel.name());
+                            publisher.service_unit_name(symbol_table, &topic.name());
                         channel_contexts.push(PublicationChannelContext::new(
-                            channel.name().to_string(),
+                            topic.name().to_string(),
                             service_unit_name,
                             publisher.capacity,
                         ));
@@ -461,18 +461,34 @@ impl ServiceBundleContext {
         for (publication_fqn, subscribers) in &subscribers_for_publication {
             let mut channel_contexts = Vec::new();
             for subscriber in subscribers {
-                for channel_name in subscriber.channels(symbol_table) {
-                    let publisher_for_channel =
-                        subscriber.publisher_for_channel(symbol_table, &channel_name);
-                    let publisher_service_bundle_symbol =
-                        publisher_for_channel.owning_service_bundle(symbol_table);
+                if symbol_table.uses_pdk29() {
+                    for channel_name in subscriber.channels(symbol_table) {
+                        let publisher_for_topic =
+                            subscriber.publisher_for_channel(symbol_table, &channel_name);
+                        let publisher_service_bundle_symbol =
+                            publisher_for_topic.owning_service_bundle(symbol_table);
 
-                    channel_contexts.push(SubscriptionChannelContext::new(
-                        channel_name.clone(),
-                        publisher_for_channel.service_unit_name(symbol_table, &channel_name),
-                        publisher_service_bundle_symbol.name.clone(),
-                        publisher_service_bundle_symbol.package(symbol_table),
-                    ));
+                        channel_contexts.push(SubscriptionChannelContext::new(
+                            channel_name.clone(),
+                            publisher_for_topic.service_unit_name(symbol_table, &channel_name),
+                            publisher_service_bundle_symbol.name.clone(),
+                            publisher_service_bundle_symbol.package(symbol_table),
+                        ));
+                    }
+                } else {
+                    for channel_name in subscriber.topics(symbol_table) {
+                        let publisher_for_channel =
+                            subscriber.publisher_for_topic(symbol_table, &channel_name);
+                        let publisher_service_bundle_symbol =
+                            publisher_for_channel.owning_service_bundle(symbol_table);
+
+                        channel_contexts.push(SubscriptionChannelContext::new(
+                            channel_name.clone(),
+                            publisher_for_channel.service_unit_name(symbol_table, &channel_name),
+                            publisher_service_bundle_symbol.name.clone(),
+                            publisher_service_bundle_symbol.package(symbol_table),
+                        ));
+                    }
                 }
             }
 

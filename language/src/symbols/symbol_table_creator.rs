@@ -29,11 +29,11 @@ use super::symbol_table::{SymbolTableState, TargetApi};
 use super::{
     scope::ScopeId,
     specific_symbols::{
-        channel_symbol::ChannelSymbol, proto_enum_symbol::ProtoEnumSymbol,
-        proto_message_symbol::ProtoMessageSymbol, proto_publication_symbol::ProtoPublicationSymbol,
+        proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
+        proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
         rpc_server_symbol::RpcServerSymbol, service_bundle_symbol::ServiceBundleSymbol,
-        subscriber_symbol::SubscriberSymbol,
+        subscriber_symbol::SubscriberSymbol, topic_symbol::TopicSymbol,
     },
     symbol::{SymbolId, SymbolKind},
     symbol_table::SymbolTable,
@@ -296,7 +296,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             self.global_scope = Some(GLOBAL_SCOPE_ID);
         }
         self.created_channels =
-            self.symbol_table.get_all_channel_symbols().iter().map(|s| s.name()).collect();
+            self.symbol_table.get_all_topic_symbols().iter().map(|s| s.name()).collect();
         self.current_scope_id = self.global_scope.clone();
         self.total_files = catalog.catalog_vsidl_files.len() + catalog.proto_descriptors.len();
         self.printer = ProgressPrinter::new(self.total_files);
@@ -816,18 +816,18 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         );
 
         // Create channel symbols if defined inline
-        for (i, channel_name) in node.channel.iter().enumerate() {
-            if !self.created_channels.contains(channel_name) {
-                let channel_symbol = ChannelSymbol { ast_node: node.clone(), ..Default::default() };
+        for (i, topic_name) in node.topic.iter().enumerate() {
+            if !self.created_channels.contains(topic_name) {
+                let topic_symbol = TopicSymbol { ast_node: node.clone(), ..Default::default() };
                 let span = node.channel_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
-                    channel_name.clone(),
+                    topic_name.clone(),
                     span,
-                    SymbolKind::Channel(channel_symbol),
+                    SymbolKind::Topic(topic_symbol),
                 );
                 // Add to global scope
                 self.symbol_table.add_symbol_to_scope(&GLOBAL_SCOPE_ID, &id);
-                self.created_channels.insert(channel_name.clone());
+                self.created_channels.insert(topic_name.clone());
             };
         }
 

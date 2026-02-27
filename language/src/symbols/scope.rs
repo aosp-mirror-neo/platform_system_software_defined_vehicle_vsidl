@@ -15,11 +15,11 @@
  */
 
 use crate::{
-    channel_symbol::ChannelSymbol, proto_enum_symbol::ProtoEnumSymbol,
-    proto_message_symbol::ProtoMessageSymbol, proto_publication_symbol::ProtoPublicationSymbol,
+    proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
+    proto_publication_symbol::ProtoPublicationSymbol,
     proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
     rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol,
-    service_bundle_symbol::ServiceBundleSymbol,
+    service_bundle_symbol::ServiceBundleSymbol, topic_symbol::TopicSymbol,
 };
 
 use super::symbol::{SymbolId, SymbolKind};
@@ -103,7 +103,7 @@ impl Scope {
 
     implement_resolver!(resolve_service_bundle, SymbolKind::ServiceBundle, ServiceBundleSymbol);
     implement_resolver!(resolve_publisher, SymbolKind::Publisher, PublisherSymbol);
-    implement_resolver!(resolve_channel, SymbolKind::Channel, ChannelSymbol);
+    implement_resolver!(resolve_topic, SymbolKind::Topic, TopicSymbol);
     implement_resolver!(resolve_rpc_server, SymbolKind::RpcServer, RpcServerSymbol);
     implement_resolver!(resolve_rpc_client, SymbolKind::RpcClient, RpcClientSymbol);
     implement_resolver!(resolve_proto_message, SymbolKind::ProtoMessage, ProtoMessageSymbol);

@@ -234,6 +234,9 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         Rule::publisher_message | Rule::subscriber_message => {
             format_property(result, "message", pair, context)
         }
+        Rule::publisher_topic | Rule::subscriber_topic => {
+            format_property(result, "topic", pair, context)
+        }
         Rule::publisher_channel | Rule::subscriber_channel => {
             format_property(result, "channel", pair, context)
         }

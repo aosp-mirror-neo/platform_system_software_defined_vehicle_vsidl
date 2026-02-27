@@ -61,7 +61,7 @@ pub mod subscriber {
         }
     }
     impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-        /// Enables access to subscription channel 'vehicle_speed' of 'sdv.golden.VehicleSpeed'
+        /// Enables access to subscription channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
         pub const VEHICLE_SPEED: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle_speed",

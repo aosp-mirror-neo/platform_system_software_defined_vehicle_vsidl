@@ -18,6 +18,10 @@
 mod multiple_publishers_same_multipub_type_per_bundle;
 pub use multiple_publishers_same_multipub_type_per_bundle::MultiplePublishersSameMultipubTopicPerBundle;
 
+// Publishers may not user-defined names without specifying the channel if the type has multiple channels
+mod no_user_defined_names_for_multi_channel_publishers;
+pub use no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;
+
 /// Issues an error if the type of a publisher is either not defined at all or not a publication
 mod publication_type;
 pub use publication_type::PublicationType;
@@ -68,6 +72,14 @@ pub use vsidl_redundant_explicit_channel_listing::VsidlRedundantExplicitChannelL
 // `MULTI_PUB` specification of publication is misuse
 mod publication_multipub_misuse;
 pub use publication_multipub_misuse::PublicationMultipubMisuse;
+
+// Subscriber channel should not redeclare in same service bundle
+mod subscriber_channels_redeclaration;
+pub use subscriber_channels_redeclaration::SubscriberChannelsRedeclaration;
+
+// User-defined service unit names may not be used in publishers with multiple channels
+mod user_defined_names_only_one_channel;
+pub use user_defined_names_only_one_channel::UserDefinedNamesOnlyOneChannel;
 
 // publication is unused
 mod publication_unused;

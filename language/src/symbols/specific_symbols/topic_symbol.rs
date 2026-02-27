@@ -24,32 +24,32 @@ use super::proto_message_symbol::ProtoMessageSymbol;
 use super::publisher_symbol::PublisherSymbol;
 use super::subscriber_symbol::SubscriberSymbol;
 
-/// Symbol representing a VSIDL Channel.
+/// Symbol representing a VSIDL Topic.
 ///
-/// Channels decouple publishers and subscribers by providing a named communication
+/// Topics decouple publishers and subscribers by providing a named communication
 /// path associated with a specific Protobuf message type.
 #[derive(Default, Debug, Clone)]
-pub struct ChannelSymbol {
+pub struct TopicSymbol {
     /// The original VSIDL AST node ([Publisher]) this symbol was created from.
-    /// Channels are created inline by publishers, i.e., each channel has one publisher defining it.
+    /// Topics are created inline by publishers, i.e., each topic has one publisher defining it.
     pub ast_node: Publisher,
     /// Common information shared across all symbol types (like ID, name, scope).
     pub symbol: SymbolCommon,
-    /// Symbol ID of the [ProtoMessageSymbol] sent over this channel. Requires the symbol table to be linked.
+    /// Symbol ID of the [ProtoMessageSymbol] sent over this topic. Requires the symbol table to be linked.
     pub(crate) message: Option<SymbolId>,
-    /// Symbol IDs of the [PublisherSymbol]s that publish to this channel. Requires the symbol table to be linked.
+    /// Symbol IDs of the [PublisherSymbol]s that publish to this topic. Requires the symbol table to be linked.
     pub(crate) publishers: Vec<SymbolId>,
-    /// Symbol IDs of the [SubscriberSymbol]s that subscribe to this channel. Requires the symbol table to be linked.
+    /// Symbol IDs of the [SubscriberSymbol]s that subscribe to this topic. Requires the symbol table to be linked.
     pub(crate) subscribers: Vec<SymbolId>,
 }
 // Implements Deref for the ast_node field, allowing direct access to the Publisher fields.
-implement_ast_node_deref!(ChannelSymbol, Publisher);
+implement_ast_node_deref!(TopicSymbol, Publisher);
 
-impl ChannelSymbol {
+impl TopicSymbol {
     // This macro implements accessors for SymbolCommon, allowing access to its fields directly.
     implement_symbol_deref!();
 
-    /// Returns the [ProtoMessageSymbol] associated with this channel.
+    /// Returns the [ProtoMessageSymbol] associated with this topic.
     ///
     /// # Parameters
     ///
@@ -57,7 +57,7 @@ impl ChannelSymbol {
     ///
     /// # Returns
     ///
-    /// The [ProtoMessageSymbol] that this channel carries.
+    /// The [ProtoMessageSymbol] that this topic carries.
     ///
     /// # Panics
     ///
@@ -68,7 +68,7 @@ impl ChannelSymbol {
         symbol_table.get_proto_message_symbol(&self.message.clone().unwrap()).unwrap()
     }
 
-    /// Returns the [PublisherSymbol]s associated with this channel.
+    /// Returns the [PublisherSymbol]s associated with this topic.
     ///
     /// # Parameters
     ///
@@ -76,7 +76,7 @@ impl ChannelSymbol {
     ///
     /// # Returns
     ///
-    /// A `Vec<&PublisherSymbol>` containing the publishers for this channel.
+    /// A `Vec<&PublisherSymbol>` containing the publishers for this topic.
     ///
     /// # Panics
     ///
@@ -89,7 +89,7 @@ impl ChannelSymbol {
             .collect()
     }
 
-    /// Returns the [SubscriberSymbol]s associated with this channel.
+    /// Returns the [SubscriberSymbol]s associated with this topic.
     ///
     /// # Parameters
     ///
@@ -97,7 +97,7 @@ impl ChannelSymbol {
     ///
     /// # Returns
     ///
-    /// A `Vec<&SubscriberSymbol>` containing the subscribers for this channel.
+    /// A `Vec<&SubscriberSymbol>` containing the subscribers for this topic.
     ///
     /// # Panics
     ///
@@ -113,14 +113,14 @@ impl ChannelSymbol {
 
 #[cfg(test)]
 mod tests {
-    use crate::channel_symbol::ChannelSymbol;
     use crate::symbol_table_creator::SymbolTableCreator;
     use crate::symbol_table_linker::SymbolTableLinker;
+    use crate::topic_symbol::TopicSymbol;
     use crate::SymbolTable;
     use vsidl_v1_common::AstNode;
     use vsidl_v1_common::Catalog;
 
-    fn setup_test() -> (SymbolTable, ChannelSymbol) {
+    fn setup_test() -> (SymbolTable, TopicSymbol) {
         // Given: A valid catalog
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
@@ -135,18 +135,18 @@ mod tests {
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
         let symbol_table = linker.symbol_table().clone();
-        let channel_symbol =
-            symbol_table.resolve_channel_fqn("TWO").into_iter().next().unwrap().clone();
-        (symbol_table, channel_symbol)
+        let topic_symbol =
+            symbol_table.resolve_topic_fqn("two").into_iter().next().unwrap().clone();
+        (symbol_table, topic_symbol)
     }
 
     #[test]
     fn test_message() {
         // GIVEN a valid symbol table
-        let (symbol_table, channel_symbol) = setup_test();
+        let (symbol_table, topic_symbol) = setup_test();
 
         // WHEN getting the message
-        let message = channel_symbol.message(&symbol_table);
+        let message = topic_symbol.message(&symbol_table);
 
         // THEN the message should be found
         assert_eq!(message.full_name(&symbol_table), "sdv.test.Pressure");
@@ -155,10 +155,10 @@ mod tests {
     #[test]
     fn test_publishers() {
         // GIVEN a valid symbol table
-        let (symbol_table, channel_symbol) = setup_test();
+        let (symbol_table, topic_symbol) = setup_test();
 
         // WHEN getting the publishers
-        let publishers = channel_symbol.publishers(&symbol_table);
+        let publishers = topic_symbol.publishers(&symbol_table);
 
         // THEN the publishers should be found
         assert_eq!(publishers.len(), 1);
@@ -169,10 +169,10 @@ mod tests {
     #[test]
     fn test_subscribers() {
         // GIVEN a valid symbol table
-        let (symbol_table, channel_symbol) = setup_test();
+        let (symbol_table, topic_symbol) = setup_test();
 
         // WHEN getting the subscribers
-        let subscribers = channel_symbol.subscribers(&symbol_table);
+        let subscribers = topic_symbol.subscribers(&symbol_table);
 
         // THEN the subscribers should be found
         assert_eq!(subscribers.len(), 1);
@@ -185,9 +185,9 @@ mod tests {
     fn test_message_not_linked() {
         // GIVEN an unlinked symbol table
         let symbol_table = SymbolTable::default();
-        let channel_symbol = ChannelSymbol::default();
+        let topic_symbol = TopicSymbol::default();
 
         // WHEN calling message
-        channel_symbol.message(&symbol_table);
+        topic_symbol.message(&symbol_table);
     }
 }

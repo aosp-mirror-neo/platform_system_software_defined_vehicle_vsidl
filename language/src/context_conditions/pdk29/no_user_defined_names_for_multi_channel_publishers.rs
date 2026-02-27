@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
+use crate::{FindingCollector, FindingId};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
 use vsidl_v1_symbols::{publisher_symbol::PublisherSymbol, SymbolTable};
@@ -56,7 +56,7 @@ impl SymbolTableChecker for NoUserDefinedNamesForMultiChannelPublishers {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::no_user_defined_names_for_multi_channel_publishers::NoUserDefinedNamesForMultiChannelPublishers;
+    use crate::pdk29::NoUserDefinedNamesForMultiChannelPublishers;
     use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use super::{FindingCollector, FindingId};
 use crate::impl_context_condition;
+use crate::{FindingCollector, FindingId};
 use vsidl_v1::syntax::service_bundle::Publisher;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
@@ -41,7 +41,7 @@ impl VsidlVisitor for UserDefinedNamesOnlyOneChannel {
 #[cfg(test)]
 mod test {
     use crate::context_condition::ContextCondition;
-    use crate::user_defined_names_only_one_channel::UserDefinedNamesOnlyOneChannel;
+    use crate::pdk29::UserDefinedNamesOnlyOneChannel;
     use crate::FindingSeverity;
     use vsidl_v1_common::Catalog;
 

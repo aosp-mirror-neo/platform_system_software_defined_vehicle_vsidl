@@ -23,6 +23,7 @@ service_bundle {
   publisher {
     type: "sdv.golden.VehicleSpeedForOtherCatalog"
     channel: "VEHICLE_SPEED_FOR_OTHER_CATALOG"
+    topic: "vehicle-speed-for-other-catalog"
     capacity: 8
   }
 }

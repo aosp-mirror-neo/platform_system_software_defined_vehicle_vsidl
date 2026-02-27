@@ -23,9 +23,9 @@ use vsidl_v1::syntax::Span;
 use vsidl_v1_common::constants::UNIQUE_CHANNEL;
 
 use super::{
-    channel_symbol::ChannelSymbol, proto_message_symbol::ProtoMessageSymbol,
-    proto_publication_symbol::ProtoPublicationSymbol, publisher_symbol::PublisherSymbol,
-    service_bundle_symbol::ServiceBundleSymbol,
+    proto_message_symbol::ProtoMessageSymbol, proto_publication_symbol::ProtoPublicationSymbol,
+    publisher_symbol::PublisherSymbol, service_bundle_symbol::ServiceBundleSymbol,
+    topic_symbol::TopicSymbol,
 };
 
 /// Symbol representing a VSIDL Subscriber definition within a service bundle.
@@ -44,8 +44,8 @@ pub struct SubscriberSymbol {
     pub(crate) message: Option<SymbolId>,
     /// (PDK29 only) Symbol ID of the [ProtoPublicationSymbol] this subscriber subscribes to. Requires the symbol table to be linked.
     pub(crate) publication: Option<SymbolId>,
-    /// Symbol IDs of the [ChannelSymbol]s this subscriber subscribes to. Requires the symbol table to be linked.
-    pub(crate) channels: Vec<SymbolId>,
+    /// Symbol IDs of the [TopicSymbol]s this subscriber subscribes to. Requires the symbol table to be linked.
+    pub(crate) topics: Vec<SymbolId>,
     /// Symbol ID of the [ServiceBundleSymbol] that owns this subscriber. Requires the symbol table to be linked.
     pub(crate) owning_service_bundle: Option<SymbolId>,
 }
@@ -113,53 +113,76 @@ impl SubscriberSymbol {
         channel_name: &str,
     ) -> &'a PublisherSymbol {
         symbol_table.panic_if_not_linked();
+        assert!(symbol_table.uses_pdk29());
 
-        if symbol_table.uses_pdk29() {
-            if !self.channels(symbol_table).contains(&channel_name.to_string()) {
-                panic!("publisher_for_channel: Channel '{channel_name}' not found for subscriber '{}'. Available channels: {:?}",
-                    self.full_name(symbol_table),
-                    self.channels(symbol_table)
+        if !self.channels(symbol_table).contains(&channel_name.to_string()) {
+            panic!("publisher_for_channel: Channel '{channel_name}' not found for subscriber '{}'. Available channels: {:?}",
+                self.full_name(symbol_table),
+                self.channels(symbol_table)
+            );
+        }
+
+        let publication = self.publication(symbol_table);
+        let mut publishers = publication.publishers(symbol_table);
+        // TODO: b/477164517 - Stable order of publishers. Remove the following line as soon as the generator only prints 'deprecated'.
+        publishers.sort_by_key(|publisher| {
+            publisher.owning_service_bundle(symbol_table).full_name(symbol_table)
+        });
+        publishers
+            .iter()
+            .find(|publisher| {
+                let channels = publisher.channels(symbol_table);
+                channels.iter().any(|v| *v == channel_name)
+            })
+            .unwrap()
+    }
+
+    /// Returns a publisher that publishes the given topic of the publication
+    /// this subscriber subscribes to.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol_table` - The linked symbol table containing all symbols.
+    /// * `topic` - The topic to find the publisher for.
+    ///
+    /// # Returns
+    ///
+    /// The [PublisherSymbol] that publishes the specified topic.
+    ///
+    /// # Panics
+    ///
+    /// * If the symbol table is not linked.
+    pub fn publisher_for_topic<'a>(
+        &self,
+        symbol_table: &'a SymbolTable,
+        topic: &str,
+    ) -> &'a PublisherSymbol {
+        symbol_table.panic_if_not_linked();
+        assert!(!symbol_table.uses_pdk29());
+
+        let maybe_topic = self.topic_symbols(symbol_table).into_iter().find(|t| t.name() == topic);
+
+        if let Some(topic_symbol) = maybe_topic {
+            let mut publishers = topic_symbol.publishers(symbol_table);
+
+            if publishers.is_empty() {
+                panic!(
+                    "publisher_for_topic: Topic '{topic}' of subscriber '{}' has no publishers",
+                    self.full_name(symbol_table)
                 );
             }
 
-            let publication = self.publication(symbol_table);
-            let mut publishers = publication.publishers(symbol_table);
             // TODO: b/477164517 - Stable order of publishers. Remove the following line as soon as the generator only prints 'deprecated'.
             publishers.sort_by_key(|publisher| {
                 publisher.owning_service_bundle(symbol_table).full_name(symbol_table)
             });
-            publishers
-                .iter()
-                .find(|publisher| {
-                    let channels = publisher.channels(symbol_table);
-                    channels.iter().any(|v| *v == channel_name)
-                })
-                .unwrap()
+
+            publishers[0]
         } else {
-            let maybe_channel = self
-                .channel_symbols(symbol_table)
-                .into_iter()
-                .find(|channel| channel.name() == channel_name);
-
-            if let Some(channel) = maybe_channel {
-                let mut publishers = channel.publishers(symbol_table);
-
-                if publishers.is_empty() {
-                    panic!("publisher_for_channel: Channel '{channel_name}' of subscriber '{}' has no publishers", self.full_name(symbol_table));
-                }
-
-                // TODO: b/477164517 - Stable order of publishers. Remove the following line as soon as the generator only prints 'deprecated'.
-                publishers.sort_by_key(|publisher| {
-                    publisher.owning_service_bundle(symbol_table).full_name(symbol_table)
-                });
-
-                publishers[0]
-            } else {
-                panic!("publisher_for_channel: Channel '{channel_name}' not found for subscriber '{}'. Available channels: {:?}",
-                    self.full_name(symbol_table),
-                    self.channel_symbols(symbol_table).into_iter().map(|c| c.name()).collect::<Vec<_>>()
-                );
-            }
+            panic!("publisher_for_topic: Topic '{topic}' not found for subscriber '{}'. Available channels: {:?}",
+                self.full_name(symbol_table),
+                self.topic_symbols(symbol_table).into_iter().map(|c| c.name()).collect::<Vec<_>>()
+            );
         }
     }
 
@@ -197,45 +220,59 @@ impl SubscriberSymbol {
     /// * If the publication or its channels enum cannot be resolved when needed.
     pub fn channels(&self, symbol_table: &SymbolTable) -> Vec<String> {
         symbol_table.panic_if_not_linked();
+        assert!(symbol_table.uses_pdk29());
 
-        if symbol_table.uses_pdk29() {
-            // Case 1: Subscriber defines explicit channels
-            let mut channels = self.channel.clone();
-            // Case 2: Subscriber defines no channels, but publication has channels => use all
-            if channels.is_empty() {
-                channels = self.publication(symbol_table).channels(symbol_table).clone();
-            }
-            // Case 3: Subscriber defines no channels and publication has no channels => use UNIQUE
-            if channels.is_empty() {
-                channels.push(UNIQUE_CHANNEL.to_string());
-            }
-            channels
-        } else {
-            // Case 1: Subscriber defines explicit channel names
-            let channels = if !self.channel.is_empty() {
-                self.channel.clone()
-            } else {
-                // Case 2: Subscriber defines no channels, but message has channels => use all
-                let mut channels = Vec::new();
-                if let Some(message_id) = &self.message {
-                    if let Some(SymbolKind::ProtoMessage(message)) =
-                        symbol_table.get_symbol(message_id)
-                    {
-                        channels = message
-                            .channels(symbol_table)
-                            .iter()
-                            .map(|channel| channel.name())
-                            .collect();
-                    }
-                }
-                channels
-            };
-
-            channels
+        // Case 1: Subscriber defines explicit channels
+        let mut channels = self.channel.clone();
+        // Case 2: Subscriber defines no channels, but publication has channels => use all
+        if channels.is_empty() {
+            channels = self.publication(symbol_table).channels(symbol_table).clone();
         }
+        // Case 3: Subscriber defines no channels and publication has no channels => use UNIQUE
+        if channels.is_empty() {
+            channels.push(UNIQUE_CHANNEL.to_string());
+        }
+        channels
     }
 
-    /// Returns the [ChannelSymbol]s associated with this subscriber.
+    /// Returns the list of topic this subscriber subscribes to.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol_table` - The linked symbol table required for resolving the topics.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<String>` containing the topics subscribed to.
+    ///
+    /// # Panics
+    ///
+    /// * If the symbol table is not linked.
+    /// * If the publication or its channels enum cannot be resolved when needed.
+    pub fn topics(&self, symbol_table: &SymbolTable) -> Vec<String> {
+        symbol_table.panic_if_not_linked();
+        assert!(!symbol_table.uses_pdk29());
+
+        // Case 1: Subscriber defines explicit topic names
+        let topics = if !self.topic.is_empty() {
+            self.topic.clone()
+        } else {
+            // Case 2: Subscriber defines no channels, but message has channels => use all
+            let mut topics = Vec::new();
+            if let Some(message_id) = &self.message {
+                if let Some(SymbolKind::ProtoMessage(message)) = symbol_table.get_symbol(message_id)
+                {
+                    topics =
+                        message.topics(symbol_table).iter().map(|topic| topic.name()).collect();
+                }
+            }
+            topics
+        };
+
+        topics
+    }
+
+    /// Returns the [TopicSymbol]s associated with this subscriber.
     ///
     /// # Parameters
     ///
@@ -243,31 +280,27 @@ impl SubscriberSymbol {
     ///
     /// # Returns
     ///
-    /// A `Vec<&ChannelSymbol>` containing the channels for this subscriber.
-    pub fn channel_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a ChannelSymbol> {
-        if symbol_table.uses_pdk29() {
-            self.channels
+    /// A `Vec<&TopicSymbol>` containing the channels for this subscriber.
+    pub fn topic_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a TopicSymbol> {
+        symbol_table.panic_if_not_linked();
+        assert!(!symbol_table.uses_pdk29());
+
+        // Case 1: Subscriber defines explicit channels
+        if !self.topics.is_empty() {
+            let mut channels: Vec<_> = self
+                .topics
                 .iter()
-                .map(|channel_id| symbol_table.get_channel_symbol(channel_id).unwrap())
-                .collect()
-        } else {
-            // Case 1: Subscriber defines explicit channels
-            if !self.channels.is_empty() {
-                let mut channels: Vec<_> = self
-                    .channels
-                    .iter()
-                    .map(|channel_id| symbol_table.get_channel_symbol(channel_id).unwrap())
-                    .collect();
+                .map(|channel_id| symbol_table.get_topic_symbol(channel_id).unwrap())
+                .collect();
 
-                // Sorts the channels by name; necessary for a stable order in generated files
-                channels.sort_by_key(|channel| channel.name());
+            // Sorts the channels by name; necessary for a stable order in generated files
+            channels.sort_by_key(|channel| channel.name());
 
-                return channels;
-            }
-
-            // Case 2: Subscriber defines no channels, but message has channels => use all
-            self.message(symbol_table).channels(symbol_table)
+            return channels;
         }
+
+        // Case 2: Subscriber defines no channels, but message has channels => use all
+        self.message(symbol_table).topics(symbol_table)
     }
 }
 
@@ -331,7 +364,7 @@ mod tests {
                 .symbol_table()
                 .resolve_subscriber_fqn("sdv.test.Pressure")
                 .into_iter()
-                .find(|symbol| symbol.channel[0] == "TWO")
+                .find(|symbol| symbol.topic[0] == "two")
                 .unwrap()
                 .clone(),
         )
@@ -374,12 +407,12 @@ mod tests {
     }
 
     #[test]
-    fn test_publisher_for_channel_non_pdk29() {
+    fn test_publisher_for_topic() {
         // GIVEN a non-PDK29 symbol table
         let (symbol_table, subscriber_symbol) = setup_test();
 
         // WHEN requesting publisher for channel
-        let publisher = subscriber_symbol.publisher_for_channel(&symbol_table, "TWO");
+        let publisher = subscriber_symbol.publisher_for_topic(&symbol_table, "two");
 
         // THEN it should be found and own by ServiceBundleOne
         assert_eq!(
@@ -425,15 +458,15 @@ mod tests {
     }
 
     #[test]
-    fn test_channels_explicit_non_pdk29() {
+    fn test_topics() {
         // GIVEN a non-PDK29 symbol table
         let (symbol_table, subscriber_symbol) = setup_test();
 
         // WHEN requesting channels
-        let result = subscriber_symbol.channels(&symbol_table);
+        let result = subscriber_symbol.topics(&symbol_table);
 
         // THEN channels should be TWO
-        assert_eq!(result, vec!["TWO"]);
+        assert_eq!(result, vec!["two"]);
     }
 
     #[test]

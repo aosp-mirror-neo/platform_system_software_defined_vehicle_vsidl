@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-use super::channel_symbol::ChannelSymbol;
 use super::publisher_symbol::PublisherSymbol;
 use super::subscriber_symbol::SubscriberSymbol;
+use super::topic_symbol::TopicSymbol;
 use crate::{
     implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
 };
@@ -47,8 +47,8 @@ pub struct ProtoMessageSymbol {
     /// Optional, because it can be not be calculated for messages with variable size fields that
     /// do not specify a max size. All messages sent over channels have to have a defined max size.
     pub max_size: Option<MessageSize>,
-    /// Symbol IDs of the [ChannelSymbol]s using this message. Requires the symbol table to be linked.
-    pub(crate) channels: Vec<SymbolId>,
+    /// Symbol IDs of the [TopicSymbol]s using this message. Requires the symbol table to be linked.
+    pub(crate) topics: Vec<SymbolId>,
 }
 // Implements Deref for the ast_node field, allowing direct access to the DescriptorProto fields.
 implement_ast_node_deref!(ProtoMessageSymbol, DescriptorProto);
@@ -57,31 +57,33 @@ impl ProtoMessageSymbol {
     // This macro implements accessors for SymbolCommon, allowing access to its fields directly.
     implement_symbol_deref!();
 
-    /// Returns the [ChannelSymbol]s that use this message.
+    /// Returns the [TopicSymbol]s that use this message.
     ///
     /// # Parameters
     ///
-    /// * `symbol_table` - The linked symbol table to resolve the channel IDs.
+    /// * `symbol_table` - The linked symbol table to resolve the topic IDs.
     ///
     /// # Returns
     ///
-    /// A `Vec<ChannelSymbol>` containing the channels using this message.
+    /// A `Vec<TopicSymbol>` containing the topics using this message.
     ///
     /// # Panics
     ///
     /// * If the symbol table is not linked.
-    pub fn channels<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a ChannelSymbol> {
+    pub fn topics<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a TopicSymbol> {
         symbol_table.panic_if_not_linked();
-        let mut channels: Vec<_> = self
-            .channels
+        assert!(!symbol_table.uses_pdk29());
+
+        let mut topics: Vec<_> = self
+            .topics
             .iter()
-            .map(|channel_id| symbol_table.get_channel_symbol(channel_id).unwrap())
+            .map(|topic_id| symbol_table.get_topic_symbol(topic_id).unwrap())
             .collect();
 
-        // Sorts the channels by name; necessary for a stable order in generated files
-        channels.sort_by_key(|channel| channel.name());
+        // Sorts the topics by name; necessary for a stable order in generated files
+        topics.sort_by_key(|topic| topic.name());
 
-        channels
+        topics
     }
 
     /// Returns the [PublisherSymbol]s that publish messages of this type.
@@ -95,10 +97,19 @@ impl ProtoMessageSymbol {
     /// A `Vec<&PublisherSymbol>` containing the publishers using this message.
     pub fn publishers<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a PublisherSymbol> {
         symbol_table.panic_if_not_linked();
-        self.channels(symbol_table)
-            .iter()
-            .flat_map(|channel| channel.publishers(symbol_table))
-            .collect()
+        if symbol_table.uses_pdk29() {
+            symbol_table
+                .get_all_publisher_symbols()
+                .iter()
+                .filter(|publisher| publisher.message == Some(self.symbol.id.clone()))
+                .cloned()
+                .collect()
+        } else {
+            self.topics(symbol_table)
+                .iter()
+                .flat_map(|topic| topic.publishers(symbol_table))
+                .collect()
+        }
     }
 
     /// Returns the [SubscriberSymbol]s that subscribe to messages of this type.
@@ -112,16 +123,26 @@ impl ProtoMessageSymbol {
     /// A `Vec<&SubscriberSymbol>` containing the subscribers using this message.
     pub fn subscribers<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a SubscriberSymbol> {
         symbol_table.panic_if_not_linked();
-        self.channels(symbol_table)
-            .iter()
-            .flat_map(|channel| channel.subscribers(symbol_table))
-            .collect()
+        if symbol_table.uses_pdk29() {
+            symbol_table
+                .get_all_subscriber_symbols()
+                .iter()
+                .filter(|subscriber| subscriber.message == Some(self.symbol.id.clone()))
+                .cloned()
+                .collect()
+        } else {
+            self.topics(symbol_table)
+                .iter()
+                .flat_map(|topic| topic.subscribers(symbol_table))
+                .collect()
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::proto_message_symbol::ProtoMessageSymbol;
+    use crate::symbol_table::TargetApi;
     use crate::symbol_table_creator::SymbolTableCreator;
     use crate::symbol_table_linker::SymbolTableLinker;
     use crate::SymbolTable;
@@ -153,18 +174,19 @@ mod tests {
     }
 
     #[test]
-    fn test_channels() {
+    fn test_topics() {
         // GIVEN a valid symbol table
-        let (symbol_table, message_symbol) = setup_test();
+        let (mut symbol_table, message_symbol) = setup_test();
+        symbol_table.target_api = TargetApi::Latest;
 
-        // WHEN getting the channels
-        let channels = message_symbol.channels(&symbol_table);
+        // WHEN getting the topics
+        let topics = message_symbol.topics(&symbol_table);
 
-        // THEN the channels should be found
-        assert_eq!(channels.len(), 2);
-        let channel_names: Vec<String> = channels.iter().map(|c| c.name()).collect();
-        assert!(channel_names.contains(&"ONE".to_string()));
-        assert!(channel_names.contains(&"TWO".to_string()));
+        // THEN the topics should be found
+        assert_eq!(topics.len(), 2);
+        let topic_names: Vec<String> = topics.iter().map(|c| c.name()).collect();
+        assert!(topic_names.contains(&"one".to_string()));
+        assert!(topic_names.contains(&"two".to_string()));
     }
 
     #[test]

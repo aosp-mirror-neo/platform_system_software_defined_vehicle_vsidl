@@ -25,18 +25,18 @@ use vsidl_v1_symbols::symbol_table::SymbolTable;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
 
 #[derive(Default)]
-pub struct ChannelNameUnique {
+pub struct TopicNameUnique {
     finding_collector: FindingCollector,
-    // Maps channel name to the unique message types used with it
-    channel_to_messages: HashMap<String, HashSet<SymbolId>>,
-    // Maps channel name to the spans of all publishers using it
-    channel_to_spans: HashMap<String, Vec<Option<Span>>>,
+    // Maps topics to the unique message types used with it
+    topic_to_messages: HashMap<String, HashSet<SymbolId>>,
+    // Maps topics to the spans of all publishers using it
+    topic_to_spans: HashMap<String, Vec<Option<Span>>>,
 }
-impl_context_condition_symtab!(ChannelNameUnique);
-impl VsidlVisitor for ChannelNameUnique {}
+impl_context_condition_symtab!(TopicNameUnique);
+impl VsidlVisitor for TopicNameUnique {}
 
-/// Issues an error if there are publishers with different message symbols but same channel name
-impl SymbolTableChecker for ChannelNameUnique {
+/// Issues an error if there are publishers with different message symbols but same topic
+impl SymbolTableChecker for TopicNameUnique {
     fn check_publisher(&mut self, symbol_table: &SymbolTable, publisher: &PublisherSymbol) {
         let message_type = &publisher.ast_node.message;
         let enclosing_scope_id = &publisher.symbol.enclosing_scope;
@@ -54,22 +54,22 @@ impl SymbolTableChecker for ChannelNameUnique {
         }
         let message_id = resolved_messages[0].id().clone();
 
-        // Collect message types and spans for each channel used by this publisher
-        for channel in &publisher.ast_node.channel {
-            self.channel_to_messages.entry(channel.clone()).or_default().insert(message_id.clone());
-            self.channel_to_spans
-                .entry(channel.clone())
+        // Collect message types and spans for each topic used by this publisher
+        for topic in &publisher.ast_node.topic {
+            self.topic_to_messages.entry(topic.clone()).or_default().insert(message_id.clone());
+            self.topic_to_spans
+                .entry(topic.clone())
                 .or_default()
                 .push(publisher.symbol.span.clone());
         }
     }
 
     fn after_checks(&mut self, symbol_table: &SymbolTable) {
-        let mut sorted_channels: Vec<_> = self.channel_to_messages.keys().collect();
-        sorted_channels.sort();
+        let mut sorted_topics: Vec<_> = self.topic_to_messages.keys().collect();
+        sorted_topics.sort();
 
-        for channel in sorted_channels {
-            let messages = self.channel_to_messages.get(channel).unwrap();
+        for topic in sorted_topics {
+            let messages = self.topic_to_messages.get(topic).unwrap();
             if messages.len() > 1 {
                 let mut message_names: Vec<String> = messages
                     .iter()
@@ -77,13 +77,13 @@ impl SymbolTableChecker for ChannelNameUnique {
                     .collect();
                 message_names.sort();
 
-                let spans = self.channel_to_spans.get(channel).unwrap().clone();
+                let spans = self.topic_to_spans.get(topic).unwrap().clone();
 
                 self.finding_collector.error(
-                    FindingId::ChannelNameUnique,
+                    FindingId::TopicNameUnique,
                     format!(
-                        "Channel name '{}' is used for {} different message types: {}",
-                        channel,
+                        "Topic '{}' is used for {} different message types: {}",
+                        topic,
                         messages.len(),
                         message_names.join(", ")
                     ),
@@ -104,34 +104,34 @@ mod tests {
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
 
     #[test]
-    fn test_should_reject_conflicting_channel_names() {
-        // GIVEN a catalog with conflicting channel names for different types
+    fn test_should_reject_conflicting_topic_names() {
+        // GIVEN a catalog with conflicting topic names for different types
         let mut catalog = Catalog::new();
         catalog
             .proto_descriptors
             .extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone()]);
-        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_CHANNEL_NAME_CONFLICT.clone());
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TOPIC_NAME_CONFLICT.clone());
 
         let mut creator = SymbolTableCreator::new();
         catalog.accept(&mut creator);
 
         // WHEN Executing context condition
-        let mut check = ChannelNameUnique::default();
+        let mut check = TopicNameUnique::default();
         check.check_symbol_table(creator.symbol_table());
 
         // THEN Should have found errors
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "Channel name 'CONFLICT' is used for 2 different message types:"
+            "Topic 'conflict' is used for 2 different message types:"
         ));
         assert!(check.any_finding_contains(FindingSeverity::Error, "sdv.test.FuelLevel"));
         assert!(check.any_finding_contains(FindingSeverity::Error, "sdv.test.Pressure"));
     }
 
     #[test]
-    fn test_should_accept_unique_channel_names() {
-        // GIVEN A valid catalog with unique channel names
+    fn test_should_accept_unique_topic_names() {
+        // GIVEN A valid catalog with unique topic names
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
             vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone(),
@@ -144,7 +144,7 @@ mod tests {
         catalog.accept(&mut creator);
 
         // WHEN Executing context condition
-        let mut check = ChannelNameUnique::default();
+        let mut check = TopicNameUnique::default();
         check.check_symbol_table(creator.symbol_table());
 
         // THEN Should not have found any errors

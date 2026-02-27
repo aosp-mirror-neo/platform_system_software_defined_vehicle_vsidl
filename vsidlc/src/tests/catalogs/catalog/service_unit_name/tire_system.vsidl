@@ -24,6 +24,7 @@ service_bundle {
     publisher {
         message: "TireTemperature"
         channel: "TIRE_TEMPERATURE_FRONT_LEFT"
+        topic: "tire-temperature-front-left"
         service_unit_name: "my-temperature-left"
         capacity: 8
     }
@@ -31,6 +32,7 @@ service_bundle {
     publisher {
         message: "TireTemperature"
         channel: "TIRE_TEMPERATURE_REAR_RIGHT"
+        topic: "tire-temperature-rear-right"
         service_unit_name: "my-temperature-right"
         capacity: 8
     }
@@ -38,17 +40,20 @@ service_bundle {
     subscriber {
         message: "TireTemperature"
         channel: "TIRE_TEMPERATURE_FRONT_LEFT"
+        topic: "tire-temperature-front-left"
     }
 
     subscriber {
         message: "TireTemperature"
         channel: "TIRE_TEMPERATURE_REAR_RIGHT"
+        topic: "tire-temperature-rear-right"
     }
 
     # multi pub
     publisher {
         message: "TireSpeed"
         channel: "UNIQUE"
+        topic: "tire-speed-unique"
         service_unit_name: "my-multipub-tire-speed"
         capacity: 8
     }

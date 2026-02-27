@@ -36,11 +36,13 @@ service_bundle {
     publisher {
         message: "VehicleSpeedA"
         channel: "VEHICLE_SPEED_A"
+        topic: "vehicle-speed-a"
         capacity: 8
     }
     publisher {
         message: "VehicleSpeedB"
         channel: "VEHICLE_SPEED_B"
+        topic: "vehicle-speed-b"
         capacity: 8
     }
     server {

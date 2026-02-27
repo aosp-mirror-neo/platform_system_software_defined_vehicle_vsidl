@@ -20,18 +20,18 @@ use vsidl_v1::syntax::service_bundle::Publisher;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
 #[derive(Debug, Default)]
-pub struct PublisherChannelMandatory {
+pub struct PublisherTopicMandatory {
     finding_collector: FindingCollector,
 }
 
-impl_context_condition!(PublisherChannelMandatory);
+impl_context_condition!(PublisherTopicMandatory);
 
-impl VsidlVisitor for PublisherChannelMandatory {
+impl VsidlVisitor for PublisherTopicMandatory {
     fn start_visit_publisher(&mut self, node: &Publisher) {
-        if node.channel.is_empty() {
+        if node.topic.is_empty() {
             self.finding_collector.error(
-                FindingId::PublisherChannelMandatory,
-                "Publisher channel is mandatory in latest VSIDL syntax. Please specify 'channel: \"channel_name\"'",
+                FindingId::PublisherTopicMandatory,
+                "Publisher topic is mandatory in latest VSIDL syntax. Please specify 'topic: \"topic-name\"'",
                 vec![node.span.clone().into_option()],
             );
         }
@@ -45,9 +45,9 @@ mod tests {
     use crate::finding_severity::FindingSeverity;
 
     #[test]
-    fn test_should_reject_missing_channel() {
-        // GIVEN a publisher WITHOUT channels
-        let mut check = PublisherChannelMandatory::default();
+    fn test_should_reject_missing_topic() {
+        // GIVEN a publisher WITHOUT topics
+        let mut check = PublisherTopicMandatory::default();
         let publisher = Publisher::default();
 
         // WHEN visiting the publisher
@@ -57,16 +57,15 @@ mod tests {
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "Publisher channel is mandatory in latest VSIDL syntax"
+            "Publisher topic is mandatory in latest VSIDL syntax"
         ));
     }
 
     #[test]
-    fn test_should_accept_provided_channel() {
-        // GIVEN a publisher WITH channels
-        let mut check = PublisherChannelMandatory::default();
-        let publisher =
-            Publisher { channel: vec!["some_channel".to_string()], ..Default::default() };
+    fn test_should_accept_provided_topic() {
+        // GIVEN a publisher WITH topics
+        let mut check = PublisherTopicMandatory::default();
+        let publisher = Publisher { topic: vec!["some-topic".to_string()], ..Default::default() };
 
         // WHEN visiting the publisher
         check.start_visit_publisher(&publisher);

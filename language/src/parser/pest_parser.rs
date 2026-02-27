@@ -69,6 +69,7 @@ publisher = { "publisher" ~ "{" ~ publisher_body ~ "}" }
 publisher_body = {
     (
         publisher_message |
+        publisher_topic |
         publisher_channel |
         publisher_capacity |
         publisher_service_unit_name
@@ -76,6 +77,7 @@ publisher_body = {
 }
 
 publisher_message = { ( "type" | "message" ) ~ ":" ~ message_str }
+publisher_topic = { ( "topic" ) ~ ":" ~ topic_str }
 publisher_channel = { ( "instance" | "channel" ) ~ ":" ~ channel_str }
 publisher_capacity = { ( "capacity" ) ~ ":" ~ integer }
 publisher_service_unit_name = { "service_unit_name" ~ ":" ~ service_unit_name_str }
@@ -86,11 +88,13 @@ subscriber = { "subscriber" ~ "{" ~ subscriber_body ~ "}" }
 subscriber_body = {
     (
         subscriber_message |
+        subscriber_topic |
         subscriber_channel
     )*
 }
 
 subscriber_message = { ( "type" | "message" ) ~ ":" ~ message_str }
+subscriber_topic = { ( "topic" ) ~ ":" ~ topic_str }
 subscriber_channel = { ( "instance" | "channel" ) ~ ":" ~ channel_str }
 
 // Server
@@ -152,6 +156,7 @@ identifier_str = ${ "\"" ~ IDENTIFIER ~ "\"" }
 // The following rules just tag existing rules to make them distinguishable
 // The Pest Tag feature is not enabled in Android
 message_str = ${ qualified_name_str }
+topic_str = ${ string }
 channel_str = ${ identifier_str }
 service_str = ${ qualified_name_str }
 target_name_str = ${ string }

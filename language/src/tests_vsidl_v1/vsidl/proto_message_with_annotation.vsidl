@@ -23,12 +23,14 @@ service_bundle {
   publisher {
     message: "AnnotationSinglePubMessage"
     channel: "test"
+    topic: "test"
     capacity: 8
   }
 
   publisher {
     message: "AnnotationMultiPubMessage"
     channel: "test2"
+    topic: "test2"
     capacity: 8
   }
 }
