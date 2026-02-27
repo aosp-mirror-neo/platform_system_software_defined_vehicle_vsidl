@@ -181,3 +181,6 @@ pub use rpc_streaming::RpcStreaming;
 
 mod rpc_duplicate_method_name;
 pub use rpc_duplicate_method_name::RpcDuplicateMethodName;
+
+mod rpc_channel_naming_convention;
+pub use rpc_channel_naming_convention::RpcChannelNamingConvention;
