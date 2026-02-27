@@ -142,6 +142,8 @@ macro_rules! finding_ids {
             E407: (0x407, PublisherCapacityMandatory),
             /// Publisher topic is mandatory in latest VSIDL syntax
             E408: (0x408, PublisherTopicMandatory),
+            /// RPC channel is mandatory in latest VSIDL syntax
+            E409: (0x409, RpcChannelMandatory),
             // -- Limitations --
             /// Publishers using user-defined names must specify a channel if the type has multiple channels
             E501: (0x501, NoUserDefinedNamesForMultiChannelPublishers),

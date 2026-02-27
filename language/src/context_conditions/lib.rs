@@ -184,3 +184,6 @@ pub use rpc_duplicate_method_name::RpcDuplicateMethodName;
 
 mod rpc_channel_naming_convention;
 pub use rpc_channel_naming_convention::RpcChannelNamingConvention;
+
+mod rpc_channel_mandatory;
+pub use rpc_channel_mandatory::RpcChannelMandatory;

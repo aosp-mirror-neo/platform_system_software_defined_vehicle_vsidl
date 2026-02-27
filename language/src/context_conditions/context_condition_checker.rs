@@ -318,6 +318,10 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
+            Box::new(RpcChannelMandatory::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
             Box::new(RpcChannelNamingConvention::default()),
         )
         .add_context_condition(
