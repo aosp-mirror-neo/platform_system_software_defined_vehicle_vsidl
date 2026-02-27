@@ -18,8 +18,9 @@ use crate::{
     proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
     proto_publication_symbol::ProtoPublicationSymbol,
     proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
-    rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol,
-    subscriber_symbol::SubscriberSymbol, topic_symbol::TopicSymbol, SymbolCommon,
+    rpc_channel_symbol::RpcChannelSymbol, rpc_client_symbol::RpcClientSymbol,
+    rpc_server_symbol::RpcServerSymbol, subscriber_symbol::SubscriberSymbol,
+    topic_symbol::TopicSymbol, SymbolCommon,
 };
 
 use super::{
@@ -358,6 +359,7 @@ impl SymbolTable {
                 service_bundle_symbol.symbol = symbol
             }
             SymbolKind::Publisher(publisher_symbol) => publisher_symbol.symbol = symbol,
+            SymbolKind::RpcChannel(rpc_channel_symbol) => rpc_channel_symbol.symbol = symbol,
             SymbolKind::Subscriber(subscriber_symbol) => subscriber_symbol.symbol = symbol,
             SymbolKind::RpcServer(rpc_server_symbol) => rpc_server_symbol.symbol = symbol,
             SymbolKind::RpcClient(rpc_client_symbol) => rpc_client_symbol.symbol = symbol,
@@ -699,6 +701,10 @@ impl SymbolTable {
                     }
                     s.topics.retain(|id| !deleted_ids.contains(id));
                 }
+                SymbolKind::RpcChannel(s) => {
+                    s.servers.retain(|id| !deleted_ids.contains(id));
+                    s.clients.retain(|id| !deleted_ids.contains(id));
+                }
                 SymbolKind::Subscriber(s) => {
                     if let Some(id) = &s.owning_service_bundle {
                         if deleted_ids.contains(id) {
@@ -728,6 +734,11 @@ impl SymbolTable {
                             s.provided_service = None;
                         }
                     }
+                    if let Some(id) = &s.channel {
+                        if deleted_ids.contains(id) {
+                            s.channel = None;
+                        }
+                    }
                 }
                 SymbolKind::RpcClient(s) => {
                     if let Some(id) = &s.owning_service_bundle {
@@ -738,6 +749,11 @@ impl SymbolTable {
                     if let Some(id) = &s.requested_service {
                         if deleted_ids.contains(id) {
                             s.requested_service = None;
+                        }
+                    }
+                    if let Some(id) = &s.channel {
+                        if deleted_ids.contains(id) {
+                            s.channel = None;
                         }
                     }
                 }
@@ -767,6 +783,7 @@ impl SymbolTable {
         ServiceBundleSymbol
     );
     get_all_symbols!(get_all_publisher_symbols, SymbolKind::Publisher, PublisherSymbol);
+    get_all_symbols!(get_all_rpc_channel_symbols, SymbolKind::RpcChannel, RpcChannelSymbol);
     get_all_symbols!(get_all_subscriber_symbols, SymbolKind::Subscriber, SubscriberSymbol);
     get_all_symbols!(get_all_rpc_server_symbols, SymbolKind::RpcServer, RpcServerSymbol);
     get_all_symbols!(get_all_rpc_client_symbols, SymbolKind::RpcClient, RpcClientSymbol);
@@ -787,6 +804,7 @@ impl SymbolTable {
     get_symbol!(get_topic_symbol, SymbolKind::Topic, TopicSymbol);
     get_symbol!(get_service_bundle_symbol, SymbolKind::ServiceBundle, ServiceBundleSymbol);
     get_symbol!(get_publisher_symbol, SymbolKind::Publisher, PublisherSymbol);
+    get_symbol!(get_rpc_channel_symbol, SymbolKind::RpcChannel, RpcChannelSymbol);
     get_symbol!(get_subscriber_symbol, SymbolKind::Subscriber, SubscriberSymbol);
     get_symbol!(get_rpc_server_symbol, SymbolKind::RpcServer, RpcServerSymbol);
     get_symbol!(get_rpc_client_symbol, SymbolKind::RpcClient, RpcClientSymbol);
@@ -810,6 +828,26 @@ impl SymbolTable {
     pub(super) fn get_topic_symbol_mut(&mut self, id: &SymbolId) -> Option<&mut TopicSymbol> {
         if let Some(SymbolKind::Topic(topic_symbol)) = self.symbols.get_mut(id) {
             return Some(topic_symbol);
+        }
+        None
+    }
+
+    /// Returns a mutable reference to the [RpcChannelSymbol] with the given ID.
+    ///
+    /// # Parameters
+    ///
+    /// * `id`: The [SymbolId] of the RPC channel symbol to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// An `Option` containing a mutable reference to the [RpcChannelSymbol] if found
+    /// and is of the correct type, otherwise `None`.
+    pub(super) fn get_rpc_channel_symbol_mut(
+        &mut self,
+        id: &SymbolId,
+    ) -> Option<&mut RpcChannelSymbol> {
+        if let Some(SymbolKind::RpcChannel(rpc_channel_symbol)) = self.symbols.get_mut(id) {
+            return Some(rpc_channel_symbol);
         }
         None
     }
@@ -906,6 +944,7 @@ impl SymbolTable {
         ServiceBundleSymbol
     );
     implement_fqn_resolver!(resolve_publisher_fqn, SymbolKind::Publisher, PublisherSymbol);
+    implement_fqn_resolver!(resolve_rpc_channel_fqn, SymbolKind::RpcChannel, RpcChannelSymbol);
     implement_fqn_resolver!(resolve_subscriber_fqn, SymbolKind::Subscriber, SubscriberSymbol);
     implement_fqn_resolver!(resolve_rpc_server_fqn, SymbolKind::RpcServer, RpcServerSymbol);
     implement_fqn_resolver!(resolve_rpc_client_fqn, SymbolKind::RpcClient, RpcClientSymbol);
@@ -1148,6 +1187,7 @@ impl SymbolTable {
                     checker.check_service_bundle(self, service_bundle)
                 }
                 SymbolKind::Publisher(publisher) => checker.check_publisher(self, publisher),
+                SymbolKind::RpcChannel(rpc_channel) => checker.check_rpc_channel(self, rpc_channel),
                 SymbolKind::Subscriber(subscriber) => checker.check_subscriber(self, subscriber),
                 SymbolKind::RpcServer(rpc_server) => checker.check_rpc_server(self, rpc_server),
                 SymbolKind::RpcClient(rpc_client) => checker.check_rpc_client(self, rpc_client),

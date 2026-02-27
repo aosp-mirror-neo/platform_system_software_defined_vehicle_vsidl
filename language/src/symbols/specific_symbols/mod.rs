@@ -17,6 +17,8 @@
 // VSIDL
 /// Module containing the [PublisherSymbol].
 pub mod publisher_symbol;
+/// Module containing the [RpcChannelSymbol].
+pub mod rpc_channel_symbol;
 /// Module containing the [RpcClientSymbol].
 pub mod rpc_client_symbol;
 /// Module containing the [RpcServerSymbol].

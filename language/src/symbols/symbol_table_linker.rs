@@ -72,6 +72,8 @@ impl SymbolTableLinker {
         self.link_publishers_to_messages();
         self.link_subscribers_to_messages();
         self.link_clients_to_rpc_services();
+        self.link_rpc_servers_to_channels();
+        self.link_rpc_clients_to_channels();
         self.link_publishers_to_topics();
         self.link_topics_to_proto_messages();
         self.link_subscribers_to_topics();
@@ -174,6 +176,88 @@ impl SymbolTableLinker {
                 &mut proto_service_symbol.unwrap()
             {
                 proto_service_symbol.clients.push(vsidl_client);
+            }
+        }
+    }
+
+    /// Links [RpcServerSymbol]s to the [RpcChannelSymbol] they use.
+    fn link_rpc_servers_to_channels(&mut self) {
+        let mut server_links = HashSet::new();
+
+        // 1. Collect links for Servers
+        for rpc_server_symbol in self.symbol_table.get_all_rpc_server_symbols() {
+            let channel_name = rpc_server_symbol.ast_node.channel.clone();
+
+            if channel_name.is_empty() {
+                continue;
+            }
+
+            let resolved_symbols: Vec<_> = self
+                .symbol_table
+                .resolve(&GLOBAL_SCOPE_ID, &channel_name, false)
+                .into_iter()
+                .filter(|symbol| matches!(symbol, SymbolKind::RpcChannel(_)))
+                .collect();
+
+            if !resolved_symbols.is_empty() {
+                server_links
+                    .insert((rpc_server_symbol.id().clone(), resolved_symbols[0].id().clone()));
+            }
+        }
+
+        // 2. Apply links for Servers
+        for (server_id, channel_id) in server_links {
+            if let Some(SymbolKind::RpcServer(server_symbol)) =
+                self.symbol_table.get_symbol_mut(&server_id)
+            {
+                server_symbol.channel = Some(channel_id.clone());
+            }
+            if let Some(channel_symbol) = self.symbol_table.get_rpc_channel_symbol_mut(&channel_id)
+            {
+                if !channel_symbol.servers.contains(&server_id) {
+                    channel_symbol.servers.push(server_id);
+                }
+            }
+        }
+    }
+
+    /// Links [RpcClientSymbol]s to the [RpcChannelSymbol] they use.
+    fn link_rpc_clients_to_channels(&mut self) {
+        let mut client_links = HashSet::new();
+
+        // 1. Collect links for Clients
+        for rpc_client_symbol in self.symbol_table.get_all_rpc_client_symbols() {
+            let channel_name = rpc_client_symbol.ast_node.channel.clone();
+
+            if channel_name.is_empty() {
+                continue;
+            }
+
+            let resolved_symbols: Vec<_> = self
+                .symbol_table
+                .resolve(&GLOBAL_SCOPE_ID, &channel_name, false)
+                .into_iter()
+                .filter(|symbol| matches!(symbol, SymbolKind::RpcChannel(_)))
+                .collect();
+
+            if !resolved_symbols.is_empty() {
+                client_links
+                    .insert((rpc_client_symbol.id().clone(), resolved_symbols[0].id().clone()));
+            }
+        }
+
+        // 2. Apply links for Clients
+        for (client_id, channel_id) in client_links {
+            if let Some(SymbolKind::RpcClient(client_symbol)) =
+                self.symbol_table.get_symbol_mut(&client_id)
+            {
+                client_symbol.channel = Some(channel_id.clone());
+            }
+            if let Some(channel_symbol) = self.symbol_table.get_rpc_channel_symbol_mut(&channel_id)
+            {
+                if !channel_symbol.clients.contains(&client_id) {
+                    channel_symbol.clients.push(client_id);
+                }
             }
         }
     }
