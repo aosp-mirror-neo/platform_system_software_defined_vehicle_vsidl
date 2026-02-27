@@ -72,7 +72,7 @@ pub mod publisher {
         /// Publication channel 'tire-temperature-rear-left' of 'sdv.golden.TireTemperature'
         pub const TIRE_TEMPERATURE_REAR_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_temperature_rear_left",
+            name: "tire-temperature-rear-left",
             service_unit: "tire-temperature-rear-left",
             capacity: 8,
         };

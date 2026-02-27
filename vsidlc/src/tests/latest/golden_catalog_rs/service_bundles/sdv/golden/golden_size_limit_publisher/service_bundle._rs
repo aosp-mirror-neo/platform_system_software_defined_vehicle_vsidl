@@ -59,7 +59,7 @@ pub mod publisher {
         /// Publication channel 'message-with-size-limit' of 'sdv.golden.size_limit.MessageWithSizeLimit'
         pub const MESSAGE_WITH_SIZE_LIMIT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "message_with_size_limit",
+            name: "message-with-size-limit",
             service_unit: "message-with-size-limit",
             capacity: 8,
         };

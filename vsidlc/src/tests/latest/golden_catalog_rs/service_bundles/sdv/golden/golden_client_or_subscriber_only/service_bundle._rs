@@ -64,7 +64,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
         pub const VEHICLE_SPEED: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "vehicle_speed",
+            name: "vehicle-speed",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
             service_unit: "vehicle-speed",

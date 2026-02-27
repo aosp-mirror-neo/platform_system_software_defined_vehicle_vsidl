@@ -65,7 +65,7 @@ pub mod publisher {
         /// Publication channel 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
         pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "vehicle_speed_b",
+            name: "vehicle-speed-b",
             service_unit: "vehicle-speed-b",
             capacity: 8,
         };

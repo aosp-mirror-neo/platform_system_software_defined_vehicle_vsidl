@@ -70,7 +70,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
         pub const VEHICLE_SPEED_A: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "vehicle_speed_a",
+            name: "vehicle-speed-a",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTwoFoldersServerPublisher",
             service_unit: "vehicle-speed-a",
@@ -102,7 +102,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
         pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "vehicle_speed_b",
+            name: "vehicle-speed-b",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTwoFoldersPublisher",
             service_unit: "vehicle-speed-b",
