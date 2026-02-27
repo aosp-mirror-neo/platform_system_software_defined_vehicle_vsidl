@@ -59,7 +59,7 @@ pub mod publisher {
         /// Publication channel 'tire-speed-unique' of 'sdv.golden.TireSpeed'
         pub const TIRE_SPEED_UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_speed_unique",
+            name: "tire-speed-unique",
             service_unit: "tire-speed-rear",
             capacity: 8,
         };

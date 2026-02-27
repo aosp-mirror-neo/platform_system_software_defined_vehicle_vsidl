@@ -64,7 +64,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'vehicle-speed-for-other-catalog' of 'sdv.golden.VehicleSpeedForOtherCatalog'
         pub const VEHICLE_SPEED_FOR_OTHER_CATALOG: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "vehicle_speed_for_other_catalog",
+            name: "vehicle-speed-for-other-catalog",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenNoAndroidbpPublishingBundle",
             service_unit: "vehicle-speed-for-other-catalog",
