@@ -154,7 +154,7 @@ impl GoldenMessageMetadata {
                                 .message_metadata_required(true)
                                 .build()?,
                         )
-                        .topic_name(channel.service_unit.replace("-", "_"))
+                        .topic_name(channel.service_unit)
                         .build()?,
                 )
                 .await?;

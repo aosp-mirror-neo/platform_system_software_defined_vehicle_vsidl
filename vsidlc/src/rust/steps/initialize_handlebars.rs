@@ -16,7 +16,7 @@ use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use anyhow::Result;
 use handlebars::{Context, Handlebars, Helper, HelperResult, Output, RenderContext};
-use heck::{ToShoutySnakeCase, ToSnakeCase};
+use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 
 pub struct InitializeHandlebars;
 
@@ -376,6 +376,7 @@ impl GeneratorStepExecution for InitializeHandlebars {
         // Helpers
         handlebars.register_helper("snake_case", Box::new(snake_case_helper));
         handlebars.register_helper("upper_snake_case", Box::new(upper_snake_case_helper));
+        handlebars.register_helper("camel_case", Box::new(camel_case_helper));
 
         register_templates(&mut handlebars, &state.cli.target_api.to_lowercase())?;
 
@@ -411,5 +412,20 @@ fn upper_snake_case_helper(
     let param = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
     // Write the shouty_snake_cased string to the output
     out.write(&param.to_shouty_snake_case())?;
+    Ok(())
+}
+
+// A helper to convert a string to CamelCase
+fn camel_case_helper(
+    h: &Helper,
+    _: &Handlebars,
+    _: &Context,
+    _: &mut RenderContext,
+    out: &mut dyn Output,
+) -> HelperResult {
+    // Get the parameter from the template
+    let param = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
+    // Write the CamelCased string to the output
+    out.write(&param.to_upper_camel_case())?;
     Ok(())
 }
