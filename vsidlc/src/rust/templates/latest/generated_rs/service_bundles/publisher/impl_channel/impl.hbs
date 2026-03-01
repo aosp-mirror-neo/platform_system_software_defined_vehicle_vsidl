@@ -18,7 +18,7 @@ impl Channel<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}
     /// Publication channel '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
     pub const {{upper_snake_case this.channel_name}}: &Self = &Self {
         _proto: std::marker::PhantomData,
-        name: "{{snake_case this.channel_name}}",
+        name: "{{this.channel_name}}",
         service_unit: "{{this.service_unit_name}}",
         capacity: {{this.capacity}},
     };

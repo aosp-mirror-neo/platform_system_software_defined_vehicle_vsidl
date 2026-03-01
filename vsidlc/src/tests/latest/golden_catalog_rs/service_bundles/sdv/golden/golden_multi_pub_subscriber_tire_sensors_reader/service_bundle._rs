@@ -64,7 +64,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'tire-speed-unique' of 'sdv.golden.TireSpeed'
         pub const TIRE_SPEED_UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_speed_unique",
+            name: "tire-speed-unique",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenMultiPubFrontTireSensorsReader",
             service_unit: "tire-speed-front",

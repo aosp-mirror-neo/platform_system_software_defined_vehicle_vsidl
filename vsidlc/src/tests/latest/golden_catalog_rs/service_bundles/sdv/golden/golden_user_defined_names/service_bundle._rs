@@ -59,14 +59,14 @@ pub mod publisher {
         /// Publication channel 'tire-temperature-front-left' of 'sdv.golden.TireTemperature'
         pub const TIRE_TEMPERATURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_temperature_front_left",
+            name: "tire-temperature-front-left",
             service_unit: "my-temperature-left",
             capacity: 8,
         };
         /// Publication channel 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
         pub const TIRE_TEMPERATURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_temperature_rear_right",
+            name: "tire-temperature-rear-right",
             service_unit: "my-temperature-right",
             capacity: 8,
         };
@@ -94,7 +94,7 @@ pub mod publisher {
         /// Publication channel 'tire-speed-unique' of 'sdv.golden.TireSpeed'
         pub const TIRE_SPEED_UNIQUE: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_speed_unique",
+            name: "tire-speed-unique",
             service_unit: "my-multipub-tire-speed",
             capacity: 8,
         };
@@ -152,7 +152,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'tire-temperature-front-left' of 'sdv.golden.TireTemperature'
         pub const TIRE_TEMPERATURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_temperature_front_left",
+            name: "tire-temperature-front-left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenUserDefinedNames",
             service_unit: "my-temperature-left",
@@ -160,7 +160,7 @@ pub mod subscriber {
         /// Enables access to subscription channel 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
         pub const TIRE_TEMPERATURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
-            name: "tire_temperature_rear_right",
+            name: "tire-temperature-rear-right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenUserDefinedNames",
             service_unit: "my-temperature-right",

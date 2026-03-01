@@ -18,7 +18,7 @@ impl Channel<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}
     /// Enables access to subscription channel '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
     pub const {{upper_snake_case this.channel_name}}: &Self = &Self {
         _proto: std::marker::PhantomData,
-        name: "{{snake_case this.channel_name}}",
+        name: "{{this.channel_name}}",
         // Multipub doesn't subscribe to a specific service unit, but to a shared channel
         {{!--
         TODO: b/477164517 - Set the service_bundle_package and service_bundle_name fields to "Deprecated"
