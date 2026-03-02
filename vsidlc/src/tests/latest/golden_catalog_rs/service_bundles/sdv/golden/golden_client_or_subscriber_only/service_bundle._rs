@@ -67,7 +67,7 @@ pub mod subscriber {
             name: "vehicle-speed",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "vehicle-speed",
+            service_unit: "sdv-golden-vehicle-speed-vehicle-speed",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];

@@ -60,7 +60,7 @@ pub mod publisher {
         pub const VEHICLE_SPEED_FOR_OTHER_CATALOG: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle-speed-for-other-catalog",
-            service_unit: "vehicle-speed-for-other-catalog",
+            service_unit: "sdv-golden-vehicle-speed-for-other-catalog-vehicle-speed-for-other-catalog",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeedForOtherCatalog' available to the service bundle

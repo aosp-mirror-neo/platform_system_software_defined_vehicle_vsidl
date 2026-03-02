@@ -184,7 +184,8 @@ impl PublisherSymbol {
             let publication_fqn = self.publication(symbol_table).full_name(symbol_table);
             format_service_unit_name(publication_fqn, channel_or_topic.to_string())
         } else {
-            channel_or_topic.to_string().to_kebab_case()
+            let message_fqn = self.message(symbol_table).full_name(symbol_table);
+            format_service_unit_name(message_fqn, channel_or_topic.to_string().to_kebab_case())
         }
     }
 

@@ -60,7 +60,7 @@ pub mod publisher {
         pub const VEHICLE_SPEED_A: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle-speed-a",
-            service_unit: "vehicle-speed-a",
+            service_unit: "sdv-golden-vehicle-speed-a-vehicle-speed-a",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
@@ -85,7 +85,7 @@ pub mod publisher {
         pub const VEHICLE_SPEED_B: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle-speed-b",
-            service_unit: "vehicle-speed-b",
+            service_unit: "sdv-golden-vehicle-speed-b-vehicle-speed-b",
             capacity: 8,
         };
         /// List of all publication channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
