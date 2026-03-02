@@ -44,6 +44,7 @@ pub(super) struct ServiceUnitContext {
     pub(super) user_defined_name: String,
     pub(super) servers: Vec<(String, String)>,
     pub(super) has_alternative_servers: bool,
+    pub(super) channel: String,
 }
 
 impl ServiceUnitContext {
@@ -60,6 +61,11 @@ impl ServiceUnitContext {
             user_defined_name: rpc_server.service_unit_name(symbol_table).clone(),
             servers: Vec::new(),
             has_alternative_servers: false,
+            channel: if symbol_table.uses_pdk29() {
+                "".to_string()
+            } else {
+                RpcServerSymbol::channel(rpc_server, symbol_table).name()
+            },
         }
     }
 
@@ -87,6 +93,11 @@ impl ServiceUnitContext {
             user_defined_name: "".to_string(),
             servers: servers.clone(),
             has_alternative_servers: servers.len() > 1,
+            channel: if symbol_table.uses_pdk29() {
+                "".to_string()
+            } else {
+                RpcClientSymbol::channel(rpc_client, symbol_table).name()
+            },
         }
     }
 }
@@ -317,6 +328,7 @@ pub(super) struct ServiceBundleContext {
     pub(super) unit_types: IndexSet<UnitTypeContext>,
     pub(super) rpc_servers: IndexSet<ServiceUnitContext>,
     pub(super) rpc_clients: IndexSet<ServiceUnitContext>,
+    pub(super) rpc_client_groups: Vec<(ServiceUnitContext, Vec<ServiceUnitContext>)>,
     pub(super) publications: Vec<(PublicationTypeContext, Vec<PublicationChannelContext>)>,
     pub(super) subscriptions: Vec<(PublicationTypeContext, Vec<SubscriptionChannelContext>)>,
     mutable_service: bool,
@@ -363,6 +375,7 @@ impl ServiceBundleContext {
                 .iter()
                 .map(|server| ServiceUnitContext::from_rpc_server(server, symbol_table))
                 .collect(),
+            rpc_client_groups: Self::get_rpc_client_groups(service_bundle, symbol_table),
             mutable_service: is_publisher || is_server,
             used_comms: (is_subscriber || is_publisher || is_client || is_server)
                 && cli.target_api == "pdk29",
@@ -525,6 +538,19 @@ impl ServiceBundleContext {
             }
         }
         subscriptions
+    }
+
+    fn get_rpc_client_groups(
+        service_bundle: &ServiceBundleSymbol,
+        symbol_table: &SymbolTable,
+    ) -> Vec<(ServiceUnitContext, Vec<ServiceUnitContext>)> {
+        let mut groups: IndexMap<UnitTypeContext, Vec<ServiceUnitContext>> = IndexMap::new();
+        for client in &service_bundle.clients(symbol_table) {
+            let context = ServiceUnitContext::from_rpc_client(client, symbol_table);
+            groups.entry(context.unit_type.clone()).or_default().push(context);
+        }
+
+        groups.into_iter().map(|(_, clients)| (clients[0].clone(), clients)).collect()
     }
 }
 

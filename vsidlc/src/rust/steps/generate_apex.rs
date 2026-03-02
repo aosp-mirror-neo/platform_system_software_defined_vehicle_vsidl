@@ -25,6 +25,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use vsidl_v1_parser::rpc_server_symbol::RpcServerSymbol;
 use vsidl_v1_parser::service_bundle_symbol::ServiceBundleSource;
 use vsidl_v1_parser::SymbolTable;
 
@@ -38,6 +39,7 @@ struct AclUnitType {
 #[derive(Serialize)]
 struct AclServiceUnit {
     name: String,
+    channel_name: String,
     acl_name: String,
     members: Vec<String>,
 }
@@ -147,6 +149,7 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
             let service_unit_name = publisher.service_unit_name(symbol_table, &channel);
             message_service_units.push(AclServiceUnit {
                 name: service_unit_name.clone(),
+                channel_name: channel.clone(),
                 acl_name: format!("{}-publisher-acl", service_unit_name.replace('_', "-")),
                 members: subscribers,
             });
@@ -180,6 +183,11 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
         let service_unit_name = server.service_unit_name(symbol_table);
         rpc_service_units.push(AclServiceUnit {
             name: service_unit_name.clone(),
+            channel_name: if symbol_table.uses_pdk29() {
+                "".to_string()
+            } else {
+                RpcServerSymbol::channel(server, symbol_table).name()
+            },
             acl_name: format!("{}-client-acl", service_unit_name.replace('_', "-")),
             members: clients,
         });

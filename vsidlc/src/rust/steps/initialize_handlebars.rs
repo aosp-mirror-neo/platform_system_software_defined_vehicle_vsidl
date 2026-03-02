@@ -295,10 +295,40 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
         include_str!("../templates/latest/generated_rs/service_bundles/service_bundle_builder/functions/build.hbs")
     ),
 
+    /* RPC Client Functions */
+    (
+        "service_bundles/rpc_client/client",
+        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/client.hbs")
+    ),
+    (
+        "service_bundles/rpc_client/impl_descriptor/impl",
+        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor/impl.hbs")
+    ),
+    (
+        "service_bundles/rpc_client/impl_to_type_name/impl",
+        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_to_type_name/impl.hbs")
+    ),
+    (
+        "service_bundles/rpc_client/impl_to_type_name/functions/type_name",
+        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_to_type_name/functions/type_name.hbs")
+    ),
+    (
+        "service_bundles/rpc_client/impl_descriptor_trait/impl",
+        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor_trait/impl.hbs")
+    ),
+    (
+        "service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel",
+        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel.hbs")
+    ),
+
     /* RPC Service Functions */
     (
         "rpc/impl_unit_type/unit_type",
         include_str!("../templates/latest/generated_rs/rpc/impl_unit_type/unit_type.hbs")
+    ),
+    (
+        "rpc/impl_debug/fmt",
+        include_str!("../templates/latest/generated_rs/rpc/impl_debug/fmt.hbs")
     ),
 ];
 
