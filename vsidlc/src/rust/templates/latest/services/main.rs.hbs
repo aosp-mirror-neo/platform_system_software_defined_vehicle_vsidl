@@ -31,7 +31,7 @@ use tokio::time::sleep;
 use tokio_util::sync::CancellationToken;
 use futures::Stream;
 use futures_util::stream::StreamExt;
-use sdv::mw::{Availability, SubscribeOptions};
+use sdv::mw::{clientlib, Availability, SubscribeOptions, Communicate};
 use std::fmt::Debug;
 
 {{#each @root.proto_imports}}
@@ -66,24 +66,10 @@ impl ServiceBundle for {{service_bundle_name}}ServiceBundle {
         debug!("spawning thread for service bundle...");
         let _ = std::thread::spawn(move || {
             runtime.block_on(async move {
-                debug!("Creating service bundle...");
-                let service_bundle =
-                    match sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}}::new(
-                        Arc::new(SdvComms{context}),
-                        {{#if rpc_servers}}
-                        (
-                            {{#each rpc_servers}}
-                            Arc::new({{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl::new()),
-                            {{/each}}
-                        )
-                        {{/if}}
-                    ).await {
-                        Ok(service) => service,
-                        Err(e) => panic!("{e}"),
-                    };
+                let comms = Arc::new(SdvComms{context});
                 debug!("Calling sdv_main...");
                 let res = tokio::select! {
-                    res = sdv_main(service_bundle) => res,
+                    res = sdv_main(comms) => res,
                     () = cancellation_token.cancelled() => Err(sdv::status::SdvStatus::new(sdv::status::SdvStatusCode::Cancelled)),
                 };
                 error!("Service bundle loop stopped: {res:?}.");
@@ -99,9 +85,25 @@ impl ServiceBundle for {{service_bundle_name}}ServiceBundle {
 }
 
 {{#if subscriptions}}
-async fn wait_for_available(
-    mut event_stream: Pin<Box<dyn futures::Stream<Item = Availability> + Send>>,
+/// Waits until a publisher for the given `channel` becomes available.
+///
+/// This function creates a registration event stream and waits for the first
+/// `Availability::Available` event, indicating that a publisher is ready.
+/// It can be used to synchronize a subscriber with a publisher, ensuring
+/// the publisher is active before attempting to subscribe.
+///
+/// # Arguments
+/// * `comms` - A reference to the `Communicate` trait object for middleware communication.
+/// * `channel` - The subscription channel to wait for.
+pub async fn wait_for_publisher_to_be_available<C: clientlib::subscriber::Channel>(
+    comms: &dyn Communicate,
+    channel: &C,
 ) {
+    debug!("Waiting for publisher {channel:#?}");
+    let mut event_stream = clientlib::create_registration_event_stream(comms, channel)
+        .await
+        .expect("unable to generate a registration event");
+
     loop {
         debug!("Waiting for publisher loop.");
         match event_stream.next().await {
@@ -110,63 +112,67 @@ async fn wait_for_available(
                 debug!("Still waiting for publisher...");
             } // Topic unregistered (ignore for now).
             None => {
-                debug!("Stream terminated, publisher not found.");
+                debug!("Stream terminated.");
+                break;
             } // Stream termination.
         }
     }
     debug!("Publisher found");
 }
-
-async fn wait_for_publisher_to_be_available<T>(
-    mw_service_bundle: &mut sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}},
-    variant: &sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::subscriber::Channel<T>,
-)
-where
-    T: protobuf::Message
-        + Debug
-        + sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::subscriber::Metadata
-        + sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::UnitType,
-{
-    debug!("Waiting for publisher {variant:#?}");
-    wait_for_available(
-        mw_service_bundle
-            .create_registration_event_stream(variant, &SubscribeOptions::default())
-            .await
-            .expect("unable to generate a registration event"),
-    )
-    .await;
-}
 {{/if}}
 
-async fn sdv_main(mut service_bundle: sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}}) -> sdv::status::SdvResult<()> {
+async fn sdv_main(
+    comms: Arc<dyn Communicate>,
+) -> sdv::status::SdvResult<()> {
     info!("Starting service bundle '{{service_bundle_name}}'");
 
+    debug!("Creating service bundle...");
+    let {{#if is_publisher}}mut{{/if}} _service_bundle =
+        match sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}}::builder()
+            .set_comms(comms.clone())
+            {{#each rpc_servers}}
+            .set_server_{{snake_case user_defined_name}}(Arc::new({{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl::new()))
+            {{/each}}
+            .build()
+            .await {
+            Ok(service) => service,
+            Err(e) => panic!("{e}"),
+        };
+
+    {{#unless is_empty}}
     let mut futures_join_set = tokio::task::JoinSet::new();
+    {{/unless}}
 
     {{#each publications}}
     {{#each this.1}}
-    let publisher = service_bundle.take_publisher(sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::publisher::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{this.channel_name}}).expect("Failed to take publisher {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
+    let publisher = _service_bundle.take_publisher(sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::publisher::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{upper_snake_case this.channel_name}}).expect("Failed to take publisher {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
     futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_publisher(publisher));
     {{/each}}
     {{/each}}
 
     {{#each subscriptions}}
     {{#each this.1}}
-    let variant = sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::subscriber::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{this.channel_name}};
-    wait_for_publisher_to_be_available(&mut service_bundle, variant).await;
-    let observer = service_bundle.create_observer(variant, &sdv::mw::SubscribeOptions::default()).await.expect("Failed to create observer {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
+    let variant = sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::subscriber::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{upper_snake_case this.channel_name}};
+    wait_for_publisher_to_be_available(comms.as_ref(), variant).await;
+    let observer = sdv::mw::clientlib::create_observer(comms.as_ref(), variant, &sdv::mw::SubscribeOptions::default()).await.expect("Failed to create observer {{../this.0.unit_type.proto_type_name}}#{{upper_snake_case this.channel_name}}");
     futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_observer(observer));
     {{/each}}
     {{/each}}
 
     {{#each rpc_clients}}
-    let client = create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(&mut service_bundle).await;
+    let client = create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(comms.as_ref()).await;
     futures_join_set.spawn(handle_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_client(client));
     {{/each}}
 
+    {{#if has_clients_or_subscriptions}}
     while let Some(e) = futures_join_set.join_next().await {
         error!("Future joined with result: {e:?}");
     }
+    {{else}}
+    {{#unless is_empty}}
+    std::future::pending::<()>().await;
+    {{/unless}}
+    {{/if}}
 
     Ok(())
 }
@@ -179,7 +185,7 @@ async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case 
         sleep(Duration::from_secs(1)).await;
         // TODO: Modify the message content here.
         let message = {{../this.0.unit_type.proto_type_name}}::default();
-        info!("Publishing on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
+        info!("Publishing on {{../this.0.unit_type.proto_type_name}}#{{upper_snake_case this.channel_name}}");
         publisher.publish(&message).unwrap();
     }
 }
@@ -191,18 +197,19 @@ async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case 
 async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_observer(mut observer: Pin<Box<dyn Stream<Item = SdvResult<Vec<{{../this.0.unit_type.proto_type_name}}>>> + Send>>) {
     while let Some(message) = observer.next().await {
         // TODO: Implement your logic to handle received messages here.
-        info!("Received message on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}: {:?}", message);
+        info!("Received message on {{../this.0.unit_type.proto_type_name}}#{{upper_snake_case this.channel_name}}: {:?}", message);
     }
 }
 {{/each}}
 {{/each}}
 
 {{#each rpc_clients}}
-async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(service_bundle: &mut sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../service_bundle_name}}::{{../service_bundle_name}}) -> {{this.unit_type.crate_name}}::Client {
+async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(comms: &dyn sdv::mw::Communicate) -> {{this.unit_type.crate_name}}::Client {
     let sleep_duration = Duration::from_secs(1);
     let mut retries = 30;
     loop {
-        let client = service_bundle.create_rpc_client::<{{this.unit_type.crate_name}}::Client>(
+        let client = sdv::mw::clientlib::create_rpc_client::<{{this.unit_type.crate_name}}::Client>(
+            comms,
             sdv::mw::UnitName::builder()
                 {{#if this.has_alternative_servers}}
                 // There are multiple possible servers (bundle_name):
