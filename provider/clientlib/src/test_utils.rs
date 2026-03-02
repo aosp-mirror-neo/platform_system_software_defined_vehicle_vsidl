@@ -16,7 +16,9 @@
 //! Provides functions for unit tests.
 
 use crate::types::DataType;
+use crate::vsidl_provider_api::AvailabilityChangeEvent;
 use crate::vsidl_provider_api::VsidlConfigProvider;
+use futures::StreamExt;
 use googletest::prelude::*;
 use log::info;
 use protobuf::MessageField;
@@ -383,4 +385,14 @@ pub async fn test_fixture_vsidl_provider_message_descriptor_api_fails<
         message_descriptor.unwrap_err().status_code(),
         &[SdvStatusCode::NotFound, SdvStatusCode::Internal],
     );
+}
+
+pub async fn test_fixture_subscribe_availability_change_by_vm<TProvider: VsidlConfigProvider>(
+    provider: TProvider,
+    _ctx: Option<ContextRef>,
+    _data_types: HashSet<DataType>,
+) {
+    let mut stream = provider.subscribe_availability_change_by_vm("any_vm").await.unwrap();
+    assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Available));
+    assert_eq!(stream.next().await, None);
 }

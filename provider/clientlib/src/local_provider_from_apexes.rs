@@ -408,6 +408,13 @@ impl VsidlConfigProvider for LocalProviderFromApexes {
             })
         })
     }
+
+    async fn subscribe_availability_change_by_vm(
+        &self,
+        _vm_name: &str,
+    ) -> SdvResult<AvailabilityStream> {
+        Ok(Box::pin(futures::stream::once(async { AvailabilityChangeEvent::Available })))
+    }
 }
 
 #[cfg(test)]
@@ -418,6 +425,7 @@ mod test {
     use std::future::Future;
     use std::sync::Arc;
 
+    use crate::test_utils::test_fixture_subscribe_availability_change_by_vm;
     use crate::test_utils::test_fixture_vsidl_init_succeeds;
     use crate::test_utils::test_fixture_vsidl_provider_api_fails;
     use crate::test_utils::test_fixture_vsidl_provider_diagnostics_api_succeeds;
@@ -495,6 +503,11 @@ mod test {
     #[tokio::test]
     async fn test_vsidl_provider_message_descriptor_api_fails() {
         run_test(test_fixture_vsidl_provider_message_descriptor_api_fails).await;
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm() {
+        run_test(test_fixture_subscribe_availability_change_by_vm).await;
     }
 
     #[tokio::test]
