@@ -46,7 +46,6 @@ pub mod publisher {
         sdv_vsidlc_goldens_two_folders_folder_b_catalog::speed_b::VehicleSpeedB,
     > {
         const MESSAGE_SIZE: u32 = 5;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<

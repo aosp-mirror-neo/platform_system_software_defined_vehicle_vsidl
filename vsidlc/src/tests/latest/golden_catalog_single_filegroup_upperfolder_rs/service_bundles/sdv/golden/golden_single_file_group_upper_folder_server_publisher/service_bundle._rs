@@ -46,7 +46,6 @@ pub mod publisher {
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_a::VehicleSpeedA,
     > {
         const MESSAGE_SIZE: u32 = 5;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<
@@ -77,7 +76,6 @@ pub mod publisher {
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedB,
     > {
         const MESSAGE_SIZE: u32 = 5;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<

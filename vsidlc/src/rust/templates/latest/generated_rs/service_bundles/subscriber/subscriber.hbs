@@ -31,8 +31,6 @@ pub struct Channel<Proto: ::protobuf::Message> {
 {{> service_bundles/subscriber/impl_identity/impl}}
 
 {{#each subscriptions}}
-    {{> service_bundles/subscriber/impl_metadata/impl}}
-
     {{> service_bundles/subscriber/impl_to_type_name/impl}}
 
     {{> service_bundles/subscriber/impl_channel/impl}}

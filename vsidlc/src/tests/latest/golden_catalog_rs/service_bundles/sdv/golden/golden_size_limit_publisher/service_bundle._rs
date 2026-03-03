@@ -44,7 +44,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit> {
         const MESSAGE_SIZE: u32 = 1332;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit> {
