@@ -128,6 +128,10 @@ impl Diagnostics {
     }
     /// Create FaultListenerSrvice implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `fault_listener_server_builder` instead"
+    )]
     pub fn create_fault_listener_server(
         event1_handler: Arc<
             dyn FaultListenerHandler<
@@ -138,6 +142,10 @@ impl Diagnostics {
         Arc::new(FaultListenerServer {
             event1_handler,
         })
+    }
+    /// Returns a builder for `FaultListenerServer`.
+    pub fn fault_listener_server_builder() -> FaultListenerServerBuilder {
+        FaultListenerServerBuilder::default()
     }
 }
 /// Builder for `DataItemServer`.
@@ -242,6 +250,35 @@ impl RoutineControlServerBuilder {
         Arc::new(RoutineServer {
             routine1_handler: self.routine1_handler,
         })
+    }
+}
+/// Builder for `FaultListenerServer`.
+#[derive(Default)]
+pub struct FaultListenerServerBuilder {
+    event1_handler: Option<
+        Arc<
+            dyn FaultListenerHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::FirstEventExt,
+            >,
+        >,
+    >,
+}
+impl FaultListenerServerBuilder {
+    /// Adds a handler for event1.
+    pub fn add_event1_handler(
+        mut self,
+        handler: Arc<
+            dyn FaultListenerHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::FirstEventExt,
+            >,
+        >,
+    ) -> Self {
+        self.event1_handler = Some(handler);
+        self
+    }
+    /// Builds a `FaultListenerServer`.
+    pub fn build(self) -> Arc<dyn FaultListenerService> {
+        Arc::new(FaultListenerServer::from(self))
     }
 }
 struct DataItemServer {
@@ -522,6 +559,13 @@ struct FaultListenerServer {
             sdv_vsidlc_goldens_catalog::diagnostics_messages::FirstEventExt,
         >,
     >,
+}
+impl From<FaultListenerServerBuilder> for FaultListenerServer {
+    fn from(builder: FaultListenerServerBuilder) -> Self {
+        Self {
+            event1_handler: builder.event1_handler.unwrap(),
+        }
+    }
 }
 #[async_trait::async_trait]
 impl FaultListenerService for FaultListenerServer {

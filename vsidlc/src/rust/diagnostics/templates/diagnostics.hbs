@@ -156,6 +156,7 @@ impl Diagnostics {
 
     /// Create FaultListenerSrvice implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `fault_listener_server_builder` instead")]
     pub fn create_fault_listener_server(
         {{#each events}}
         {{#if this.has_fault_listener}}
@@ -171,6 +172,12 @@ impl Diagnostics {
                 {{/each}}
         })
     }
+
+    /// Returns a builder for `FaultListenerServer`.
+    pub fn fault_listener_server_builder() -> FaultListenerServerBuilder {
+        FaultListenerServerBuilder::default()
+    }
+
 {{/if}}
 }
 
@@ -258,6 +265,35 @@ impl RoutineControlServerBuilder {
             {{this.handler_name}}: self.{{this.handler_name}},
         {{/each}}
         })
+    }
+}
+{{/if}}
+
+{{#if has_fault_listeners}}
+/// Builder for `FaultListenerServer`.
+#[derive(Default)]
+pub struct FaultListenerServerBuilder {
+{{#each events}}
+{{#if this.has_fault_listener}}
+    {{this.fault_listener_handler_name}}: Option<Arc<dyn FaultListenerHandler<{{this.full_message_name}}>>>,
+{{/if}}
+{{/each}}
+}
+
+impl FaultListenerServerBuilder {
+{{#each events}}
+{{#if this.has_fault_listener}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.fault_listener_handler_name}}(mut self, handler: Arc<dyn FaultListenerHandler<{{this.full_message_name}}>>) -> Self {
+        self.{{this.fault_listener_handler_name}} = Some(handler);
+        self
+    }
+{{/if}}
+{{/each}}
+
+    /// Builds a `FaultListenerServer`.
+    pub fn build(self) -> Arc<dyn FaultListenerService> {
+        Arc::new(FaultListenerServer::from(self))
     }
 }
 {{/if}}

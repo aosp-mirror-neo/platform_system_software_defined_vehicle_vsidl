@@ -192,6 +192,10 @@ impl Diagnostics {
     }
     /// Create FaultListenerSrvice implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `fault_listener_server_builder` instead"
+    )]
     pub fn create_fault_listener_server(
         event_with_dot_handler: Arc<
             dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
@@ -204,6 +208,10 @@ impl Diagnostics {
             event_with_dot_handler,
             event_with_uppercase_handler,
         })
+    }
+    /// Returns a builder for `FaultListenerServer`.
+    pub fn fault_listener_server_builder() -> FaultListenerServerBuilder {
+        FaultListenerServerBuilder::default()
     }
 }
 /// Builder for `DataItemServer`.
@@ -354,6 +362,42 @@ impl RoutineControlServerBuilder {
             routine_handler: self.routine_handler,
             routine_with_dot_handler: self.routine_with_dot_handler,
         })
+    }
+}
+/// Builder for `FaultListenerServer`.
+#[derive(Default)]
+pub struct FaultListenerServerBuilder {
+    event_with_dot_handler: Option<
+        Arc<dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>>,
+    >,
+    event_with_uppercase_handler: Option<
+        Arc<dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>>,
+    >,
+}
+impl FaultListenerServerBuilder {
+    /// Adds a handler for event.with.dot.
+    pub fn add_event_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
+        >,
+    ) -> Self {
+        self.event_with_dot_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for EVENT.WITH.UPPERCASE.
+    pub fn add_event_with_uppercase_handler(
+        mut self,
+        handler: Arc<
+            dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
+        >,
+    ) -> Self {
+        self.event_with_uppercase_handler = Some(handler);
+        self
+    }
+    /// Builds a `FaultListenerServer`.
+    pub fn build(self) -> Arc<dyn FaultListenerService> {
+        Arc::new(FaultListenerServer::from(self))
     }
 }
 struct DataItemServer {
@@ -727,6 +771,14 @@ struct FaultListenerServer {
     event_with_uppercase_handler: Arc<
         dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
     >,
+}
+impl From<FaultListenerServerBuilder> for FaultListenerServer {
+    fn from(builder: FaultListenerServerBuilder) -> Self {
+        Self {
+            event_with_dot_handler: builder.event_with_dot_handler.unwrap(),
+            event_with_uppercase_handler: builder.event_with_uppercase_handler.unwrap(),
+        }
+    }
 }
 #[async_trait::async_trait]
 impl FaultListenerService for FaultListenerServer {
