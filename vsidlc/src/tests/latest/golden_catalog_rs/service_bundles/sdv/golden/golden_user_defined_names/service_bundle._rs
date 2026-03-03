@@ -114,24 +114,12 @@ pub mod subscriber {
         _proto: std::marker::PhantomData<Proto>,
         /// Unique name of a channel
         pub name: &'static str,
-        service_bundle_package: &'static str,
-        service_bundle_name: &'static str,
-        service_unit: &'static str,
     }
     impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::subscriber::Identity
     for Channel<Proto> {
         type ProtoMessage = Proto;
         fn get_name(&self) -> &str {
             self.name
-        }
-        fn get_service_unit_name(&self) -> &str {
-            self.service_unit
-        }
-        fn get_service_bundle_package(&self) -> &str {
-            self.service_bundle_package
-        }
-        fn get_service_bundle_name(&self) -> &str {
-            self.service_bundle_name
         }
     }
     impl sdv::mw::clientlib::channel::subscriber::Metadata
@@ -153,17 +141,11 @@ pub mod subscriber {
         pub const TIRE_TEMPERATURE_FRONT_LEFT: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "tire-temperature-front-left",
-            service_bundle_package: "sdv.golden",
-            service_bundle_name: "GoldenUserDefinedNames",
-            service_unit: "my-temperature-left",
         };
         /// Enables access to subscription channel 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
         pub const TIRE_TEMPERATURE_REAR_RIGHT: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "tire-temperature-rear-right",
-            service_bundle_package: "sdv.golden",
-            service_bundle_name: "GoldenUserDefinedNames",
-            service_unit: "my-temperature-right",
         };
         /// List of all subscription channels of 'sdv.golden.TireTemperature' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
