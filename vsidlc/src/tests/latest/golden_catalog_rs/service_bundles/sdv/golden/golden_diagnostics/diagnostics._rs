@@ -166,8 +166,8 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
-            io_control_handler,
-            io_control_with_dot_handler,
+            io_control_handler: Some(io_control_handler),
+            io_control_with_dot_handler: Some(io_control_with_dot_handler),
         })
     }
     /// Returns a builder for `IoControlServer`.
@@ -223,17 +223,10 @@ impl IoControlServerBuilder {
     }
     /// Builds an `IoControlServer`.
     ///
-    /// # Panics
-    ///
-    /// Panics if any of the handlers have not been set.
     pub fn build(self) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
-            io_control_handler: self
-                .io_control_handler
-                .expect("handler for io_control_handler must be set"),
-            io_control_with_dot_handler: self
-                .io_control_with_dot_handler
-                .expect("handler for io_control_with_dot_handler must be set"),
+            io_control_handler: self.io_control_handler,
+            io_control_with_dot_handler: self.io_control_with_dot_handler,
         })
     }
 }
@@ -368,11 +361,11 @@ impl RoutineControlService for RoutineServer {
     }
 }
 struct IoControlServer {
-    io_control_handler: Arc<
-        dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    io_control_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
-    io_control_with_dot_handler: Arc<
-        dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    io_control_with_dot_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
 }
 #[async_trait::async_trait]
@@ -384,20 +377,24 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(
-                    self
-                        .io_control_handler
-                        .return_control_to_ecu_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(handler.return_control_to_ecu_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .return_control_to_ecu_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(handler.return_control_to_ecu_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -414,15 +411,24 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(self.io_control_handler.reset_to_default_untyped(&request.mask).await)
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(handler.reset_to_default_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .reset_to_default_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(handler.reset_to_default_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -439,20 +445,24 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(
-                    self
-                        .io_control_handler
-                        .freeze_current_state_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(handler.freeze_current_state_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .freeze_current_state_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(handler.freeze_current_state_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -469,26 +479,38 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(
-                    self
-                        .io_control_handler
-                        .short_term_adjustment_untyped(
-                            &request.adjusted_value,
-                            &request.mask,
-                        )
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(
+                        handler
+                            .short_term_adjustment_untyped(
+                                &request.adjusted_value,
+                                &request.mask,
+                            )
+                            .await,
+                    )
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .short_term_adjustment_untyped(
-                            &request.adjusted_value,
-                            &request.mask,
-                        )
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(
+                        handler
+                            .short_term_adjustment_untyped(
+                                &request.adjusted_value,
+                                &request.mask,
+                            )
+                            .await,
+                    )
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {

@@ -129,7 +129,7 @@ impl Diagnostics {
     ) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
                 {{#each io_controls}}
-                {{this.handler_name}},
+                {{this.handler_name}}: Some({{this.handler_name}}),
                 {{/each}}
         })
     }
@@ -181,13 +181,10 @@ impl IoControlServerBuilder {
 
     /// Builds an `IoControlServer`.
     ///
-    /// # Panics
-    ///
-    /// Panics if any of the handlers have not been set.
     pub fn build(self) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
         {{#each io_controls}}
-            {{this.handler_name}}: self.{{this.handler_name}}.expect("handler for {{this.handler_name}} must be set"),
+            {{this.handler_name}}: self.{{this.handler_name}},
         {{/each}}
         })
     }
