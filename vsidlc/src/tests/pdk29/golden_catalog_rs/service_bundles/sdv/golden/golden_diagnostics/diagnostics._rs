@@ -153,6 +153,10 @@ impl Diagnostics {
     }
     /// Create IoControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `io_control_server_builder` instead"
+    )]
     pub fn create_io_control_server(
         io_control_handler: Arc<
             dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
@@ -165,6 +169,10 @@ impl Diagnostics {
             io_control_handler,
             io_control_with_dot_handler,
         })
+    }
+    /// Returns a builder for `IoControlServer`.
+    pub fn io_control_server_builder() -> IoControlServerBuilder {
+        IoControlServerBuilder::default()
     }
     /// Create FaultListenerSrvice implementation.
     #[allow(clippy::too_many_arguments)]
@@ -179,6 +187,53 @@ impl Diagnostics {
         Arc::new(FaultListenerServer {
             event_with_dot_handler,
             event_with_uppercase_handler,
+        })
+    }
+}
+/// Builder for `IoControlServer`.
+#[derive(Default)]
+pub struct IoControlServerBuilder {
+    io_control_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+    io_control_with_dot_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+}
+impl IoControlServerBuilder {
+    /// Adds a handler for io_control.
+    pub fn add_io_control_handler(
+        mut self,
+        handler: Arc<
+            dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.io_control_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for io_control.with.dot.
+    pub fn add_io_control_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.io_control_with_dot_handler = Some(handler);
+        self
+    }
+    /// Builds an `IoControlServer`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any of the handlers have not been set.
+    pub fn build(self) -> Arc<dyn IoControlService> {
+        Arc::new(IoControlServer {
+            io_control_handler: self
+                .io_control_handler
+                .expect("handler for io_control_handler must be set"),
+            io_control_with_dot_handler: self
+                .io_control_with_dot_handler
+                .expect("handler for io_control_with_dot_handler must be set"),
         })
     }
 }
