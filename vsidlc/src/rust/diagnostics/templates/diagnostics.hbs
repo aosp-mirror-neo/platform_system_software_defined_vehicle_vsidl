@@ -112,6 +112,7 @@ impl Diagnostics {
 
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `routine_control_server_builder` instead")]
     pub fn create_routine_control_server(
         {{#each routine_controls}}
         {{this.handler_name}}: Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>,
@@ -122,6 +123,11 @@ impl Diagnostics {
                 {{this.handler_name}},
                 {{/each}}
         })
+    }
+
+    /// Returns a builder for `RoutineControlServer`.
+    pub fn routine_control_server_builder() -> RoutineControlServerBuilder {
+        RoutineControlServerBuilder::default()
     }
 {{/if}}
 {{#if io_controls}}
@@ -221,6 +227,35 @@ impl IoControlServerBuilder {
         Arc::new(IoControlServer {
         {{#each io_controls}}
             {{this.handler_name}}: self.{{this.handler_name}},
+        {{/each}}
+        })
+    }
+}
+{{/if}}
+
+{{#if routine_controls}}
+/// Builder for `RoutineControlServer`.
+#[derive(Default)]
+pub struct RoutineControlServerBuilder {
+{{#each routine_controls}}
+    {{this.handler_name}}: Option<Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>>,
+{{/each}}
+}
+
+impl RoutineControlServerBuilder {
+{{#each routine_controls}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.handler_name}}(mut self, handler: Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>) -> Self {
+        self.{{this.handler_name}} = Some(handler);
+        self
+    }
+{{/each}}
+
+    /// Builds a `RoutineControlServer`.
+    pub fn build(self) -> Arc<dyn RoutineControlService> {
+        Arc::new(RoutineServer {
+        {{#each routine_controls}}
+            {{this.handler_name}}: self.{{this.handler_name}}.expect("handler for {{this.handler_name}} must be set"),
         {{/each}}
         })
     }

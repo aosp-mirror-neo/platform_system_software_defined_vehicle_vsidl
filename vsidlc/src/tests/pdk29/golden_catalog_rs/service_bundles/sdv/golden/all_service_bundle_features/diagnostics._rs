@@ -81,6 +81,10 @@ impl Diagnostics {
     }
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `routine_control_server_builder` instead"
+    )]
     pub fn create_routine_control_server(
         routine1_handler: Arc<
             dyn RoutineHandler<
@@ -94,6 +98,10 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer { routine1_handler })
+    }
+    /// Returns a builder for `RoutineControlServer`.
+    pub fn routine_control_server_builder() -> RoutineControlServerBuilder {
+        RoutineControlServerBuilder::default()
     }
     /// Create IoControlService implementation.
     #[allow(clippy::too_many_arguments)]
@@ -190,6 +198,49 @@ impl IoControlServerBuilder {
     pub fn build(self) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
             io_control_data1_handler: self.io_control_data1_handler,
+        })
+    }
+}
+/// Builder for `RoutineControlServer`.
+#[derive(Default)]
+pub struct RoutineControlServerBuilder {
+    routine1_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineRequestParameter,
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineResponseParameter,
+                protobuf::well_known_types::empty::Empty,
+                sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+                protobuf::well_known_types::empty::Empty,
+                sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+            >,
+        >,
+    >,
+}
+impl RoutineControlServerBuilder {
+    /// Adds a handler for routine1.
+    pub fn add_routine1_handler(
+        mut self,
+        handler: Arc<
+            dyn RoutineHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineRequestParameter,
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineResponseParameter,
+                protobuf::well_known_types::empty::Empty,
+                sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+                protobuf::well_known_types::empty::Empty,
+                sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+            >,
+        >,
+    ) -> Self {
+        self.routine1_handler = Some(handler);
+        self
+    }
+    /// Builds a `RoutineControlServer`.
+    pub fn build(self) -> Arc<dyn RoutineControlService> {
+        Arc::new(RoutineServer {
+            routine1_handler: self
+                .routine1_handler
+                .expect("handler for routine1_handler must be set"),
         })
     }
 }

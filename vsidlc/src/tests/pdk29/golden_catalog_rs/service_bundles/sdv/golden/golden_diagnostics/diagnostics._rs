@@ -132,6 +132,10 @@ impl Diagnostics {
     }
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `routine_control_server_builder` instead"
+    )]
     pub fn create_routine_control_server(
         routine_handler: Arc<
             dyn RoutineHandler<
@@ -158,6 +162,10 @@ impl Diagnostics {
             routine_handler,
             routine_with_dot_handler,
         })
+    }
+    /// Returns a builder for `RoutineControlServer`.
+    pub fn routine_control_server_builder() -> RoutineControlServerBuilder {
+        RoutineControlServerBuilder::default()
     }
     /// Create IoControlService implementation.
     #[allow(clippy::too_many_arguments)]
@@ -274,6 +282,81 @@ impl IoControlServerBuilder {
         Arc::new(IoControlServer {
             io_control_handler: self.io_control_handler,
             io_control_with_dot_handler: self.io_control_with_dot_handler,
+        })
+    }
+}
+/// Builder for `RoutineControlServer`.
+#[derive(Default)]
+pub struct RoutineControlServerBuilder {
+    routine_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    >,
+    routine_with_dot_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    >,
+}
+impl RoutineControlServerBuilder {
+    /// Adds a handler for routine.
+    pub fn add_routine_handler(
+        mut self,
+        handler: Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    ) -> Self {
+        self.routine_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for routine.with.dot.
+    pub fn add_routine_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    ) -> Self {
+        self.routine_with_dot_handler = Some(handler);
+        self
+    }
+    /// Builds a `RoutineControlServer`.
+    pub fn build(self) -> Arc<dyn RoutineControlService> {
+        Arc::new(RoutineServer {
+            routine_handler: self
+                .routine_handler
+                .expect("handler for routine_handler must be set"),
+            routine_with_dot_handler: self
+                .routine_with_dot_handler
+                .expect("handler for routine_with_dot_handler must be set"),
         })
     }
 }
