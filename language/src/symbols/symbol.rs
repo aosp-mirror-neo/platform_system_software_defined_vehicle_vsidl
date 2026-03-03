@@ -20,9 +20,9 @@ use super::{
         proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
         proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
-        rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol,
-        service_bundle_symbol::ServiceBundleSymbol, subscriber_symbol::SubscriberSymbol,
-        topic_symbol::TopicSymbol,
+        rpc_channel_symbol::RpcChannelSymbol, rpc_client_symbol::RpcClientSymbol,
+        rpc_server_symbol::RpcServerSymbol, service_bundle_symbol::ServiceBundleSymbol,
+        subscriber_symbol::SubscriberSymbol, topic_symbol::TopicSymbol,
     },
     symbol_table::SymbolTable,
 };
@@ -57,6 +57,8 @@ pub enum SymbolKind {
     ServiceBundle(ServiceBundleSymbol),
     /// Represents a VSIDL publisher definition within a service bundle. See [PublisherSymbol].
     Publisher(PublisherSymbol),
+    /// Represents a VSIDL RPC channel definition. See [RpcChannelSymbol].
+    RpcChannel(RpcChannelSymbol),
     /// Represents a VSIDL subscriber definition within a service bundle. See [SubscriberSymbol].
     Subscriber(SubscriberSymbol),
     /// Represents a VSIDL RPC server definition within a service bundle. See [RpcServerSymbol].
@@ -216,6 +218,7 @@ implement_symbol_kind_methods!(
     (Topic, TopicSymbol),
     (ServiceBundle, ServiceBundleSymbol),
     (Publisher, PublisherSymbol),
+    (RpcChannel, RpcChannelSymbol),
     (Subscriber, SubscriberSymbol),
     (RpcServer, RpcServerSymbol),
     (RpcClient, RpcClientSymbol),

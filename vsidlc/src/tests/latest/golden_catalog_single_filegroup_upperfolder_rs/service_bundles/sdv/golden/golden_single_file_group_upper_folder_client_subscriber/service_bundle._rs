@@ -73,7 +73,7 @@ pub mod subscriber {
             name: "vehicle-speed-a",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenSingleFileGroupUpperFolderServerPublisher",
-            service_unit: "vehicle-speed-a",
+            service_unit: "sdv-golden-vehicle-speed-a-vehicle-speed-a",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_A];
@@ -105,7 +105,7 @@ pub mod subscriber {
             name: "vehicle-speed-b",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenSingleFileGroupUpperFolderServerPublisher",
-            service_unit: "vehicle-speed-b",
+            service_unit: "sdv-golden-vehicle-speed-b-vehicle-speed-b",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_B];

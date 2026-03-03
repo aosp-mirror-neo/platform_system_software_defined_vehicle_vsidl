@@ -318,11 +318,23 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
+            Box::new(RpcChannelMandatory::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(RpcChannelNamingConvention::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::NotCreated,
             Box::new(ServiceUnitNameTooLong::default()),
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
             Box::new(UserDefinedNamesOnlyOneTopic::default()), // Checks user_defined_name usage
+        )
+        .add_context_condition(
+            SymbolTableState::CreatedNotLinked,
+            Box::new(RpcChannelUniquePerService::default()),
         )
         .add_context_condition(
             SymbolTableState::CreatedNotLinked,
@@ -347,6 +359,10 @@ impl ContextConditionChecker {
         .add_context_condition(
             SymbolTableState::Linked,
             Box::new(ProtoMessageRequireAnnotationType::default()),
+        )
+        .add_context_condition(
+            SymbolTableState::Linked,
+            Box::new(RpcClientChannelRequiresServerChannel::default()),
         )
         .add_context_condition(
             SymbolTableState::Linked,

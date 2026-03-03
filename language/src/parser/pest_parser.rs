@@ -157,7 +157,7 @@ identifier_str = ${ "\"" ~ IDENTIFIER ~ "\"" }
 // The Pest Tag feature is not enabled in Android
 message_str = ${ qualified_name_str }
 topic_str = ${ string }
-channel_str = ${ identifier_str }
+channel_str = ${ string }
 service_str = ${ qualified_name_str }
 target_name_str = ${ string }
 skip_codegen = ${ boolean }

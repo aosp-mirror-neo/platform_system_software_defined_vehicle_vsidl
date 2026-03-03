@@ -67,7 +67,7 @@ pub mod subscriber {
             name: "tire-pressure-front-left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-front-left",
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-front-left",
         };
         /// Enables access to subscription channel 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
         pub const TIRE_PRESSURE_FRONT_RIGHT: &Self = &Self {
@@ -75,7 +75,7 @@ pub mod subscriber {
             name: "tire-pressure-front-right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-front-right",
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-front-right",
         };
         /// Enables access to subscription channel 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
         pub const TIRE_PRESSURE_REAR_LEFT: &Self = &Self {
@@ -83,7 +83,7 @@ pub mod subscriber {
             name: "tire-pressure-rear-left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-rear-left",
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-rear-left",
         };
         /// Enables access to subscription channel 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
         pub const TIRE_PRESSURE_REAR_RIGHT: &Self = &Self {
@@ -91,7 +91,7 @@ pub mod subscriber {
             name: "tire-pressure-rear-right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-rear-right",
+            service_unit: "sdv-golden-tire-pressure-tire-pressure-rear-right",
         };
         /// List of all subscription channels of 'sdv.golden.TIREPressure' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[
@@ -122,7 +122,7 @@ pub mod subscriber {
             name: "tire-pressure-explicit-front-left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-explicit-front-left",
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-front-left",
         };
         /// Enables access to subscription channel 'tire-pressure-explicit-front-right' of 'sdv.golden.TirePressureExplicitInstances'
         pub const TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT: &Self = &Self {
@@ -130,7 +130,7 @@ pub mod subscriber {
             name: "tire-pressure-explicit-front-right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-explicit-front-right",
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-front-right",
         };
         /// Enables access to subscription channel 'tire-pressure-explicit-rear-left' of 'sdv.golden.TirePressureExplicitInstances'
         pub const TIRE_PRESSURE_EXPLICIT_REAR_LEFT: &Self = &Self {
@@ -138,7 +138,7 @@ pub mod subscriber {
             name: "tire-pressure-explicit-rear-left",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-explicit-rear-left",
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-rear-left",
         };
         /// Enables access to subscription channel 'tire-pressure-explicit-rear-right' of 'sdv.golden.TirePressureExplicitInstances'
         pub const TIRE_PRESSURE_EXPLICIT_REAR_RIGHT: &Self = &Self {
@@ -146,7 +146,7 @@ pub mod subscriber {
             name: "tire-pressure-explicit-rear-right",
             service_bundle_package: "sdv.golden",
             service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "tire-pressure-explicit-rear-right",
+            service_unit: "sdv-golden-tire-pressure-explicit-instances-tire-pressure-explicit-rear-right",
         };
         /// List of all subscription channels of 'sdv.golden.TirePressureExplicitInstances' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[

@@ -19,9 +19,9 @@ use super::{
         proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
         proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
-        rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol,
-        service_bundle_symbol::ServiceBundleSymbol, subscriber_symbol::SubscriberSymbol,
-        topic_symbol::TopicSymbol,
+        rpc_channel_symbol::RpcChannelSymbol, rpc_client_symbol::RpcClientSymbol,
+        rpc_server_symbol::RpcServerSymbol, service_bundle_symbol::ServiceBundleSymbol,
+        subscriber_symbol::SubscriberSymbol, topic_symbol::TopicSymbol,
     },
     symbol_table::SymbolTable,
 };
@@ -81,6 +81,17 @@ pub trait SymbolTableChecker: AsDynChecker {
     /// * `_symbol_table` - The symbol table containing the symbol.
     /// * `_publisher` - The publisher symbol to check.
     fn check_publisher(&mut self, _symbol_table: &SymbolTable, _publisher: &PublisherSymbol) {}
+
+    /// Checks a specific [RpcChannelSymbol].
+    ///
+    /// This method is called for each RPC channel symbol found during the traversal
+    /// of the symbol table.
+    ///
+    /// # Parameters
+    ///
+    /// * `_symbol_table` - The symbol table containing the symbol.
+    /// * `_rpc_channel` - The RPC channel symbol to check.
+    fn check_rpc_channel(&mut self, _symbol_table: &SymbolTable, _rpc_channel: &RpcChannelSymbol) {}
 
     /// Checks a specific [SubscriberSymbol].
     ///

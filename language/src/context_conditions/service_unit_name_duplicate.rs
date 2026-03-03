@@ -149,6 +149,7 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
         let service_bundle_name =
             rpc_server.owning_service_bundle(symbol_table).full_name(symbol_table);
 
+        // 1. Check service unit name
         let service_unit_name = if rpc_server.service_unit_name.is_empty() {
             // Validate generated name
             format!("{}.{}", rpc_server.package(symbol_table), rpc_server.service)
@@ -160,10 +161,20 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
         };
         self.check(
             service_unit_name,
-            service_bundle_name,
+            service_bundle_name.clone(),
             !IS_PUBLISHER,
             rpc_server.span.clone().into_option(),
         );
+
+        // 2. Check channel name (it's also stored as service_unit_name in SD)
+        if !rpc_server.channel.is_empty() {
+            self.check(
+                rpc_server.channel.clone(),
+                service_bundle_name,
+                !IS_PUBLISHER,
+                rpc_server.span.clone().into_option(),
+            );
+        }
     }
 }
 
@@ -176,6 +187,7 @@ mod tests {
     use vsidl_v1_common::Catalog;
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
+    use vsidl_v1_symbols::TargetApi;
 
     #[test]
     fn test_service_unit_name_conflict_pubsub_within_service_bundle() {
@@ -196,7 +208,7 @@ mod tests {
         let mut check = ServiceUnitNameDuplicate::default();
         check.check_linked_symbol_table(linker.symbol_table());
 
-        // THEN Should not have found any errors
+        // THEN Should have found any errors
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
@@ -225,7 +237,7 @@ mod tests {
         let mut check = ServiceUnitNameDuplicate::default();
         check.check_linked_symbol_table(linker.symbol_table());
 
-        // THEN Should not have found any errors
+        // THEN Should have found any errors
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
@@ -350,13 +362,25 @@ mod tests {
         // GIVEN A valid catalog
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS.clone(),
             vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
             vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
         ]);
-        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.clone());
+
+        let mut vsidl_entry = vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.1.clone();
+        // Set mandatory channels
+        vsidl_entry.service_bundle[0].client[0].channel = "client-chan-1".to_string();
+        vsidl_entry.service_bundle[0].client[1].channel = "client-chan-2".to_string();
+        vsidl_entry.service_bundle[1].server[0].channel = "server-chan-1".to_string();
+        vsidl_entry.service_bundle[1].server[1].channel = "server-chan-2".to_string();
+
+        catalog
+            .catalog_vsidl_files
+            .push((vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.0.clone(), vsidl_entry));
+
         let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
         catalog.accept(&mut creator);
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
@@ -367,6 +391,98 @@ mod tests {
 
         // THEN Should not have found any errors
         assert!(check.is_ok());
+    }
+
+    #[test]
+    fn test_should_reject_conflicting_channel_names() {
+        // GIVEN a catalog where two servers share the same channel name
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([
+            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
+        ]);
+
+        let mut vsidl_entry = vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.1.clone();
+        // Set mandatory channels for clients
+        vsidl_entry.service_bundle[0].client[0].channel = "client-chan-1".to_string();
+        vsidl_entry.service_bundle[0].client[1].channel = "client-chan-2".to_string();
+
+        // Server 1 uses channel "main"
+        vsidl_entry.service_bundle[1].server[0].channel = "main".to_string();
+        // Server 2 also uses channel "main" -> conflict
+        vsidl_entry.service_bundle[1].server[1].channel = "main".to_string();
+
+        catalog
+            .catalog_vsidl_files
+            .push((vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.0.clone(), vsidl_entry));
+
+        let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // WHEN Executing context condition
+        let mut check = ServiceUnitNameDuplicate::default();
+        check.check_linked_symbol_table(linker.symbol_table());
+
+        // THEN Should have found errors
+        assert!(check.is_err());
+        assert!(check.any_finding_contains(
+            FindingSeverity::Error,
+            "Service unit name 'main' is used multiple times in service bundle 'sdv.test.ServiceBundleTwo'"
+        ));
+    }
+
+    #[test]
+    fn test_should_reject_conflicting_channel_and_service_unit_name() {
+        // GIVEN a catalog where a channel name conflicts with a publisher's service_unit_name
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([
+            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
+        ]);
+
+        let mut vsidl_entry = vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.1.clone();
+
+        // Bundle 1: Publisher has service_unit_name "shared-name"
+        vsidl_entry.service_bundle[0].publisher[0].service_unit_name = "shared-name".to_string();
+        // Bundle 1: Client needs a channel
+        vsidl_entry.service_bundle[0].client[0].channel = "client-chan".to_string();
+
+        // Bundle 2: Server has channel "shared-name"
+        vsidl_entry.service_bundle[1].server[0].channel = "shared-name".to_string();
+        // Conflict if they were in the same bundle, but here they are in different bundles, which is OK.
+        // Let's move them to the same bundle for the test.
+        let mut bundle = vsidl_entry.service_bundle[0].clone();
+        bundle.server.push(vsidl_entry.service_bundle[1].server[0].clone());
+        // Now bundle 0 has both.
+        vsidl_entry.service_bundle[0] = bundle;
+
+        catalog
+            .catalog_vsidl_files
+            .push((vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.0.clone(), vsidl_entry));
+
+        let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // WHEN Executing context condition
+        let mut check = ServiceUnitNameDuplicate::default();
+        check.check_linked_symbol_table(linker.symbol_table());
+
+        // THEN Should have found errors
+        assert!(check.is_err());
+        assert!(check.any_finding_contains(
+            FindingSeverity::Error,
+            "Service unit name 'shared-name' is used multiple times in service bundle 'sdv.test.ServiceBundleOne'"
+        ));
     }
 
     #[test]

@@ -218,6 +218,13 @@ impl VsidlConfigProvider for LocalProviderFromFiles {
             "Unexpected call to get diagnostics declaration from file source",
         ))
     }
+
+    async fn subscribe_availability_change_by_vm(
+        &self,
+        _vm_name: &str,
+    ) -> SdvResult<AvailabilityStream> {
+        Ok(Box::pin(futures::stream::once(async { AvailabilityChangeEvent::Available })))
+    }
 }
 
 #[cfg(test)]
@@ -227,6 +234,7 @@ mod test {
     use std::collections::HashSet;
     use std::future::Future;
 
+    use crate::test_utils::test_fixture_subscribe_availability_change_by_vm;
     use crate::test_utils::test_fixture_vsidl_init_succeeds;
     use crate::test_utils::test_fixture_vsidl_provider_api_fails;
     use crate::test_utils::test_fixture_vsidl_provider_diagnostics_api_succeeds;
@@ -319,6 +327,12 @@ mod test {
     async fn test_vsidl_init_fails_to_parse_proto() {
         let init_dir = "test_data/v1/invalid";
         run_test(init_dir, test_fixture_vsidl_provider_empty_proto_schemas).await;
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_availability_change_by_vm() {
+        let init_dir = ".";
+        run_test(init_dir, test_fixture_subscribe_availability_change_by_vm).await;
     }
 
     async fn test_fixture_vsidl_provider_empty_proto_schemas(

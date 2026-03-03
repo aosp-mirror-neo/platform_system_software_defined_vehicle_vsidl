@@ -32,8 +32,9 @@ use super::{
         proto_enum_symbol::ProtoEnumSymbol, proto_message_symbol::ProtoMessageSymbol,
         proto_publication_symbol::ProtoPublicationSymbol,
         proto_rpc_service_symbol::ProtoRpcServiceSymbol, publisher_symbol::PublisherSymbol,
-        rpc_server_symbol::RpcServerSymbol, service_bundle_symbol::ServiceBundleSymbol,
-        subscriber_symbol::SubscriberSymbol, topic_symbol::TopicSymbol,
+        rpc_channel_symbol::RpcChannelSymbol, rpc_server_symbol::RpcServerSymbol,
+        service_bundle_symbol::ServiceBundleSymbol, subscriber_symbol::SubscriberSymbol,
+        topic_symbol::TopicSymbol,
     },
     symbol::{SymbolId, SymbolKind},
     symbol_table::SymbolTable,
@@ -111,6 +112,8 @@ pub struct SymbolTableCreator<F: FileProvider = DiskFileProvider> {
     should_process_current_file: bool,
     /// Already created channels in the symbol table.
     created_channels: HashSet<String>,
+    /// Already created RPC channels in the symbol table.
+    created_rpc_channels: HashSet<String>,
     /// Optional path to a specific file to process. If set, only this file is processed.
     target_file: Option<PathBuf>,
     /// The target API level for code generation.
@@ -160,6 +163,7 @@ impl<F: FileProvider> SymbolTableCreator<F> {
             diagnostics_context: None,
             should_process_current_file: true,
             created_channels: HashSet::new(),
+            created_rpc_channels: HashSet::new(),
             target_file: None,
             target_api: TargetApi::default(),
             file_provider,
@@ -297,6 +301,8 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         }
         self.created_channels =
             self.symbol_table.get_all_topic_symbols().iter().map(|s| s.name()).collect();
+        self.created_rpc_channels =
+            self.symbol_table.get_all_rpc_channel_symbols().iter().map(|s| s.name()).collect();
         self.current_scope_id = self.global_scope.clone();
         self.total_files = catalog.catalog_vsidl_files.len() + catalog.proto_descriptors.len();
         self.printer = ProgressPrinter::new(self.total_files);
@@ -891,6 +897,20 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         let current_scope_id =
             self.current_scope_id.clone().expect("Service bundle scope must be set");
 
+        // Create RPC channel symbol if it doesn't exist
+        let channel_name = node.channel.clone();
+        if !channel_name.is_empty() && !self.created_rpc_channels.contains(&channel_name) {
+            let rpc_channel_symbol = RpcChannelSymbol { ..Default::default() };
+            let id = self.symbol_table.create_symbol(
+                channel_name.clone(),
+                node.channel_span.clone().into_option(),
+                SymbolKind::RpcChannel(rpc_channel_symbol),
+            );
+            // Add to global scope
+            self.symbol_table.add_symbol_to_scope(&GLOBAL_SCOPE_ID, &id);
+            self.created_rpc_channels.insert(channel_name);
+        }
+
         // Add symbol for RPC server
         let symbol = RpcServerSymbol {
             ast_node: node.clone(),
@@ -926,6 +946,20 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         let service_name = &node.service;
         let current_scope_id =
             self.current_scope_id.clone().expect("Service bundle scope must be set");
+
+        // Create RPC channel symbol if it doesn't exist
+        let channel_name = node.channel.clone();
+        if !channel_name.is_empty() && !self.created_rpc_channels.contains(&channel_name) {
+            let rpc_channel_symbol = RpcChannelSymbol { ..Default::default() };
+            let id = self.symbol_table.create_symbol(
+                channel_name.clone(),
+                node.channel_span.clone().into_option(),
+                SymbolKind::RpcChannel(rpc_channel_symbol),
+            );
+            // Add to global scope
+            self.symbol_table.add_symbol_to_scope(&GLOBAL_SCOPE_ID, &id);
+            self.created_rpc_channels.insert(channel_name);
+        }
 
         // Add symbol for RPC client
         let symbol = RpcClientSymbol {

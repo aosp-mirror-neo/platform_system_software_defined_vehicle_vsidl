@@ -22,7 +22,8 @@ use vsidl_v1::syntax::service_bundle::Server;
 use vsidl_v1::syntax::Span;
 
 use super::{
-    proto_rpc_service_symbol::ProtoRpcServiceSymbol, service_bundle_symbol::ServiceBundleSymbol,
+    proto_rpc_service_symbol::ProtoRpcServiceSymbol, rpc_channel_symbol::RpcChannelSymbol,
+    service_bundle_symbol::ServiceBundleSymbol,
 };
 
 /// Symbol representing a VSIDL RPC Server definition within a service bundle.
@@ -39,6 +40,8 @@ pub struct RpcServerSymbol {
     pub symbol: SymbolCommon,
     /// Symbol ID of the [ProtoRpcServiceSymbol] provided by this server. Requires the symbol table to be linked.
     pub(crate) provided_service: Option<SymbolId>,
+    /// Symbol ID of the [RpcChannelSymbol] used by this server. Requires the symbol table to be linked.
+    pub(crate) channel: Option<SymbolId>,
     /// Symbol ID of the [ServiceBundleSymbol] that owns this RPC server. Requires the symbol table to be linked.
     pub(crate) owning_service_bundle: Option<SymbolId>,
 }
@@ -65,6 +68,24 @@ impl RpcServerSymbol {
     pub fn service<'a>(&self, symbol_table: &'a SymbolTable) -> &'a ProtoRpcServiceSymbol {
         symbol_table.panic_if_not_linked();
         symbol_table.get_proto_rpc_service_symbol(&self.provided_service.clone().unwrap()).unwrap()
+    }
+
+    /// Returns the [RpcChannelSymbol] associated with this server.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol_table` - The linked symbol table to resolve the channel ID.
+    ///
+    /// # Returns
+    ///
+    /// The [RpcChannelSymbol] that this server uses.
+    ///
+    /// # Panics
+    ///
+    /// * If the symbol table is not linked.
+    pub fn channel<'a>(&self, symbol_table: &'a SymbolTable) -> &'a RpcChannelSymbol {
+        symbol_table.panic_if_not_linked();
+        symbol_table.get_rpc_channel_symbol(&self.channel.clone().unwrap()).unwrap()
     }
 
     /// Checks if the RPC server has a user-defined service unit name specified in the VSIDL.

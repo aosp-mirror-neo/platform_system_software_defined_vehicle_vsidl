@@ -24,8 +24,8 @@ service_bundle {
     publisher { message: "Pressure" channel: "PRESSURE_TWO" topic: "pressure-two" capacity: 8 }
     subscriber { message: "Pressure" channel: "PRESSURE_TWO" topic: "pressure-two" }
 
-    server { service: "DummyRpc" }
-    client { service: "DummyRpc" }
+    server { service: "DummyRpc" channel: "dummy-rpc" }
+    client { service: "DummyRpc" channel: "dummy-rpc" }
 
     diagnostics_declaration {
         data_item {

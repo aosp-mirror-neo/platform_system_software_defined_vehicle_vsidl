@@ -61,6 +61,7 @@ service_bundle {
     # RPC server
     server {
         service: "sdv.golden.rpc.TireStatus"
+        channel: "sdv-golden-rpc-tire-status"
         service_unit_name: "my-status"
     }
 }
