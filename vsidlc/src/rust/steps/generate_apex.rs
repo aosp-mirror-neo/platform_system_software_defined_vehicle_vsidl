@@ -204,8 +204,11 @@ fn generate_apex_files(
 
     let package_name = data["package_name"].as_str().unwrap();
 
-    create_private_key(package_name, &apex_dir)?;
-    extract_public_key(package_name, &apex_dir)?;
+    let created_private = create_private_key(package_name, &apex_dir)?;
+    let pubkey_path = apex_dir.join(format!("{}.avbpubkey", package_name));
+    if created_private || !pubkey_path.exists() {
+        extract_public_key(package_name, &apex_dir)?;
+    }
 
     let bp_content = handlebars.render("apex_android_bp", data)?;
     write_bytes_to_file(&bp_content, &apex_dir.join("Android.bp"))?;
@@ -290,18 +293,24 @@ fn generate_orchestration_files(
     Ok(())
 }
 
-fn create_private_key(package_name: &str, apex_dir: &Path) -> anyhow::Result<()> {
+fn create_private_key(package_name: &str, apex_dir: &Path) -> anyhow::Result<bool> {
+    let key_name = format!("{}.pem", package_name);
+    let key_path = apex_dir.join(&key_name);
+    if key_path.exists() {
+        return Ok(false);
+    }
+
     let output = Command::new("openssl")
         .current_dir(apex_dir)
         .arg("genrsa")
         .arg("-out")
-        .arg(format!("{}.pem", package_name))
+        .arg(key_name)
         .arg("4096")
         .output()?;
     if !output.status.success() {
         anyhow::bail!("Failed to generate private key: {:?}", output);
     }
-    Ok(())
+    Ok(true)
 }
 
 fn extract_public_key(package_name: &str, apex_dir: &Path) -> anyhow::Result<()> {
