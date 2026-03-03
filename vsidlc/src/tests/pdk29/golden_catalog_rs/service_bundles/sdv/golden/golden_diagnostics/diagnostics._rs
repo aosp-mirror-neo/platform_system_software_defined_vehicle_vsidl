@@ -122,8 +122,8 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn DataItemService> {
         Arc::new(DataItemServer {
-            data_item_handler,
-            data_item_with_dot_handler,
+            data_item_handler: Some(data_item_handler),
+            data_item_with_dot_handler: Some(data_item_with_dot_handler),
         })
     }
     /// Returns a builder for `DataItemServer`.
@@ -232,12 +232,8 @@ impl DataItemServerBuilder {
     /// Builds a `DataItemServer`.
     pub fn build(self) -> Arc<dyn DataItemService> {
         Arc::new(DataItemServer {
-            data_item_handler: self
-                .data_item_handler
-                .expect("handler for data_item should be provided"),
-            data_item_with_dot_handler: self
-                .data_item_with_dot_handler
-                .expect("handler for data_item.with.dot should be provided"),
+            data_item_handler: self.data_item_handler,
+            data_item_with_dot_handler: self.data_item_with_dot_handler,
         })
     }
 }
@@ -282,11 +278,11 @@ impl IoControlServerBuilder {
     }
 }
 struct DataItemServer {
-    data_item_handler: Arc<
-        dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    data_item_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
-    data_item_with_dot_handler: Arc<
-        dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    data_item_with_dot_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
 }
 #[async_trait::async_trait]
@@ -297,9 +293,27 @@ impl DataItemService for DataItemServer {
         request: &ReadDataItemRequest,
     ) -> SdvResult<ReadDataItemResponse> {
         match request.id.as_str() {
-            "data_item" => Ok(self.data_item_handler.read_untyped().await),
+            "data_item" => {
+                match &self.data_item_handler {
+                    Some(handler) => Ok(handler.read_untyped().await),
+                    None => {
+                        Ok(ReadDataItemResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             "data_item.with.dot" => {
-                Ok(self.data_item_with_dot_handler.read_untyped().await)
+                match &self.data_item_with_dot_handler {
+                    Some(handler) => Ok(handler.read_untyped().await),
+                    None => {
+                        Ok(ReadDataItemResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(ReadDataItemResponse {

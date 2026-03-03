@@ -97,7 +97,7 @@ impl Diagnostics {
     ) -> Arc<dyn DataItemService> {
         Arc::new(DataItemServer {
                 {{#each data_items}}
-                {{this.handler_name}},
+                {{this.handler_name}}: Some({{this.handler_name}}),
                 {{/each}}
         })
     }
@@ -190,7 +190,7 @@ impl DataItemServerBuilder {
     pub fn build(self) -> Arc<dyn DataItemService> {
         Arc::new(DataItemServer {
         {{#each data_items}}
-            {{this.handler_name}}: self.{{this.handler_name}}.expect("handler for {{this.id}} should be provided"),
+            {{this.handler_name}}: self.{{this.handler_name}},
         {{/each}}
         })
     }
