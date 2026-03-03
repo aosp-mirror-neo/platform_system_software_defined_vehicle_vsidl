@@ -312,10 +312,7 @@ impl ContextConditionChecker {
             SymbolTableState::NotCreated,
             Box::new(PublisherCapacityMandatory::default()),
         )
-        .add_context_condition(
-            SymbolTableState::NotCreated,
-            Box::new(PublisherTopicMandatory::default()),
-        )
+        .add_context_condition(SymbolTableState::NotCreated, Box::new(TopicMandatory::default()))
         .add_context_condition(
             SymbolTableState::NotCreated,
             Box::new(RpcChannelMandatory::default()),
