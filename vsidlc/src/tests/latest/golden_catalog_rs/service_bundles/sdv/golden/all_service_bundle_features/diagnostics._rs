@@ -60,6 +60,10 @@ impl Diagnostics {
     }
     /// Create DataItemService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `data_item_server_builder` instead"
+    )]
     pub fn create_data_item_server(
         data_item_id1_handler: Arc<
             dyn DataItemHandler<
@@ -70,6 +74,10 @@ impl Diagnostics {
         Arc::new(DataItemServer {
             data_item_id1_handler,
         })
+    }
+    /// Returns a builder for `DataItemServer`.
+    pub fn data_item_server_builder() -> DataItemServerBuilder {
+        DataItemServerBuilder::default()
     }
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
@@ -119,6 +127,39 @@ impl Diagnostics {
     ) -> Arc<dyn FaultListenerService> {
         Arc::new(FaultListenerServer {
             event1_handler,
+        })
+    }
+}
+/// Builder for `DataItemServer`.
+#[derive(Default)]
+pub struct DataItemServerBuilder {
+    data_item_id1_handler: Option<
+        Arc<
+            dyn DataItemHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::DataItemOne,
+            >,
+        >,
+    >,
+}
+impl DataItemServerBuilder {
+    /// Adds a handler for data_item_id1.
+    pub fn add_data_item_id1_handler(
+        mut self,
+        handler: Arc<
+            dyn DataItemHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::DataItemOne,
+            >,
+        >,
+    ) -> Self {
+        self.data_item_id1_handler = Some(handler);
+        self
+    }
+    /// Builds a `DataItemServer`.
+    pub fn build(self) -> Arc<dyn DataItemService> {
+        Arc::new(DataItemServer {
+            data_item_id1_handler: self
+                .data_item_id1_handler
+                .expect("handler for data_item_id1 should be provided"),
         })
     }
 }

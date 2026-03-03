@@ -89,6 +89,7 @@ impl Diagnostics {
 
     /// Create DataItemService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `data_item_server_builder` instead")]
     pub fn create_data_item_server(
         {{#each data_items}}
         {{this.handler_name}}: Arc<dyn {{this.handler_type}}<{{this.message}}>>,
@@ -100,7 +101,13 @@ impl Diagnostics {
                 {{/each}}
         })
     }
+
+    /// Returns a builder for `DataItemServer`.
+    pub fn data_item_server_builder() -> DataItemServerBuilder {
+        DataItemServerBuilder::default()
+    }
 {{/if}}
+
 {{#if routine_controls}}
 
     /// Create RoutineControlService implementation.
@@ -160,6 +167,35 @@ impl Diagnostics {
     }
 {{/if}}
 }
+
+{{#if data_items}}
+/// Builder for `DataItemServer`.
+#[derive(Default)]
+pub struct DataItemServerBuilder {
+{{#each data_items}}
+    {{this.handler_name}}: Option<Arc<dyn {{this.handler_type}}<{{this.message}}>>>,
+{{/each}}
+}
+
+impl DataItemServerBuilder {
+{{#each data_items}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.handler_name}}(mut self, handler: Arc<dyn {{this.handler_type}}<{{this.message}}>>) -> Self {
+        self.{{this.handler_name}} = Some(handler);
+        self
+    }
+{{/each}}
+
+    /// Builds a `DataItemServer`.
+    pub fn build(self) -> Arc<dyn DataItemService> {
+        Arc::new(DataItemServer {
+        {{#each data_items}}
+            {{this.handler_name}}: self.{{this.handler_name}}.expect("handler for {{this.id}} should be provided"),
+        {{/each}}
+        })
+    }
+}
+{{/if}}
 
 {{#if io_controls}}
 /// Builder for `IoControlServer`.

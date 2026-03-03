@@ -109,6 +109,10 @@ impl Diagnostics {
     }
     /// Create DataItemService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `data_item_server_builder` instead"
+    )]
     pub fn create_data_item_server(
         data_item_handler: Arc<
             dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
@@ -121,6 +125,10 @@ impl Diagnostics {
             data_item_handler,
             data_item_with_dot_handler,
         })
+    }
+    /// Returns a builder for `DataItemServer`.
+    pub fn data_item_server_builder() -> DataItemServerBuilder {
+        DataItemServerBuilder::default()
     }
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
@@ -187,6 +195,49 @@ impl Diagnostics {
         Arc::new(FaultListenerServer {
             event_with_dot_handler,
             event_with_uppercase_handler,
+        })
+    }
+}
+/// Builder for `DataItemServer`.
+#[derive(Default)]
+pub struct DataItemServerBuilder {
+    data_item_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+    data_item_with_dot_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+}
+impl DataItemServerBuilder {
+    /// Adds a handler for data_item.
+    pub fn add_data_item_handler(
+        mut self,
+        handler: Arc<
+            dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.data_item_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for data_item.with.dot.
+    pub fn add_data_item_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.data_item_with_dot_handler = Some(handler);
+        self
+    }
+    /// Builds a `DataItemServer`.
+    pub fn build(self) -> Arc<dyn DataItemService> {
+        Arc::new(DataItemServer {
+            data_item_handler: self
+                .data_item_handler
+                .expect("handler for data_item should be provided"),
+            data_item_with_dot_handler: self
+                .data_item_with_dot_handler
+                .expect("handler for data_item.with.dot should be provided"),
         })
     }
 }
