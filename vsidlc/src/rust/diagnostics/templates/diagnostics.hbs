@@ -120,7 +120,7 @@ impl Diagnostics {
     ) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
                 {{#each routine_controls}}
-                {{this.handler_name}},
+                {{this.handler_name}}: Some({{this.handler_name}}),
                 {{/each}}
         })
     }
@@ -255,7 +255,7 @@ impl RoutineControlServerBuilder {
     pub fn build(self) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
         {{#each routine_controls}}
-            {{this.handler_name}}: self.{{this.handler_name}}.expect("handler for {{this.handler_name}} must be set"),
+            {{this.handler_name}}: self.{{this.handler_name}},
         {{/each}}
         })
     }

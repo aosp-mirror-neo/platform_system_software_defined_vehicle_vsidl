@@ -159,8 +159,8 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
-            routine_handler,
-            routine_with_dot_handler,
+            routine_handler: Some(routine_handler),
+            routine_with_dot_handler: Some(routine_with_dot_handler),
         })
     }
     /// Returns a builder for `RoutineControlServer`.
@@ -351,12 +351,8 @@ impl RoutineControlServerBuilder {
     /// Builds a `RoutineControlServer`.
     pub fn build(self) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
-            routine_handler: self
-                .routine_handler
-                .expect("handler for routine_handler must be set"),
-            routine_with_dot_handler: self
-                .routine_with_dot_handler
-                .expect("handler for routine_with_dot_handler must be set"),
+            routine_handler: self.routine_handler,
+            routine_with_dot_handler: self.routine_with_dot_handler,
         })
     }
 }
@@ -423,24 +419,28 @@ impl DataItemService for DataItemServer {
     }
 }
 struct RoutineServer {
-    routine_handler: Arc<
-        dyn RoutineHandler<
-            protobuf::well_known_types::timestamp::Timestamp,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
+    routine_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
         >,
     >,
-    routine_with_dot_handler: Arc<
-        dyn RoutineHandler<
-            protobuf::well_known_types::timestamp::Timestamp,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
+    routine_with_dot_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
         >,
     >,
 }
@@ -452,9 +452,27 @@ impl RoutineControlService for RoutineServer {
         request: &RoutineControlRequest,
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
-            "routine" => Ok(self.routine_handler.start_untyped(&request.request).await),
+            "routine" => {
+                match &self.routine_handler {
+                    Some(handler) => Ok(handler.start_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             "routine.with.dot" => {
-                Ok(self.routine_with_dot_handler.start_untyped(&request.request).await)
+                match &self.routine_with_dot_handler {
+                    Some(handler) => Ok(handler.start_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {
@@ -470,9 +488,27 @@ impl RoutineControlService for RoutineServer {
         request: &RoutineControlRequest,
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
-            "routine" => Ok(self.routine_handler.stop_untyped(&request.request).await),
+            "routine" => {
+                match &self.routine_handler {
+                    Some(handler) => Ok(handler.stop_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             "routine.with.dot" => {
-                Ok(self.routine_with_dot_handler.stop_untyped(&request.request).await)
+                match &self.routine_with_dot_handler {
+                    Some(handler) => Ok(handler.stop_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {
@@ -489,15 +525,30 @@ impl RoutineControlService for RoutineServer {
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
             "routine" => {
-                Ok(self.routine_handler.request_result_untyped(&request.request).await)
+                match &self.routine_handler {
+                    Some(handler) => {
+                        Ok(handler.request_result_untyped(&request.request).await)
+                    }
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             "routine.with.dot" => {
-                Ok(
-                    self
-                        .routine_with_dot_handler
-                        .request_result_untyped(&request.request)
-                        .await,
-                )
+                match &self.routine_with_dot_handler {
+                    Some(handler) => {
+                        Ok(handler.request_result_untyped(&request.request).await)
+                    }
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {

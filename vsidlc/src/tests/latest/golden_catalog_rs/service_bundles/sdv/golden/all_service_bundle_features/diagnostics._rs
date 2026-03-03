@@ -97,7 +97,9 @@ impl Diagnostics {
             >,
         >,
     ) -> Arc<dyn RoutineControlService> {
-        Arc::new(RoutineServer { routine1_handler })
+        Arc::new(RoutineServer {
+            routine1_handler: Some(routine1_handler),
+        })
     }
     /// Returns a builder for `RoutineControlServer`.
     pub fn routine_control_server_builder() -> RoutineControlServerBuilder {
@@ -238,9 +240,7 @@ impl RoutineControlServerBuilder {
     /// Builds a `RoutineControlServer`.
     pub fn build(self) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
-            routine1_handler: self
-                .routine1_handler
-                .expect("handler for routine1_handler must be set"),
+            routine1_handler: self.routine1_handler,
         })
     }
 }
@@ -308,14 +308,16 @@ impl DataItemService for DataItemServer {
     }
 }
 struct RoutineServer {
-    routine1_handler: Arc<
-        dyn RoutineHandler<
-            sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineRequestParameter,
-            sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineResponseParameter,
-            protobuf::well_known_types::empty::Empty,
-            sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
-            protobuf::well_known_types::empty::Empty,
-            sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+    routine1_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineRequestParameter,
+                sdv_vsidlc_goldens_catalog::diagnostics_messages::RoutineResponseParameter,
+                protobuf::well_known_types::empty::Empty,
+                sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+                protobuf::well_known_types::empty::Empty,
+                sdv_vsidlc_goldens_catalog::all_ast_node_types::Temperature,
+            >,
         >,
     >,
 }
@@ -327,7 +329,17 @@ impl RoutineControlService for RoutineServer {
         request: &RoutineControlRequest,
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
-            "routine1" => Ok(self.routine1_handler.start_untyped(&request.request).await),
+            "routine1" => {
+                match &self.routine1_handler {
+                    Some(handler) => Ok(handler.start_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             _ => {
                 Ok(RoutineControlResponse {
                     response_code: REQUEST_OUT_OF_RANGE.into(),
@@ -342,7 +354,17 @@ impl RoutineControlService for RoutineServer {
         request: &RoutineControlRequest,
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
-            "routine1" => Ok(self.routine1_handler.stop_untyped(&request.request).await),
+            "routine1" => {
+                match &self.routine1_handler {
+                    Some(handler) => Ok(handler.stop_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             _ => {
                 Ok(RoutineControlResponse {
                     response_code: REQUEST_OUT_OF_RANGE.into(),
@@ -358,7 +380,17 @@ impl RoutineControlService for RoutineServer {
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
             "routine1" => {
-                Ok(self.routine1_handler.request_result_untyped(&request.request).await)
+                match &self.routine1_handler {
+                    Some(handler) => {
+                        Ok(handler.request_result_untyped(&request.request).await)
+                    }
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {
