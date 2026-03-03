@@ -204,8 +204,15 @@ async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{e
     loop {
         let client = service_bundle.create_rpc_client::<{{this.unit_type.crate_name}}::Client>(
             sdv::mw::UnitName::builder()
-                .package_name("{{this.unit_type.package}}")
-                .bundle_name("{{this.unit_type.bundle_name}}")
+                {{#if this.has_alternative_servers}}
+                // There are multiple possible servers (bundle_name):
+                {{#each this.servers}}
+                // (package_name: '{{this.0}}', bundle_name: '{{this.1}}'){{#unless @last}},{{/unless}}
+                {{/each}}
+                // TODO: Choose the server that best fits your need
+                {{/if}}
+                .package_name("{{this.servers.0.0}}")
+                .bundle_name("{{this.servers.0.1}}")
                 .service_unit_name({{this.unit_type.crate_name}}::Client::DEFAULT_UNIT_NAME)
                 .instance_name("instance")
                 .build()
