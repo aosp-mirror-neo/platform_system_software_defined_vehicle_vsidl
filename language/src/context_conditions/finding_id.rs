@@ -94,6 +94,8 @@ macro_rules! finding_ids {
             E20D: (0x20D, TopicNameKebabCase),
             /// RPC channels must be in lowercase kebab case
             E20E: (0x20E, RpcChannelNamingConvention),
+            /// Topics must not exceed 127 characters.
+            E20F: (0x20F, TopicNameTooLong),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),
