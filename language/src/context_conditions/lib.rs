@@ -54,6 +54,9 @@ pub use topic_name_unique::TopicNameUnique;
 mod topic_name_kebab_case;
 pub use topic_name_kebab_case::TopicNameKebabCase;
 
+mod topic_name_too_long;
+pub use topic_name_too_long::TopicNameTooLong;
+
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
 mod no_user_defined_names_for_multi_topic_publishers;
 pub use no_user_defined_names_for_multi_topic_publishers::NoUserDefinedNamesForMultiChannelPublishers;

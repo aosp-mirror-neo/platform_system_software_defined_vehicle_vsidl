@@ -307,6 +307,7 @@ impl ContextConditionChecker {
             SymbolTableState::NotCreated,
             Box::new(TopicNameKebabCase::default()),
         )
+        .add_context_condition(SymbolTableState::NotCreated, Box::new(TopicNameTooLong::default()))
         .add_context_condition(SymbolTableState::NotCreated, Box::new(PublisherCapacity::default()))
         .add_context_condition(
             SymbolTableState::NotCreated,
