@@ -21,7 +21,6 @@ use vsidl_v1_symbols::specific_symbols::proto_message_symbol::ProtoMessageSymbol
 use vsidl_v1_symbols::specific_symbols::subscriber_symbol::SubscriberSymbol;
 use vsidl_v1_symbols::symbol_table::SymbolTable;
 use vsidl_v1_symbols::symbol_table_checker::SymbolTableChecker;
-use vsidl_v1_symbols::topic_symbol::TopicSymbol;
 
 #[derive(Default)]
 pub struct SubscriberType {
@@ -49,26 +48,6 @@ impl SymbolTableChecker for SubscriberType {
                 ),
                 vec![subscriber.message_span.clone().into_option()],
             );
-            return;
-        }
-
-        for (index, topic) in subscriber.topic.iter().enumerate() {
-            let topics: Vec<TopicSymbol> =
-                subscriber.enclosing_scope(symbol_table).resolve_topic(symbol_table, topic);
-
-            // ERROR: Channel specified by subscriber does not exist for message
-            if topics.is_empty() {
-                self.finding_collector.error(
-                    FindingId::SubscriberTypeDoesNotHaveRequestedChannel,
-                    format!(
-                        "Subscriber '{}' uses undefined topic '{}' for message '{}'",
-                        subscriber.full_name(symbol_table),
-                        topic,
-                        subscriber.message
-                    ),
-                    vec![subscriber.topic_span.get(index).cloned()],
-                );
-            }
         }
     }
 }
@@ -102,31 +81,6 @@ mod tests {
 
         // THEN Should not have found any errors
         assert!(check.is_ok());
-    }
-
-    #[test]
-    fn test_should_reject_subscriber_with_invalid_topic() {
-        // GIVEN A catalog with a subscriber that has a invalid topic
-        let mut catalog = Catalog::new();
-        catalog.proto_descriptors.extend([
-            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
-            vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
-        ]);
-        catalog
-            .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_NON_EXISTING_SUBSCRIBER_TOPIC.clone());
-        let mut creator = SymbolTableCreator::new();
-        catalog.accept(&mut creator);
-
-        // WHEN Executing context condition
-        let mut check = SubscriberType::default();
-        check.check_symbol_table(creator.symbol_table());
-
-        // THEN Should have found an error
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "invalid-topic"));
     }
 
     #[test]

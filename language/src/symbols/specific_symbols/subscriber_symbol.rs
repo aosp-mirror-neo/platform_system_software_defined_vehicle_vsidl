@@ -15,8 +15,7 @@
  */
 
 use crate::{
-    implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolKind,
-    SymbolTable,
+    implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
 };
 use vsidl_v1::syntax::service_bundle::Subscriber;
 use vsidl_v1::syntax::Span;
@@ -253,54 +252,32 @@ impl SubscriberSymbol {
         symbol_table.panic_if_not_linked();
         assert!(!symbol_table.uses_pdk29());
 
-        // Case 1: Subscriber defines explicit topic names
-        let topics = if !self.topic.is_empty() {
-            self.topic.clone()
-        } else {
-            // Case 2: Subscriber defines no channels, but message has channels => use all
-            let mut topics = Vec::new();
-            if let Some(message_id) = &self.message {
-                if let Some(SymbolKind::ProtoMessage(message)) = symbol_table.get_symbol(message_id)
-                {
-                    topics =
-                        message.topics(symbol_table).iter().map(|topic| topic.name()).collect();
-                }
-            }
-            topics
-        };
-
-        topics
+        self.topic_symbols(symbol_table).into_iter().map(|topic| topic.name()).collect()
     }
 
     /// Returns the [TopicSymbol]s associated with this subscriber.
     ///
     /// # Parameters
     ///
-    /// * `symbol_table` - The linked symbol table to resolve the channel IDs.
+    /// * `symbol_table` - The linked symbol table to resolve the topic IDs.
     ///
     /// # Returns
     ///
-    /// A `Vec<&TopicSymbol>` containing the channels for this subscriber.
+    /// A `Vec<&TopicSymbol>` containing the topics for this subscriber.
     pub fn topic_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a TopicSymbol> {
         symbol_table.panic_if_not_linked();
         assert!(!symbol_table.uses_pdk29());
 
-        // Case 1: Subscriber defines explicit channels
-        if !self.topics.is_empty() {
-            let mut channels: Vec<_> = self
-                .topics
-                .iter()
-                .map(|channel_id| symbol_table.get_topic_symbol(channel_id).unwrap())
-                .collect();
+        let mut topic_symbols: Vec<_> = self
+            .topics
+            .iter()
+            .map(|topic_id| symbol_table.get_topic_symbol(topic_id).unwrap())
+            .collect();
 
-            // Sorts the channels by name; necessary for a stable order in generated files
-            channels.sort_by_key(|channel| channel.name());
+        // Sorts the topics by name; necessary for a stable order in generated files
+        topic_symbols.sort_by_key(|topic| topic.name());
 
-            return channels;
-        }
-
-        // Case 2: Subscriber defines no channels, but message has channels => use all
-        self.message(symbol_table).topics(symbol_table)
+        topic_symbols
     }
 }
 
