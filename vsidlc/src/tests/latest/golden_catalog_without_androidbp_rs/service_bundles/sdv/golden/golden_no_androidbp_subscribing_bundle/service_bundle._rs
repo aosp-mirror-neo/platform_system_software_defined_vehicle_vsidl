@@ -34,10 +34,6 @@ pub mod subscriber {
             self.name
         }
     }
-    impl sdv::mw::clientlib::channel::subscriber::Metadata
-    for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog> {
-        const IS_MULTIPUB: bool = false;
-    }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog> {
         fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {

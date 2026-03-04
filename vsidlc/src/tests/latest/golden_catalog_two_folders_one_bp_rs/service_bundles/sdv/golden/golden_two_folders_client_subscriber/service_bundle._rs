@@ -34,12 +34,6 @@ pub mod subscriber {
             self.name
         }
     }
-    impl sdv::mw::clientlib::channel::subscriber::Metadata
-    for Channel<
-        sdv_vsidlc_goldens_two_folders_one_bp_folder_a_catalog::speed_a::VehicleSpeedA,
-    > {
-        const IS_MULTIPUB: bool = false;
-    }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<
         sdv_vsidlc_goldens_two_folders_one_bp_folder_a_catalog::speed_a::VehicleSpeedA,
@@ -62,12 +56,6 @@ pub mod subscriber {
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED_A];
-    }
-    impl sdv::mw::clientlib::channel::subscriber::Metadata
-    for Channel<
-        sdv_vsidlc_goldens_two_folders_one_bp_folder_b_catalog::speed_b::VehicleSpeedB,
-    > {
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<

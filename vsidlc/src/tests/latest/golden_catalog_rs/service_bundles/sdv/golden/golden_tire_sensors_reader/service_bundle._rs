@@ -44,7 +44,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
         const MESSAGE_SIZE: u32 = 6;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
@@ -95,7 +94,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
         const MESSAGE_SIZE: u32 = 6;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
@@ -146,7 +144,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
         const MESSAGE_SIZE: u32 = 6;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
@@ -173,7 +170,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
         const MESSAGE_SIZE: u32 = 5;
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {

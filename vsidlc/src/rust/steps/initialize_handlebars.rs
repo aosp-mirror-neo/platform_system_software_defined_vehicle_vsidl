@@ -131,10 +131,6 @@ macro_rules! define_common_templates {
 
             /* Subscriber Module Impls */
             (
-                "service_bundles/subscriber/impl_metadata/impl",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/subscriber/impl_metadata/impl.hbs")),
-            ),
-            (
                 "service_bundles/subscriber/impl_channel/impl",
                 include_str!(concat!($prefix, "/generated_rs/service_bundles/subscriber/impl_channel/impl.hbs")),
             ),
@@ -241,10 +237,6 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
         include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/impl.hbs"),
     ),
     (
-        "service_bundles/subscriber/impl_metadata/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_metadata/impl.hbs"),
-    ),
-    (
         "service_bundles/subscriber/impl_to_type_name/impl",
         include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_to_type_name/impl.hbs"),
     ),
@@ -318,6 +310,12 @@ const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[
     (
         "service_bundles/functions/add_server",
         include_str!("../templates/pdk29/generated_rs/service_bundles/functions/add_server.hbs"),
+    ),
+    (
+        "service_bundles/subscriber/impl_metadata/impl",
+        include_str!(
+            "../templates/pdk29//generated_rs/service_bundles/subscriber/impl_metadata/impl.hbs"
+        ),
     ),
 ];
 

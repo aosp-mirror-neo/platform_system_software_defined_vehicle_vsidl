@@ -34,10 +34,6 @@ pub mod subscriber {
             self.name
         }
     }
-    impl sdv::mw::clientlib::channel::subscriber::Metadata
-    for Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-        const IS_MULTIPUB: bool = false;
-    }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
         fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
@@ -76,10 +72,6 @@ pub mod subscriber {
             Self::TIRE_PRESSURE_REAR_LEFT,
             Self::TIRE_PRESSURE_REAR_RIGHT,
         ];
-    }
-    impl sdv::mw::clientlib::channel::subscriber::Metadata
-    for Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances> {
