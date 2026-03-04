@@ -136,55 +136,6 @@ impl SubscriberSymbol {
             .unwrap()
     }
 
-    /// Returns a publisher that publishes the given topic of the publication
-    /// this subscriber subscribes to.
-    ///
-    /// # Parameters
-    ///
-    /// * `symbol_table` - The linked symbol table containing all symbols.
-    /// * `topic` - The topic to find the publisher for.
-    ///
-    /// # Returns
-    ///
-    /// The [PublisherSymbol] that publishes the specified topic.
-    ///
-    /// # Panics
-    ///
-    /// * If the symbol table is not linked.
-    pub fn publisher_for_topic<'a>(
-        &self,
-        symbol_table: &'a SymbolTable,
-        topic: &str,
-    ) -> &'a PublisherSymbol {
-        symbol_table.panic_if_not_linked();
-        assert!(!symbol_table.uses_pdk29());
-
-        let maybe_topic = self.topic_symbols(symbol_table).into_iter().find(|t| t.name() == topic);
-
-        if let Some(topic_symbol) = maybe_topic {
-            let mut publishers = topic_symbol.publishers(symbol_table);
-
-            if publishers.is_empty() {
-                panic!(
-                    "publisher_for_topic: Topic '{topic}' of subscriber '{}' has no publishers",
-                    self.full_name(symbol_table)
-                );
-            }
-
-            // TODO: b/477164517 - Stable order of publishers. Remove the following line as soon as the generator only prints 'deprecated'.
-            publishers.sort_by_key(|publisher| {
-                publisher.owning_service_bundle(symbol_table).full_name(symbol_table)
-            });
-
-            publishers[0]
-        } else {
-            panic!("publisher_for_topic: Topic '{topic}' not found for subscriber '{}'. Available channels: {:?}",
-                self.full_name(symbol_table),
-                self.topic_symbols(symbol_table).into_iter().map(|c| c.name()).collect::<Vec<_>>()
-            );
-        }
-    }
-
     /// Returns the owning [ServiceBundleSymbol] for this subscriber.
     ///
     /// # Parameters
@@ -381,21 +332,6 @@ mod tests {
 
         // THEN the publisher should be found
         assert!(publisher.channels(&symbol_table).contains(&"TWO".to_string()));
-    }
-
-    #[test]
-    fn test_publisher_for_topic() {
-        // GIVEN a non-PDK29 symbol table
-        let (symbol_table, subscriber_symbol) = setup_test();
-
-        // WHEN requesting publisher for channel
-        let publisher = subscriber_symbol.publisher_for_topic(&symbol_table, "two");
-
-        // THEN it should be found and own by ServiceBundleOne
-        assert_eq!(
-            publisher.owning_service_bundle(&symbol_table).full_name(&symbol_table),
-            "sdv.test.ServiceBundleOne"
-        );
     }
 
     #[test]
