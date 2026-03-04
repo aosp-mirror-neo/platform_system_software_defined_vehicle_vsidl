@@ -381,13 +381,6 @@ impl ContextConditionChecker {
             SymbolTableState::Linked,
             Box::new(UniqueUserDefinedServiceUnitNamesPerType::default()),
         );
-
-        if self.print_warnings {
-            self.add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(VsidlRedundantExplicitTopicListing::default()),
-            );
-        }
     }
 
     /// Enables CoCos for PDK29.

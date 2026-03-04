@@ -171,10 +171,6 @@ pub use vsidl_unnecessary_fully_qualified_name::VsidlUnnecessaryFullyQualifiedNa
 mod proto_message_exceeds_max_size;
 pub use proto_message_exceeds_max_size::ProtoMessageExceedsMaxSize;
 
-// redundant explicit topic listing
-mod redundant_explicit_topic_listing;
-pub use redundant_explicit_topic_listing::VsidlRedundantExplicitTopicListing;
-
 // Subscriber channel should not redeclare in same service bundle
 mod subscriber_topic_redeclaration;
 pub use subscriber_topic_redeclaration::SubscriberChannelsRedeclaration;
