@@ -26,9 +26,6 @@ pub struct Channel<Proto: ::protobuf::Message> {
     _proto: std::marker::PhantomData<Proto>,
     /// Unique name of a channel
     pub name: &'static str,
-    service_bundle_package: &'static str,
-    service_bundle_name: &'static str,
-    service_unit: &'static str,
 }
 
 {{> service_bundles/subscriber/impl_identity/impl}}

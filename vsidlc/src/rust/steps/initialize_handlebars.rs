@@ -277,18 +277,6 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
         include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_name.hbs"),
     ),
     (
-        "generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_unit_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_unit_name.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_bundle_package",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_bundle_package.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_bundle_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_service_bundle_name.hbs"),
-    ),
-    (
         "generated_rs/service_bundles/subscriber/impl_to_type_name/functions/type_name",
         include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_to_type_name/functions/type_name.hbs"),
     ),

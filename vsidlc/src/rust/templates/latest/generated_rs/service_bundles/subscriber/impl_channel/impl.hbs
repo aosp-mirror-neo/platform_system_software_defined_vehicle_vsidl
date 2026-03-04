@@ -19,15 +19,6 @@ impl Channel<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}
     pub const {{upper_snake_case this.channel_name}}: &Self = &Self {
         _proto: std::marker::PhantomData,
         name: "{{this.channel_name}}",
-        // Multipub doesn't subscribe to a specific service unit, but to a shared channel
-        {{!--
-        TODO: b/477164517 - Set the service_bundle_package and service_bundle_name fields to "Deprecated"
-        once all types of subscribers / observers support the new channel concept.
-        Then test with atest sdv_core_middleware_unit_vsidl_pubsub_e2e_test
-        --}}
-        service_bundle_package: "{{this.offering_service_bundle_package}}",
-        service_bundle_name: "{{this.offering_service_bundle_name}}",
-        service_unit: "{{this.service_unit_name}}",
     };
     {{/each}}
 

@@ -26,24 +26,12 @@ pub mod subscriber {
         _proto: std::marker::PhantomData<Proto>,
         /// Unique name of a channel
         pub name: &'static str,
-        service_bundle_package: &'static str,
-        service_bundle_name: &'static str,
-        service_unit: &'static str,
     }
     impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::subscriber::Identity
     for Channel<Proto> {
         type ProtoMessage = Proto;
         fn get_name(&self) -> &str {
             self.name
-        }
-        fn get_service_unit_name(&self) -> &str {
-            self.service_unit
-        }
-        fn get_service_bundle_package(&self) -> &str {
-            self.service_bundle_package
-        }
-        fn get_service_bundle_name(&self) -> &str {
-            self.service_bundle_name
         }
     }
     impl sdv::mw::clientlib::channel::subscriber::Metadata
@@ -65,9 +53,6 @@ pub mod subscriber {
         pub const VEHICLE_SPEED: &Self = &Self {
             _proto: std::marker::PhantomData,
             name: "vehicle-speed",
-            service_bundle_package: "sdv.golden",
-            service_bundle_name: "GoldenTireSensorsReader",
-            service_unit: "sdv-golden-vehicle-speed-vehicle-speed",
         };
         /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];
