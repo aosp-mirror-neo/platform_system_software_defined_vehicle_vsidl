@@ -33,5 +33,6 @@ service_bundle {
 
   subscriber {
     type: "sdv.golden.VehicleSpeedForOtherCatalog"
+    topic: "vehicle-speed-for-other-catalog"
   }
 }

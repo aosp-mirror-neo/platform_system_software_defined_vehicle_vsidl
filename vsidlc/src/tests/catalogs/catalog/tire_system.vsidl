@@ -27,6 +27,7 @@ service_bundle {
 
     subscriber {
         message: "VehicleSpeed"
+        topic: "vehicle-speed"
     }
 }
 
@@ -34,9 +35,14 @@ service_bundle {
     name: "GoldenTireAlert"
     subscriber {
         message: "TIREPressure"
+        topic: "tire-pressure-front-left"
+        topic: "tire-pressure-front-right"
+        topic: "tire-pressure-rear-left"
+        topic: "tire-pressure-rear-right"
     }
     subscriber {
         message: "VehicleSpeed"
+        topic: "vehicle-speed"
     }
     client {
         service: "sdv.golden.rpc.TireStatus"

@@ -140,8 +140,8 @@ macro_rules! finding_ids {
             E406: (0x406, PublisherCapacity),
             /// Publisher capacity is mandatory in latest VSIDL syntax
             E407: (0x407, PublisherCapacityMandatory),
-            /// Publisher topic is mandatory in latest VSIDL syntax
-            E408: (0x408, PublisherTopicMandatory),
+            /// Topic is mandatory for publishers and subscribers in latest VSIDL syntax
+            E408: (0x408, TopicMandatory),
             /// RPC channel is mandatory in latest VSIDL syntax
             E409: (0x409, RpcChannelMandatory),
             /// RPC client channel maps to an existing server-side channel definition
