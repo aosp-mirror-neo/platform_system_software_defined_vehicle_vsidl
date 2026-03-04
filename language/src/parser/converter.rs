@@ -1513,7 +1513,7 @@ mod test {
                 let interface_type = instance_impl.interface_type.as_ref().unwrap();
                 match interface_type {
                     vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedInterface(rpc_interface) => {
-                        assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().package_name, "com.sdv.someip");
+                        assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().package_name, "com.android.sdv.someip");
                         assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().service_bundle_name, "SomeIpBroker");
                         assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().type_name, "SomeIpInterface");
                         assert_eq!(rpc_interface.service_unit, 1);
@@ -1533,7 +1533,7 @@ mod test {
             vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
                 assert_eq!(
                     mapping.unit_type.as_ref().unwrap().package_name,
-                    "com.sdv.someip.sample"
+                    "com.android.sdv.someip.sample"
                 );
                 assert_eq!(
                     mapping.unit_type.as_ref().unwrap().service_bundle_name,
@@ -1555,7 +1555,7 @@ mod test {
             vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
                 assert_eq!(
                     mapping.unit_type.as_ref().unwrap().package_name,
-                    "com.sdv.someip.sample"
+                    "com.android.sdv.someip.sample"
                 );
                 assert_eq!(
                     mapping.unit_type.as_ref().unwrap().service_bundle_name,

@@ -133,7 +133,7 @@ some_ip_mapping {
           }
           event_part {
             sdv_unit_type {
-              package_name: "com.sdv.someip"
+              package_name: "com.android.sdv.someip"
               service_bundle_name: "SomeIpBroker"
               type_name: "FirstPart"
             }
@@ -142,7 +142,7 @@ some_ip_mapping {
           }
           event_part {
             sdv_unit_type {
-              package_name: "com.sdv.someip"
+              package_name: "com.android.sdv.someip"
               service_bundle_name: "SomeIpBroker"
               type_name: "SecondPart"
             }
@@ -155,7 +155,7 @@ some_ip_mapping {
     instance_impl {
       offered_interface {
         sdv_unit_type {
-          package_name: "com.sdv.someip"
+          package_name: "com.android.sdv.someip"
           service_bundle_name: "SomeIpBroker"
           type_name: "SomeIpInterface"
         }
@@ -184,7 +184,7 @@ some_ip_mapping {
 some_ip_mapping {
   sdv_type_mapping {
     unit_type {
-      package_name: "com.sdv.someip.sample"
+      package_name: "com.android.sdv.someip.sample"
       service_bundle_name: "ServiceBundleFoo"
       type_name: "SdvInterface"
     }
@@ -206,9 +206,9 @@ some_ip_mapping {
     }
     service_unit_mapping {
       service_unit_id {
-        package_name: "com.sdv.someip.sample"
+        package_name: "com.android.sdv.someip.sample"
         service_bundle_name: "ServiceBundleName"
-        service_unit_name: "com-sdv-someip-sample-name"
+        service_unit_name: "com-android-sdv-someip-sample-name"
       }
       instance_id: 0x0001
       fire_and_forget_method {
@@ -225,7 +225,7 @@ some_ip_mapping {
 some_ip_mapping {
   sdv_type_mapping {
     unit_type {
-      package_name: "com.sdv.someip.sample"
+      package_name: "com.android.sdv.someip.sample"
       service_bundle_name: "ServiceBundleFoo"
       type_name: "SdvInterface"
     }
@@ -252,9 +252,9 @@ some_ip_mapping {
     }
     service_unit_mapping {
       service_unit_id {
-        package_name: "com.sdv.someip.sample"
+        package_name: "com.android.sdv.someip.sample"
         service_bundle_name: "ServiceBundleName"
-        service_unit_name: "com-sdv-someip-sample-name"
+        service_unit_name: "com-android-sdv-someip-sample-name"
       }
       instance_id: 0x0001
     }
