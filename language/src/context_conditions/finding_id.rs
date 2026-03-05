@@ -94,6 +94,8 @@ macro_rules! finding_ids {
             E20D: (0x20D, TopicNameKebabCase),
             /// RPC channels must be in lowercase kebab case
             E20E: (0x20E, RpcChannelNamingConvention),
+            /// Topics must not exceed 127 characters.
+            E20F: (0x20F, TopicNameTooLong),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),
@@ -140,8 +142,8 @@ macro_rules! finding_ids {
             E406: (0x406, PublisherCapacity),
             /// Publisher capacity is mandatory in latest VSIDL syntax
             E407: (0x407, PublisherCapacityMandatory),
-            /// Publisher topic is mandatory in latest VSIDL syntax
-            E408: (0x408, PublisherTopicMandatory),
+            /// Topic is mandatory for publishers and subscribers in latest VSIDL syntax
+            E408: (0x408, TopicMandatory),
             /// RPC channel is mandatory in latest VSIDL syntax
             E409: (0x409, RpcChannelMandatory),
             /// RPC client channel maps to an existing server-side channel definition

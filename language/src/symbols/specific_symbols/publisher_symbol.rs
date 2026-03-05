@@ -16,7 +16,7 @@
 
 use crate::{
     implement_ast_node_deref, implement_symbol_deref, proto_message_symbol::ProtoMessageSymbol,
-    SymbolCommon, SymbolId, SymbolKind, SymbolTable,
+    SymbolCommon, SymbolId, SymbolTable,
 };
 use heck::ToKebabCase;
 use vsidl_v1::syntax::service_bundle::Publisher;
@@ -246,23 +246,7 @@ impl PublisherSymbol {
         symbol_table.panic_if_not_linked();
         assert!(!symbol_table.uses_pdk29());
 
-        // Case 1: Publisher defines explicit topics
-        let topics = if !self.topics.is_empty() {
-            self.topics.iter().map(|id| symbol_table.get_symbol(id).unwrap().name()).collect()
-        } else {
-            // Case 2: Publisher defines no topics, but message has topics => use all
-            let mut topics = Vec::new();
-            if let Some(message_id) = &self.message {
-                if let Some(SymbolKind::ProtoMessage(message)) = symbol_table.get_symbol(message_id)
-                {
-                    topics =
-                        message.topics(symbol_table).iter().map(|topic| topic.name()).collect();
-                }
-            }
-            topics
-        };
-
-        topics
+        self.topic_symbols(symbol_table).into_iter().map(|topic| topic.name()).collect()
     }
 
     /// Returns the [TopicSymbol]s associated with this publisher.
@@ -275,17 +259,19 @@ impl PublisherSymbol {
     ///
     /// A `Vec<&TopicSymbol>` containing the topics for this publisher.
     pub fn topic_symbols<'a>(&self, symbol_table: &'a SymbolTable) -> Vec<&'a TopicSymbol> {
+        symbol_table.panic_if_not_linked();
         assert!(!symbol_table.uses_pdk29());
-        let mut topics: Vec<_> = self
+
+        let mut topic_symbols: Vec<_> = self
             .topics
             .iter()
             .map(|topic_id| symbol_table.get_topic_symbol(topic_id).unwrap())
             .collect();
 
         // Sorts the topics by name; necessary for a stable order in generated files
-        topics.sort_by_key(|topic| topic.name());
+        topic_symbols.sort_by_key(|topic| topic.name());
 
-        topics
+        topic_symbols
     }
 }
 

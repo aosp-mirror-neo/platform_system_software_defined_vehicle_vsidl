@@ -307,15 +307,13 @@ impl ContextConditionChecker {
             SymbolTableState::NotCreated,
             Box::new(TopicNameKebabCase::default()),
         )
+        .add_context_condition(SymbolTableState::NotCreated, Box::new(TopicNameTooLong::default()))
         .add_context_condition(SymbolTableState::NotCreated, Box::new(PublisherCapacity::default()))
         .add_context_condition(
             SymbolTableState::NotCreated,
             Box::new(PublisherCapacityMandatory::default()),
         )
-        .add_context_condition(
-            SymbolTableState::NotCreated,
-            Box::new(PublisherTopicMandatory::default()),
-        )
+        .add_context_condition(SymbolTableState::NotCreated, Box::new(TopicMandatory::default()))
         .add_context_condition(
             SymbolTableState::NotCreated,
             Box::new(RpcChannelMandatory::default()),
@@ -384,13 +382,6 @@ impl ContextConditionChecker {
             SymbolTableState::Linked,
             Box::new(UniqueUserDefinedServiceUnitNamesPerType::default()),
         );
-
-        if self.print_warnings {
-            self.add_context_condition(
-                SymbolTableState::Linked,
-                Box::new(VsidlRedundantExplicitTopicListing::default()),
-            );
-        }
     }
 
     /// Enables CoCos for PDK29.

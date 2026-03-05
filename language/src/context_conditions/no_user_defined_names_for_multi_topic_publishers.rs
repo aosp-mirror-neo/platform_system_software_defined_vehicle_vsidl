@@ -57,37 +57,11 @@ impl SymbolTableChecker for NoUserDefinedNamesForMultiChannelPublishers {
 mod test {
     use crate::context_condition::ContextCondition;
     use crate::no_user_defined_names_for_multi_topic_publishers::NoUserDefinedNamesForMultiChannelPublishers;
-    use crate::FindingSeverity;
     use vsidl_v1_common::visitors::visitor::AstNode;
     use vsidl_v1_common::Catalog;
     use vsidl_v1_symbols::symbol_table_creator::SymbolTableCreator;
     use vsidl_v1_symbols::symbol_table_linker::SymbolTableLinker;
     use vsidl_v1_symbols::TargetApi;
-
-    #[test]
-    fn test_should_reject_catalog_user_defined_publisher_name_without_topic() {
-        // Given: A catalog with a publisher that uses a unit type with topics and specifies a user-defined name without specifying the topic
-        let mut catalog = Catalog::new();
-        catalog.proto_descriptors.extend([vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
-        catalog
-            .catalog_vsidl_files
-            .push(vsidl_v1_test_data::VSIDL_USER_DEFINED_NAME_WITHOUT_CHANNEL.clone());
-        let mut creator = SymbolTableCreator::new();
-        creator.set_target_api(TargetApi::Latest);
-        catalog.accept(&mut creator);
-        let mut linker = SymbolTableLinker::from(creator);
-        linker.execute();
-
-        // When: Executing CoCo
-        let mut check = NoUserDefinedNamesForMultiChannelPublishers::default();
-        check.check_symbol_table(linker.symbol_table());
-
-        // Then: Should have found error
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "Service Bundle 'sdv.test.UserDefinedNameWithoutChannel': Service unit 'my-pub' may not have a user-defined name without specifying the used topic. Possible topics:"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "one"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "two"));
-    }
 
     #[test]
     fn test_should_accept_valid_catalog() {

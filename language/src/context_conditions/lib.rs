@@ -54,6 +54,9 @@ pub use topic_name_unique::TopicNameUnique;
 mod topic_name_kebab_case;
 pub use topic_name_kebab_case::TopicNameKebabCase;
 
+mod topic_name_too_long;
+pub use topic_name_too_long::TopicNameTooLong;
+
 // Publishers may not user-defined names without specifying the channel if the type has multiple channels
 mod no_user_defined_names_for_multi_topic_publishers;
 pub use no_user_defined_names_for_multi_topic_publishers::NoUserDefinedNamesForMultiChannelPublishers;
@@ -68,8 +71,8 @@ pub use publisher_capacity::PublisherCapacity;
 mod publisher_capacity_mandatory;
 pub use publisher_capacity_mandatory::PublisherCapacityMandatory;
 
-mod publisher_topic_mandatory;
-pub use publisher_topic_mandatory::PublisherTopicMandatory;
+mod topic_mandatory;
+pub use topic_mandatory::TopicMandatory;
 
 /// Issues an error if the unit type specified for an RPC client is unknown
 mod rpc_client_type;
@@ -170,10 +173,6 @@ pub use vsidl_unnecessary_fully_qualified_name::VsidlUnnecessaryFullyQualifiedNa
 // Proto message exceed max size
 mod proto_message_exceeds_max_size;
 pub use proto_message_exceeds_max_size::ProtoMessageExceedsMaxSize;
-
-// redundant explicit topic listing
-mod redundant_explicit_topic_listing;
-pub use redundant_explicit_topic_listing::VsidlRedundantExplicitTopicListing;
 
 // Subscriber channel should not redeclare in same service bundle
 mod subscriber_topic_redeclaration;

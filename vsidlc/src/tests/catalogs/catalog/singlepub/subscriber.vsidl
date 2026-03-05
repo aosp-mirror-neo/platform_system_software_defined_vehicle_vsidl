@@ -21,9 +21,17 @@ service_bundle {
     name: "GoldenTireMonitor"
     subscriber {
         message: ".sdv.golden.TIREPressure"
+        topic: "tire-pressure-front-left"
+        topic: "tire-pressure-front-right"
+        topic: "tire-pressure-rear-left"
+        topic: "tire-pressure-rear-right"
     }
 
     subscriber {
         message: "TirePressureExplicitInstances"
+        topic: "tire-pressure-explicit-front-left"
+        topic: "tire-pressure-explicit-front-right"
+        topic: "tire-pressure-explicit-rear-left"
+        topic: "tire-pressure-explicit-rear-right"
     }
 }

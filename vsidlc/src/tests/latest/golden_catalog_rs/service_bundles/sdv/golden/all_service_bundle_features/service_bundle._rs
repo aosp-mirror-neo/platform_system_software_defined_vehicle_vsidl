@@ -46,7 +46,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
         const MESSAGE_SIZE: u32 = 6;
-        const IS_MULTIPUB: bool = false;
         const IS_MESSAGE_METADATA_REQUIRED: bool = true;
         fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
             sdv_proto_reflection_rs::message_metadata::MessageMetadata {
@@ -110,10 +109,6 @@ pub mod subscriber {
         fn get_name(&self) -> &str {
             self.name
         }
-    }
-    impl sdv::mw::clientlib::channel::subscriber::Metadata
-    for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        const IS_MULTIPUB: bool = false;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {

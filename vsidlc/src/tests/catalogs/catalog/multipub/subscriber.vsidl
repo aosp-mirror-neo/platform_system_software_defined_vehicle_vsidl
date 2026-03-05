@@ -22,5 +22,6 @@ service_bundle {
 
     subscriber {
         message: "TireSpeed"
+        topic: "tire-speed-unique"
     }
 }

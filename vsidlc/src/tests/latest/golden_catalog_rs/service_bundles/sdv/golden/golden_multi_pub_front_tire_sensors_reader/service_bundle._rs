@@ -44,7 +44,6 @@ pub mod publisher {
     impl sdv::mw::clientlib::channel::publisher::Metadata
     for Channel<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
         const MESSAGE_SIZE: u32 = 5;
-        const IS_MULTIPUB: bool = true;
     }
     impl sdv::mw::clientlib::ToTypeName
     for Channel<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {

@@ -28,13 +28,13 @@ pub struct SubscriberRequiresPublisher {
 impl_context_condition_symtab!(SubscriberRequiresPublisher);
 impl VsidlVisitor for SubscriberRequiresPublisher {}
 
-/// Issues an error if there is no publisher for a subscriber's message
+/// Issues a warning if there is no publisher for a subscriber's message
 impl SymbolTableChecker for SubscriberRequiresPublisher {
     fn check_subscriber(&mut self, symbol_table: &SymbolTable, subscriber: &SubscriberSymbol) {
         // Case 1: The message has no publishers at all
         if subscriber.message(symbol_table).publishers(symbol_table).is_empty() {
-            // ERROR: There's no publisher for the topic requested by the subscriber
-            self.finding_collector.error(
+            // WARN: There's no publisher for the topic requested by the subscriber
+            self.finding_collector.warn(
                 FindingId::SubscriberRequiresPublisher,
                 format!(
                     "There is no publisher for the message of subscriber '{}'",
@@ -49,8 +49,8 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
         let message_topics = subscriber.message(symbol_table).topics(symbol_table);
         for (index, topic) in subscriber.topics(symbol_table).iter().enumerate() {
             if !message_topics.iter().any(|c| c.name() == *topic) {
-                // ERROR: There's no publisher for the topic requested by the subscriber
-                self.finding_collector.error(
+                // WARN: There's no publisher for the topic requested by the subscriber
+                self.finding_collector.warn(
                     FindingId::SubscriberRequiresPublisher,
                     format!(
                         "Topic '{topic}' of subscriber '{}' does not have a corresponding publisher",
@@ -93,8 +93,8 @@ mod test {
         check.check_symbol_table(linker.symbol_table());
 
         // THEN Should have found errors
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "sdv.test.Pressure"));
+        assert!(check.is_ok());
+        assert!(check.any_finding_contains(FindingSeverity::Warn, "sdv.test.Pressure"));
     }
 
     #[test]
@@ -116,9 +116,9 @@ mod test {
         check.check_symbol_table(linker.symbol_table());
 
         // THEN Should have found errors
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "sdv.test.Pressure"));
-        assert!(check.any_finding_contains(FindingSeverity::Error, "one"));
+        assert!(check.is_ok());
+        assert!(check.any_finding_contains(FindingSeverity::Warn, "sdv.test.Pressure"));
+        assert!(check.any_finding_contains(FindingSeverity::Warn, "one"));
     }
 
     #[test]

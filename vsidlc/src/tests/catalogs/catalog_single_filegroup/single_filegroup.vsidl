@@ -26,9 +26,11 @@ service_bundle {
     }
     subscriber {
         message: "VehicleSpeedA"
+        topic: "vehicle-speed-a"
     }
     subscriber {
         message: "sdv.golden.VehicleSpeedB"
+        topic: "vehicle-speed-b"
     }
 }
 

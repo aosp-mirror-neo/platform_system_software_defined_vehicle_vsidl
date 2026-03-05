@@ -42,6 +42,8 @@ pub(super) struct ServiceUnitContext {
     pub(super) unit_type: UnitTypeContext,
     pub(super) has_user_defined_name: bool,
     pub(super) user_defined_name: String,
+    pub(super) servers: Vec<(String, String)>,
+    pub(super) has_alternative_servers: bool,
 }
 
 impl ServiceUnitContext {
@@ -56,6 +58,8 @@ impl ServiceUnitContext {
             ),
             has_user_defined_name: rpc_server.has_user_defined_name(),
             user_defined_name: rpc_server.service_unit_name(symbol_table).clone(),
+            servers: Vec::new(),
+            has_alternative_servers: false,
         }
     }
 
@@ -63,6 +67,17 @@ impl ServiceUnitContext {
         rpc_client: &RpcClientSymbol,
         symbol_table: &SymbolTable,
     ) -> Self {
+        let mut servers: Vec<(String, String)> = rpc_client
+            .service(symbol_table)
+            .servers(symbol_table)
+            .iter()
+            .map(|s| s.owning_service_bundle(symbol_table))
+            .map(|sb| (sb.package(symbol_table).to_string(), sb.name.to_string()))
+            .collect();
+
+        servers.sort();
+        servers.dedup();
+
         Self {
             unit_type: UnitTypeContext::from_rpc_service(
                 rpc_client.service(symbol_table),
@@ -70,6 +85,8 @@ impl ServiceUnitContext {
             ),
             has_user_defined_name: false, // RPC clients don't have user-defined names
             user_defined_name: "".to_string(),
+            servers: servers.clone(),
+            has_alternative_servers: servers.len() > 1,
         }
     }
 }
@@ -290,6 +307,7 @@ pub(super) struct ServiceBundleContext {
     year: i32,
     pub(super) service_bundle_name: String,
     has_unit_types: bool,
+    has_clients_or_subscriptions: bool,
     is_publisher: bool,
     is_subscriber: bool,
     is_server: bool,
@@ -325,6 +343,7 @@ impl ServiceBundleContext {
             year: crate::rust::generator::get_current_year(),
             service_bundle_name: service_bundle.name.clone(),
             has_unit_types: !unit_types.is_empty(),
+            has_clients_or_subscriptions: is_subscriber || is_client,
             is_publisher,
             is_subscriber,
             is_server,
