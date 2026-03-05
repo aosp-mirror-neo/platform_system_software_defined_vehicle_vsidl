@@ -274,7 +274,7 @@ impl GoldenUserDefinedNamesBuilder {
                         dyn sdv_golden_rpc_tire_status_rpc::Interface,
                     >(
                             comms.as_ref(),
-                            "my-status".to_string(),
+                            "sdv-golden-rpc-tire-status".to_string(),
                             sdv_golden_rpc_tire_status_rpc::internal::get_rpc_method_map(
                                 server.clone(),
                             ),
