@@ -33,11 +33,12 @@ pub fn format(pair: Pair<Rule>, indent_width: usize) -> String {
 struct FormatContext {
     indent_level: usize,
     indent_width: usize,
+    has_seen_code: bool,
 }
 
 impl FormatContext {
     fn new(indent_width: usize) -> Self {
-        Self { indent_level: 0, indent_width }
+        Self { indent_level: 0, indent_width, has_seen_code: false }
     }
 
     fn indent(&mut self) {
@@ -98,15 +99,21 @@ fn format_children(result: &mut String, pairs: Pairs<Rule>, context: &mut Format
     }
 }
 
-fn ensure_newline(result: &mut String) {
+fn ensure_newline(result: &mut String, context: &FormatContext, is_comment: bool) {
     if result.is_empty() || result.ends_with("\n\n") {
         return;
     }
 
     let last_line = result.trim_end().split('\n').next_back().unwrap_or("");
-    let is_comment = last_line.trim().starts_with('#');
+    let last_was_comment = last_line.trim().starts_with('#');
 
-    if !is_comment {
+    // If we haven't seen any code yet, and we are at top level,
+    // we want a blank line after the initial comment block (e.g. copyright)
+    // ONLY when we are about to start a code block.
+    let is_starting_code_after_initial_comments =
+        !context.has_seen_code && context.indent_level == 0 && last_was_comment && !is_comment;
+
+    if !last_was_comment || is_starting_code_after_initial_comments {
         if !result.ends_with('\n') {
             result.push('\n');
         }
@@ -128,7 +135,8 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
             format_children(result, pair.into_inner(), context);
         }
         Rule::package => {
-            // Special handling for package to add double newline
+            ensure_newline(result, context, false);
+            context.has_seen_code = true;
             let indent = context.get_indent();
             let value = pair.into_inner().next().unwrap().as_str().trim();
             result.push_str(&indent);
@@ -137,7 +145,7 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
             result.push('\n');
         }
         Rule::COMMENT => {
-            ensure_newline(result);
+            ensure_newline(result, context, true);
             let indent = context.get_indent();
             result.push_str(&indent);
             result.push_str(pair.as_str().trim());
@@ -149,21 +157,25 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // High Level Blocks
         // =========================================================================
         Rule::sdv_service_bundle => {
-            ensure_newline(result); // Add spacing before main blocks
+            ensure_newline(result, context, false); // Add spacing before main blocks
+            context.has_seen_code = true;
             format_block(result, "service_bundle", pair.into_inner(), context);
         }
         Rule::some_ip_mapping => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
+            context.has_seen_code = true;
             format_block(result, "some_ip_mapping", pair.into_inner(), context);
         }
         Rule::vhal_mapping => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
+            context.has_seen_code = true;
             format_block(result, "vhal_mapping", pair.into_inner(), context);
         }
         Rule::extension => {
             let mut inner = pair.into_inner();
             let name = inner.next().unwrap().as_str(); // qualified_name
-            ensure_newline(result);
+            ensure_newline(result, context, false);
+            context.has_seen_code = true;
             let indent = context.get_indent();
             result.push_str(&indent);
             result.push('[');
@@ -184,31 +196,31 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // =========================================================================
         // Blocks
         Rule::publisher => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "publisher", pair.into_inner(), context)
         }
         Rule::subscriber => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "subscriber", pair.into_inner(), context)
         }
         Rule::server => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "server", pair.into_inner(), context)
         }
         Rule::client => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "client", pair.into_inner(), context)
         }
         Rule::unit_type => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "unit_type", pair.into_inner(), context)
         }
         Rule::build_configuration => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "build_cfg", pair.into_inner(), context)
         }
         Rule::diagnostics_declaration => {
-            ensure_newline(result);
+            ensure_newline(result, context, false);
             format_block(result, "diagnostics_declaration", pair.into_inner(), context)
         }
         // Properties
@@ -633,6 +645,36 @@ mod tests {
     use super::*;
     use crate::pest_parser::{Rule, VsidlParser};
     use pest::Parser;
+
+    #[test]
+    fn test_format_service_bundle_after_comment() {
+        let input = r#"# Copyright (C) 2026 The Android Open Source Project
+service_bundle {
+  name: "MyBundle"
+}
+"#;
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        assert_eq!(
+            formatted,
+            "# Copyright (C) 2026 The Android Open Source Project\n\nservice_bundle {\n  name: \"MyBundle\"\n}\n"
+        );
+    }
+
+    #[test]
+    fn test_format_package_after_comment() {
+        let input = r#"# Copyright (C) 2026 The Android Open Source Project
+package: "sdv.test"
+"#;
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        assert_eq!(
+            formatted,
+            "# Copyright (C) 2026 The Android Open Source Project\n\npackage: \"sdv.test\"\n"
+        );
+    }
 
     #[test]
     fn test_format_comments_and_newlines() {

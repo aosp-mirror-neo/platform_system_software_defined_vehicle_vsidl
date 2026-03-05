@@ -13,6 +13,7 @@
 # limitations under the License.
 # proto-file: //system/software_defined_vehicle/vsidl/language/src/protos/sdv/vsidl/v1/syntax.proto
 # proto-message: VsidlEntry
+
 package: "sdv.test"
 
 service_bundle {
