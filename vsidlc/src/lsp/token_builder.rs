@@ -159,6 +159,7 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::some_ip_sdv_method
         | Rule::some_ip_offered_topic
         | Rule::some_ip_offered_topic_type_definition
+        | Rule::some_ip_simple_mapping
         | Rule::some_ip_multipub_topic_info
         | Rule::some_ip_service_unit_mapping
         | Rule::some_ip_service_unit_mapping_service_unit_id
