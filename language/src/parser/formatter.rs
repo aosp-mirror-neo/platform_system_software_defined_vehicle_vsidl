@@ -230,6 +230,7 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         Rule::publisher_service_unit_name | Rule::server_service_unit_name => {
             format_property(result, "service_unit_name", pair, context)
         }
+        Rule::publisher_capacity => format_property(result, "capacity", pair, context),
         Rule::server_interface | Rule::client_interface => {
             format_property(result, "service", pair, context)
         }
