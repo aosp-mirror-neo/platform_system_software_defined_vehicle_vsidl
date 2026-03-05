@@ -98,6 +98,22 @@ fn format_children(result: &mut String, pairs: Pairs<Rule>, context: &mut Format
     }
 }
 
+fn ensure_newline(result: &mut String) {
+    if result.is_empty() || result.ends_with("\n\n") {
+        return;
+    }
+
+    let last_line = result.trim_end().split('\n').next_back().unwrap_or("");
+    let is_comment = last_line.trim().starts_with('#');
+
+    if !is_comment {
+        if !result.ends_with('\n') {
+            result.push('\n');
+        }
+        result.push('\n');
+    }
+}
+
 fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContext) {
     // Filter out pure whitespace nodes, but keep comments
     if pair.as_rule() == Rule::WHITESPACE {
@@ -121,6 +137,7 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
             result.push('\n');
         }
         Rule::COMMENT => {
+            ensure_newline(result);
             let indent = context.get_indent();
             result.push_str(&indent);
             result.push_str(pair.as_str().trim());
@@ -132,35 +149,30 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // High Level Blocks
         // =========================================================================
         Rule::sdv_service_bundle => {
-            result.push('\n'); // Add spacing before main blocks
-            let inner =
-                pair.into_inner().find(|p| p.as_rule() == Rule::service_bundle_body).unwrap();
-            format_block(result, "service_bundle", inner.into_inner(), context);
+            ensure_newline(result); // Add spacing before main blocks
+            format_block(result, "service_bundle", pair.into_inner(), context);
         }
         Rule::some_ip_mapping => {
-            result.push('\n');
-            let inner =
-                pair.into_inner().find(|p| p.as_rule() == Rule::some_ip_mapping_body).unwrap();
-            format_block(result, "some_ip_mapping", inner.into_inner(), context);
+            ensure_newline(result);
+            format_block(result, "some_ip_mapping", pair.into_inner(), context);
         }
         Rule::vhal_mapping => {
-            result.push('\n');
-            let inner = pair.into_inner().find(|p| p.as_rule() == Rule::vhal_mapping_body).unwrap();
-            format_block(result, "vhal_mapping", inner.into_inner(), context);
+            ensure_newline(result);
+            format_block(result, "vhal_mapping", pair.into_inner(), context);
         }
         Rule::extension => {
             let mut inner = pair.into_inner();
             let name = inner.next().unwrap().as_str(); // qualified_name
+            ensure_newline(result);
             let indent = context.get_indent();
-            result.push('\n');
             result.push_str(&indent);
             result.push('[');
             result.push_str(name);
             result.push_str("] {\n");
             context.indent();
             // message_body
-            if let Some(body) = inner.next() {
-                format_children(result, body.into_inner(), context);
+            for child in inner {
+                format_pair(result, child, context);
             }
             context.dedent();
             result.push_str(&indent);
@@ -172,57 +184,32 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // =========================================================================
         // Blocks
         Rule::publisher => {
-            result.push('\n');
-            format_block(
-                result,
-                "publisher",
-                pair.into_inner().next().unwrap().into_inner(),
-                context,
-            )
+            ensure_newline(result);
+            format_block(result, "publisher", pair.into_inner(), context)
         }
         Rule::subscriber => {
-            result.push('\n');
-            format_block(
-                result,
-                "subscriber",
-                pair.into_inner().next().unwrap().into_inner(),
-                context,
-            )
+            ensure_newline(result);
+            format_block(result, "subscriber", pair.into_inner(), context)
         }
         Rule::server => {
-            result.push('\n');
-            format_block(result, "server", pair.into_inner().next().unwrap().into_inner(), context)
+            ensure_newline(result);
+            format_block(result, "server", pair.into_inner(), context)
         }
         Rule::client => {
-            result.push('\n');
-            format_block(result, "client", pair.into_inner().next().unwrap().into_inner(), context)
+            ensure_newline(result);
+            format_block(result, "client", pair.into_inner(), context)
         }
         Rule::unit_type => {
-            result.push('\n');
-            format_block(
-                result,
-                "unit_type",
-                pair.into_inner().next().unwrap().into_inner(),
-                context,
-            )
+            ensure_newline(result);
+            format_block(result, "unit_type", pair.into_inner(), context)
         }
         Rule::build_configuration => {
-            result.push('\n');
-            format_block(
-                result,
-                "build_cfg",
-                pair.into_inner().next().unwrap().into_inner(),
-                context,
-            )
+            ensure_newline(result);
+            format_block(result, "build_cfg", pair.into_inner(), context)
         }
         Rule::diagnostics_declaration => {
-            result.push('\n');
-            format_block(
-                result,
-                "diagnostics_declaration",
-                pair.into_inner().next().unwrap().into_inner(),
-                context,
-            )
+            ensure_newline(result);
+            format_block(result, "diagnostics_declaration", pair.into_inner(), context)
         }
         // Properties
         Rule::service_bundle_name_prop => format_property(result, "name", pair, context),
@@ -261,34 +248,22 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // Diagnostics
         // =========================================================================
         // Blocks
-        Rule::diagnostics_data_item => format_block(
-            result,
-            "data_item",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
-        Rule::diagnostics_io_control => format_block(
-            result,
-            "io_control",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
-        Rule::diagnostics_routine => {
-            format_block(result, "routine", pair.into_inner().next().unwrap().into_inner(), context)
+        Rule::diagnostics_data_item => {
+            format_block(result, "data_item", pair.into_inner(), context)
         }
-        Rule::diagnostics_event => {
-            format_block(result, "event", pair.into_inner().next().unwrap().into_inner(), context)
+        Rule::diagnostics_io_control => {
+            format_block(result, "io_control", pair.into_inner(), context)
         }
+        Rule::diagnostics_routine => format_block(result, "routine", pair.into_inner(), context),
+        Rule::diagnostics_event => format_block(result, "event", pair.into_inner(), context),
 
         // Nested Routine Blocks
         Rule::diagnostics_routine_start => {
-            format_block(result, "start", pair.into_inner().next().unwrap().into_inner(), context)
+            format_block(result, "start", pair.into_inner(), context)
         }
-        Rule::diagnostics_routine_stop => {
-            format_block(result, "stop", pair.into_inner().next().unwrap().into_inner(), context)
-        }
+        Rule::diagnostics_routine_stop => format_block(result, "stop", pair.into_inner(), context),
         Rule::diagnostics_routine_result => {
-            format_block(result, "result", pair.into_inner().next().unwrap().into_inner(), context)
+            format_block(result, "result", pair.into_inner(), context)
         }
 
         // Properties
@@ -319,41 +294,24 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // =========================================================================
         // Blocks
         Rule::vhal_vehicle_property => format_block(result, "property", pair.into_inner(), context),
-        Rule::vhal_vehicle_prop_config => format_block(
-            result,
-            "prop_config",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
-        Rule::vhal_vehicle_default_value | Rule::vhal_property_area_default_value => format_block(
-            result,
-            "default_value",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
-        Rule::vhal_vehicle_default_area_config => format_block(
-            result,
-            "default_area_config",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
-        Rule::vhal_vehicle_prop_config_area_configs => format_block(
-            result,
-            "area_configs",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        Rule::vhal_vehicle_prop_config => {
+            format_block(result, "prop_config", pair.into_inner(), context)
+        }
+        Rule::vhal_vehicle_default_value | Rule::vhal_property_area_default_value => {
+            format_block(result, "default_value", pair.into_inner(), context)
+        }
+        Rule::vhal_vehicle_default_area_config => {
+            format_block(result, "default_area_config", pair.into_inner(), context)
+        }
+        Rule::vhal_vehicle_prop_config_area_configs => {
+            format_block(result, "area_configs", pair.into_inner(), context)
+        }
         Rule::vhal_data_source => format_block(result, "source", pair.into_inner(), context),
         Rule::vhal_area_mapping => format_block(result, "area_mapping", pair.into_inner(), context),
-        Rule::vhal_area_mapping_area => {
-            format_block(result, "area", pair.into_inner().next().unwrap().into_inner(), context)
+        Rule::vhal_area_mapping_area => format_block(result, "area", pair.into_inner(), context),
+        Rule::vhal_property_area_config => {
+            format_block(result, "area_config", pair.into_inner(), context)
         }
-        Rule::vhal_property_area_config => format_block(
-            result,
-            "area_config",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
 
         // Properties
         Rule::vhal_data_source_unit_type => format_property(result, "unit_type", pair, context),
@@ -448,28 +406,19 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         Rule::some_ip_offered_interface_sdv_unit_type
         | Rule::some_ip_simple_event_sdv_unit_type
         | Rule::some_ip_event_part_sdv_unit_type
-        | Rule::some_ip_sdv_type_mapping_unit_type => format_block(
-            result,
-            "sdv_unit_type",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        | Rule::some_ip_sdv_type_mapping_unit_type => {
+            format_block(result, "sdv_unit_type", pair.into_inner(), context)
+        }
 
         Rule::some_ip_method | Rule::some_ip_sdv_method => {
             format_block(result, "method", pair.into_inner(), context)
         }
-        Rule::request_payload_mapping => format_block(
-            result,
-            "request_payload_mapping",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
-        Rule::response_payload_mapping => format_block(
-            result,
-            "response_payload_mapping",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        Rule::request_payload_mapping => {
+            format_block(result, "request_payload_mapping", pair.into_inner(), context)
+        }
+        Rule::response_payload_mapping => {
+            format_block(result, "response_payload_mapping", pair.into_inner(), context)
+        }
 
         Rule::some_ip_offered_event => {
             format_block(result, "offered_event", pair.into_inner(), context)
@@ -479,12 +428,9 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         }
         Rule::some_ip_simple_event_type_definition
         | Rule::some_ip_group_event_type_definition
-        | Rule::some_ip_offered_topic_type_definition => format_block(
-            result,
-            "type_definition",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        | Rule::some_ip_offered_topic_type_definition => {
+            format_block(result, "type_definition", pair.into_inner(), context)
+        }
 
         Rule::some_ip_group_event => {
             format_block(result, "group_event", pair.into_inner(), context)
@@ -510,12 +456,9 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         Rule::some_ip_service_unit_mapping => {
             format_block(result, "service_unit_mapping", pair.into_inner(), context)
         }
-        Rule::some_ip_service_unit_mapping_service_unit_id => format_block(
-            result,
-            "service_unit_id",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        Rule::some_ip_service_unit_mapping_service_unit_id => {
+            format_block(result, "service_unit_id", pair.into_inner(), context)
+        }
         Rule::some_ip_fire_and_forget_method => {
             format_block(result, "fire_and_forget_method", pair.into_inner(), context)
         }
@@ -524,19 +467,11 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         Rule::some_ip_string_body => format_children(result, pair.into_inner(), context),
         Rule::some_ip_array_body => format_children(result, pair.into_inner(), context),
         Rule::some_ip_struct_body => format_children(result, pair.into_inner(), context),
-        Rule::some_ip_array_type => format_block(
-            result,
-            "array_type",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        Rule::some_ip_array_type => format_block(result, "array_type", pair.into_inner(), context),
         Rule::some_ip_struct_field => format_block(result, "field", pair.into_inner(), context),
-        Rule::some_ip_struct_field_type => format_block(
-            result,
-            "field_type",
-            pair.into_inner().next().unwrap().into_inner(),
-            context,
-        ),
+        Rule::some_ip_struct_field_type => {
+            format_block(result, "field_type", pair.into_inner(), context)
+        }
 
         // Properties
         Rule::some_ip_service_id
@@ -684,5 +619,64 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
                 format_children(result, pair.into_inner(), context);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pest_parser::{Rule, VsidlParser};
+    use pest::Parser;
+
+    #[test]
+    fn test_format_comments_and_newlines() {
+        let input = r#"# Copyright (C) 2026 The Android Open Source Project
+service_bundle {
+  name: "FullBundleStable"
+
+  server {
+    service: "TireStatus"
+
+    # Use a custom service unit name for the server
+    # service_unit_name: "custom-server-name"
+  }
+
+  # Regular PubSub publisher
+  publisher {
+    message: "TirePressure"
+  }
+}
+"#;
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        // The expected output should have the comments preserved and proper newlines.
+        assert!(formatted.contains("# Copyright (C) 2026 The Android Open Source Project"));
+        assert!(formatted.contains("# Use a custom service unit name for the server"));
+        assert!(formatted.contains("# service_unit_name: \"custom-server-name\""));
+        assert!(formatted.contains("# Regular PubSub publisher"));
+
+        // Check if comments are inside the block
+        let server_block = formatted.split("server {").nth(1).unwrap().split('}').next().unwrap();
+        assert!(server_block.contains("# Use a custom service unit name for the server"));
+
+        // Check for proper spacing before publisher
+        assert!(formatted.contains("\n  # Regular PubSub publisher\n  publisher {"));
+    }
+
+    #[test]
+    fn test_format_trailing_comment_in_block() {
+        let input = r#"# Copyright (C) 2026 The Android Open Source Project
+service_bundle {
+  name: "TestBundle"
+  # End of the bundle definition
+}
+"#;
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        assert!(formatted.contains("# Copyright (C) 2026 The Android Open Source Project"));
+        assert!(formatted.contains("# End of the bundle definition"));
+        assert!(formatted.contains("name: \"TestBundle\"\n\n  # End of the bundle definition\n}"));
     }
 }
