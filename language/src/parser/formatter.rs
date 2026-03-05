@@ -406,9 +406,11 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         }
         Rule::some_ip_offered_interface_sdv_unit_type
         | Rule::some_ip_simple_event_sdv_unit_type
-        | Rule::some_ip_event_part_sdv_unit_type
-        | Rule::some_ip_sdv_type_mapping_unit_type => {
+        | Rule::some_ip_event_part_sdv_unit_type => {
             format_block(result, "sdv_unit_type", pair.into_inner(), context)
+        }
+        Rule::some_ip_sdv_type_mapping_unit_type => {
+            format_block(result, "unit_type", pair.into_inner(), context)
         }
 
         Rule::some_ip_method | Rule::some_ip_sdv_method => {
@@ -475,10 +477,11 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         }
 
         // Properties
-        Rule::some_ip_service_id
-        | Rule::some_ip_sdv_type_mapping_service_id
-        | Rule::some_ip_fire_and_forget_method_service_id => {
+        Rule::some_ip_service_id | Rule::some_ip_sdv_type_mapping_service_id => {
             format_property(result, "someip_service_id", pair, context)
+        }
+        Rule::some_ip_fire_and_forget_method_service_id => {
+            format_property(result, "service_id", pair, context)
         }
         Rule::some_ip_version_major
         | Rule::some_ip_sdv_type_mapping_version_major
@@ -492,10 +495,12 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         }
         Rule::some_ip_sd_behavior => format_property(result, "sd_behavior", pair, context),
         Rule::some_ip_instance_id
-        | Rule::some_ip_multipub_topic_info_someip_instance_id
         | Rule::some_ip_service_unit_mapping_instance_id
         | Rule::some_ip_fire_and_forget_method_instance_id => {
             format_property(result, "instance_id", pair, context)
+        }
+        Rule::some_ip_multipub_topic_info_someip_instance_id => {
+            format_property(result, "someip_instance_id", pair, context)
         }
 
         Rule::some_ip_sdv_service_unit_parameterization_block_key | Rule::some_ip_map_entry_key => {
