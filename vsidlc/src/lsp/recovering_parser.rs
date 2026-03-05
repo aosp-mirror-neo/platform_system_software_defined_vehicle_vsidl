@@ -197,7 +197,9 @@ fn patch_forward(
 ) -> bool {
     let mut patch_start = std::cmp::max(error_pos, *next_pos);
     while patch_start < content.len() {
-        let c = content[patch_start..].chars().next().unwrap();
+        let Some(c) = content[patch_start..].chars().next() else {
+            break;
+        };
         if stop_at_brace && c == '}' {
             return false;
         }
@@ -256,7 +258,9 @@ fn patch_backward(
     // Find first non-whitespace character before patch_end_limit
     let mut patch_end = patch_end_limit;
     while patch_end > 0 {
-        let c = content[..patch_end].chars().next_back().unwrap();
+        let Some(c) = content[..patch_end].chars().next_back() else {
+            break;
+        };
         if c.is_whitespace() {
             patch_end -= c.len_utf8();
         } else {
@@ -268,7 +272,9 @@ fn patch_backward(
         return false;
     }
 
-    let c = content[..patch_end].chars().next_back().unwrap();
+    let Some(c) = content[..patch_end].chars().next_back() else {
+        return false;
+    };
     if stop_at_brace && c == '{' {
         return false;
     }
@@ -276,7 +282,9 @@ fn patch_backward(
     let mut patch_start = patch_end - c.len_utf8();
     if c.is_alphanumeric() || c == '_' {
         while patch_start > 0 {
-            let prev = content[..patch_start].chars().next_back().unwrap();
+            let Some(prev) = content[..patch_start].chars().next_back() else {
+                break;
+            };
             if prev == '\n' || prev == '\r' {
                 break;
             }

@@ -114,8 +114,8 @@ impl ServerState {
 
     pub(crate) fn lock_contexts(
         &self,
-    ) -> Result<std::sync::MutexGuard<'_, HashMap<PathBuf, CatalogContext>>> {
-        self.contexts.lock().map_err(|e| anyhow!("Lock poisoned: {}", e))
+    ) -> std::sync::MutexGuard<'_, HashMap<PathBuf, CatalogContext>> {
+        self.contexts.lock().unwrap_or_else(|e| e.into_inner())
     }
 }
 
@@ -211,7 +211,7 @@ async fn handle_request(state: Arc<ServerState>, req: Request) {
 fn handle_definition(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: GotoDefinitionParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position_params.text_document.uri;
-    let mut ctxs = state.lock_contexts()?;
+    let mut ctxs = state.lock_contexts();
     let sym_table = get_symbol_table_for_file(uri, &state.cli, &mut ctxs);
     go_to_definition(state.cli.clone(), params, sym_table, &state.file_provider)
 }
@@ -219,7 +219,7 @@ fn handle_definition(state: &ServerState, req: Request) -> Result<Option<serde_j
 fn handle_references(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: ReferenceParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position.text_document.uri;
-    let mut ctxs = state.lock_contexts()?;
+    let mut ctxs = state.lock_contexts();
     let sym_table = get_symbol_table_for_file(uri, &state.cli, &mut ctxs);
     find_references(state.cli.clone(), params, sym_table, &state.file_provider)
 }
@@ -227,7 +227,7 @@ fn handle_references(state: &ServerState, req: Request) -> Result<Option<serde_j
 fn handle_hover(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: HoverParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position_params.text_document.uri;
-    let mut ctxs = state.lock_contexts()?;
+    let mut ctxs = state.lock_contexts();
     let sym_table = get_symbol_table_for_file(uri, &state.cli, &mut ctxs);
     hover(state.cli.clone(), &params, sym_table, &state.file_provider)
 }
@@ -258,7 +258,7 @@ fn handle_completion(state: &ServerState, req: Request) -> Result<Option<serde_j
     let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
     let (key, _) = resolve_context(&path, &state.cli);
 
-    let mut contexts = state.lock_contexts()?;
+    let mut contexts = state.lock_contexts();
     let context = contexts.entry(key).or_insert_with(|| CatalogContext {
         cli: state.cli.clone(),
         symbol_table: SymbolTable::default(),
@@ -300,9 +300,9 @@ async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notificat
         }
         "textDocument/didClose" => {
             if let Ok(params) = serde_json::from_value::<DidCloseTextDocumentParams>(not.params) {
-                if let Ok(mut store) = state.file_provider.document_store.lock() {
-                    store.remove(&params.text_document.uri);
-                }
+                let mut store =
+                    state.file_provider.document_store.lock().unwrap_or_else(|e| e.into_inner());
+                store.remove(&params.text_document.uri);
                 if let Ok(path) = params.text_document.uri.to_file_path() {
                     revert_shadow_file(&state, &path);
                 }
@@ -313,19 +313,12 @@ async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notificat
 }
 
 fn update_document_store(state: &ServerState, uri: Url, text: String) {
-    if let Ok(mut store) = state.file_provider.document_store.lock() {
-        store.insert(uri, text);
-    }
+    let mut store = state.file_provider.document_store.lock().unwrap_or_else(|e| e.into_inner());
+    store.insert(uri, text);
 }
 
 fn process_doc_update(state: &ServerState, uri: &Url) {
-    let mut contexts = match state.contexts.lock() {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("CRITICAL: Context lock poisoned: {:?}", e);
-            return;
-        }
-    };
+    let mut contexts = state.contexts.lock().unwrap_or_else(|e| e.into_inner());
     if let Ok(path) = uri.to_file_path() {
         if let Err(e) = process_document_internal(state, &mut contexts, uri, Some(&path)) {
             eprintln!("Error processing document: {:?}", e);
@@ -335,12 +328,11 @@ fn process_doc_update(state: &ServerState, uri: &Url) {
 
 fn revert_shadow_file(state: &ServerState, path: &Path) {
     let (key, _) = resolve_context(path, &state.cli);
-    if let Ok(contexts) = state.contexts.lock() {
-        if let Some(ctx) = contexts.get(&key) {
-            if let Some(shadow) = &ctx.shadow_workspace {
-                if let Err(e) = shadow.revert_file(path) {
-                    eprintln!("Failed to revert file: {:?}", e);
-                }
+    let contexts = state.contexts.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(ctx) = contexts.get(&key) {
+        if let Some(shadow) = &ctx.shadow_workspace {
+            if let Err(e) = shadow.revert_file(path) {
+                eprintln!("Failed to revert file: {:?}", e);
             }
         }
     }
@@ -371,11 +363,14 @@ fn process_document_internal(
             match ShadowWorkspace::new(root_path.clone()) {
                 Ok(ws) => {
                     // Sync all currently open dirty files
-                    if let Ok(store) = state.file_provider.document_store.lock() {
-                        for (uri, content) in store.iter() {
-                            if let Ok(p) = uri.to_file_path() {
-                                let _ = ws.update_file(&p, content);
-                            }
+                    let store = state
+                        .file_provider
+                        .document_store
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
+                    for (uri, content) in store.iter() {
+                        if let Ok(p) = uri.to_file_path() {
+                            let _ = ws.update_file(&p, content);
                         }
                     }
                     context.shadow_workspace = Some(Arc::new(ws));

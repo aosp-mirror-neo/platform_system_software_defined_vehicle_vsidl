@@ -79,12 +79,8 @@ impl ProgressPrinter {
     /// # Parameters
     ///
     /// * `message` - The descriptive message for the current progress step.
-    ///
-    /// # Panics
-    ///
-    /// * If the internal mutex protecting the current step count is poisoned.
     pub fn print_next_progress_step(&self, message: &str) {
-        let mut current = self.current.lock().unwrap();
+        let mut current = self.current.lock().unwrap_or_else(|e| e.into_inner());
         *current += 1;
 
         if self.is_terminal {
@@ -126,7 +122,11 @@ mod tests {
         // We expect ANSI codes for clearing and moving cursor, then "[1/3] Test message 1"
         // but cannot easily capture/assert the eprint! output directly here.
         printer.print_next_progress_step("Test message 1");
-        assert_eq!(*printer.current.lock().unwrap(), 1, "Counter should increment");
+        assert_eq!(
+            *printer.current.lock().unwrap_or_else(|e| e.into_inner()),
+            1,
+            "Counter should increment"
+        );
     }
 
     #[test]
@@ -139,7 +139,11 @@ mod tests {
 
         // We expect ANSI codes, then "[3/3] Final message\n" (with newline)
         printer.print_next_progress_step("Final message");
-        assert_eq!(*printer.current.lock().unwrap(), 3, "Counter should increment to total");
+        assert_eq!(
+            *printer.current.lock().unwrap_or_else(|e| e.into_inner()),
+            3,
+            "Counter should increment to total"
+        );
     }
 
     #[test]
@@ -152,7 +156,11 @@ mod tests {
 
         // We expect "[1/3] Test message 1\n" (with newline)
         printer.print_next_progress_step("Test message 1");
-        assert_eq!(*printer.current.lock().unwrap(), 1, "Counter should increment");
+        assert_eq!(
+            *printer.current.lock().unwrap_or_else(|e| e.into_inner()),
+            1,
+            "Counter should increment"
+        );
     }
 
     #[test]
@@ -164,6 +172,10 @@ mod tests {
         };
         // We expect "[3/3] Final message\n" (with newline)
         printer.print_next_progress_step("Final message");
-        assert_eq!(*printer.current.lock().unwrap(), 3, "Counter should increment to total");
+        assert_eq!(
+            *printer.current.lock().unwrap_or_else(|e| e.into_inner()),
+            3,
+            "Counter should increment to total"
+        );
     }
 }
