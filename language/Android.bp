@@ -51,6 +51,15 @@ rust_defaults {
 }
 
 /* --------------------------------- */
+// FILEGROUPS
+/* --------------------------------- */
+
+filegroup {
+    name: "vsidl_v1_test_vsidl_files",
+    srcs: ["src/tests_vsidl_v1/**/*.vsidl"],
+}
+
+/* --------------------------------- */
 // LIBRARIES
 /* --------------------------------- */
 
@@ -175,7 +184,7 @@ rust_library_host {
     crate_name: "vsidl_v1_test_data",
     crate_root: "src/test_data.rs",
     srcs: [
-        "**/*.vsidl",
+        ":vsidl_v1_test_vsidl_files",
     ],
     rustlibs: [
         "libsdv_vsidl_v1_test_protos_rs",
@@ -192,8 +201,9 @@ rust_library_host {
 
 rust_test_host {
     name: "sdv_core_vsidl_unit_libvsidl_v1_pest_parser_test",
+    crate_root: "src/parser/lib.rs",
     srcs: [
-        "src/parser/lib.rs",
+        ":vsidl_v1_test_vsidl_files",
     ],
     test_options: {
         unit_test: true,
@@ -221,7 +231,7 @@ rust_test_host {
     name: "sdv_core_vsidl_unit_libvsidl_v1_common_test",
     crate_root: "src/lib.rs",
     srcs: [
-        "**/*.vsidl",
+        ":vsidl_v1_test_vsidl_files",
     ],
     test_options: {
         unit_test: true,

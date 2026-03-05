@@ -685,4 +685,17 @@ service_bundle {
         assert!(formatted.contains("# End of the bundle definition"));
         assert!(formatted.contains("name: \"TestBundle\"\n\n  # End of the bundle definition\n}"));
     }
+
+    #[test]
+    fn test_format_all_ast_node_types() {
+        // GIVEN a perfectly formatted file containing every possible AST node
+        let input = include_str!("../tests_vsidl_v1/vsidl/all_ast_node_types.vsidl");
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+
+        // WHEN formatting the file
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        // THEN the input shall match the formatted output
+        assert_eq!(input, formatted, "Input file should already be perfectly formatted");
+    }
 }

@@ -13,55 +13,72 @@
 # limitations under the License.
 # proto-file: //system/software_defined_vehicle/vsidl/language/src/protos/sdv/vsidl/v1/syntax.proto
 # proto-message: VsidlEntry
-
 package: "sdv.test"
 
 service_bundle {
-    name: "AllAstNodeTypes"
+  name: "AllAstNodeTypes"
 
-    publisher { message: "Pressure" channel: "ONE" topic: "one" }
-    publisher { message: "Pressure" channel: "TWO" topic: "two" }
-    subscriber { message: "Pressure" channel: "TWO" topic: "two" }
+  publisher {
+    message: "Pressure"
+    channel: "ONE"
+    topic: "one"
+    capacity: 8
+  }
 
-    server { service: "DummyRpc" }
-    client { service: "DummyRpc" }
+  publisher {
+    message: "Pressure"
+    channel: "TWO"
+    topic: "two"
+    capacity: 8
+  }
 
-    diagnostics_declaration {
-        data_item {
-            id: "data_item_id1"
-            message_name: "sdv.test.diagnostics.DataItemOne"
-            is_writable: true
-        }
+  subscriber {
+    message: "Pressure"
+    channel: "TWO"
+    topic: "two"
+  }
 
-        io_control {
-            id: "io_control_data1"
-            message_name: "sdv.test.diagnostics.IoControllableData"
-        }
+  server {
+    service: "DummyRpc"
+  }
 
-        event {
-            id: "event1"
-            extended_data_message_name: "sdv.test.diagnostics.FirstEventExt"
-            fault_listener_mask: 0x3
-        }
+  client {
+    service: "DummyRpc"
+  }
 
-        routine {
-            id: "routine1"
-            start {
-                request: "sdv.test.diagnostics.RoutineRequestParameter"
-                response: "sdv.test.diagnostics.RoutineResponseParameter"
-            }
-            stop {
-                response: "Temperature"
-            }
-            result {
-                response: "Temperature"
-            }
-        }
+  diagnostics_declaration {
+    data_item {
+      id: "data_item_id1"
+      message_name: "sdv.test.diagnostics.DataItemOne"
+      is_writable: true
     }
-
-    build_cfg {
-        target_name: "my_custom_target_name"
+    io_control {
+      id: "io_control_data1"
+      message_name: "sdv.test.diagnostics.IoControllableData"
     }
+    event {
+      id: "event1"
+      extended_data_message_name: "sdv.test.diagnostics.FirstEventExt"
+      fault_listener_mask: 0x3
+    }
+    routine {
+      id: "routine1"
+      start {
+        request: "sdv.test.diagnostics.RoutineRequestParameter"
+        response: "sdv.test.diagnostics.RoutineResponseParameter"
+      }
+      stop {
+        response: "Temperature"
+      }
+      result {
+        response: "Temperature"
+      }
+    }
+  }
+
+  build_cfg {
+    target_name: "my_custom_target_name"
+  }
 }
 
 some_ip_mapping {
@@ -71,8 +88,14 @@ some_ip_mapping {
     version_minor: 0x0
     instance {
       instance_id: 0x1000
-      sdv_service_unit_parameterization {key: 0 value: "first_service_unit"}
-      sdv_service_unit_parameterization {key: 1 value: "second_service_unit"}
+      sdv_service_unit_parameterization {
+        key: 0
+        value: "first_service_unit"
+      }
+      sdv_service_unit_parameterization {
+        key: 1
+        value: "second_service_unit"
+      }
     }
     instance_impl {
       offered_event {
@@ -89,7 +112,9 @@ some_ip_mapping {
             length_field_size: ZERO
             field {
               field_name: "pressure"
-              field_type { someip_primitive: UINT32 }
+              field_type {
+                someip_primitive: UINT32
+              }
             }
           }
         }
@@ -110,7 +135,9 @@ some_ip_mapping {
             length_field_size: ZERO
             field {
               field_name: "temperature"
-              field_type { someip_primitive: UINT32 }
+              field_type {
+                someip_primitive: UINT32
+              }
             }
           }
         }
@@ -124,11 +151,15 @@ some_ip_mapping {
           type_definition {
             field {
               field_name: "some_bool"
-              field_type { someip_primitive: BOOL }
+              field_type {
+                someip_primitive: BOOL
+              }
             }
             field {
               field_name: "some_int"
-              field_type { someip_primitive: UINT32 }
+              field_type {
+                someip_primitive: UINT32
+              }
             }
           }
           event_part {
@@ -138,7 +169,10 @@ some_ip_mapping {
               type_name: "FirstPart"
             }
             service_unit: 0
-            field_name_mapping {key: "some_bool" value: "sample_boolean"}
+            field_name_mapping {
+              key: "some_bool"
+              value: "sample_boolean"
+            }
           }
           event_part {
             sdv_unit_type {
@@ -147,7 +181,10 @@ some_ip_mapping {
               type_name: "SecondPart"
             }
             service_unit: 1
-            field_name_mapping {key: "some_int" value: "sample_int"}
+            field_name_mapping {
+              key: "some_int"
+              value: "sample_int"
+            }
           }
         }
       }
@@ -166,13 +203,17 @@ some_ip_mapping {
           request_payload_mapping {
             field {
               field_name: "request"
-              field_type { someip_primitive: UINT32 }
+              field_type {
+                someip_primitive: UINT32
+              }
             }
           }
           response_payload_mapping {
             field {
               field_name: "response"
-              field_type { someip_primitive: UINT32 }
+              field_type {
+                someip_primitive: UINT32
+              }
             }
           }
         }
@@ -196,7 +237,9 @@ some_ip_mapping {
         length_field_size: ZERO
         field {
           field_name: "value"
-          field_type { someip_primitive: UINT32 }
+          field_type {
+            someip_primitive: UINT32
+          }
         }
       }
       simple_mapping {
@@ -239,13 +282,17 @@ some_ip_mapping {
         request_payload_mapping {
           field {
             field_name: "request"
-            field_type { someip_primitive: UINT32 }
+            field_type {
+              someip_primitive: UINT32
+            }
           }
         }
         response_payload_mapping {
           field {
             field_name: "response"
-            field_type { someip_primitive: UINT32 }
+            field_type {
+              someip_primitive: UINT32
+            }
           }
         }
       }
@@ -301,10 +348,10 @@ vhal_mapping {
       area_config {
         area_id: 1
         min_float_value: 193.0
-      max_float_value: 300.0
-      supported_enum_values: 1
-      access: WRITE
-      support_variable_update_rate: true
+        max_float_value: 300.0
+        supported_enum_values: 1
+        access: WRITE
+        support_variable_update_rate: true
       }
       default_value {
         float_values: 100.0
@@ -318,8 +365,8 @@ vhal_mapping {
         area_id: 2
       }
       default_value {
-      float_values: 110.0
-    }
+        float_values: 110.0
+      }
     }
     publication_instance: "FRONT_RIGHT"
   }
@@ -328,14 +375,14 @@ vhal_mapping {
       area_config {
         area_id: 4
         min_float_value: 193.0
-      max_float_value: 300.0
-      supported_enum_values: 1
-      access: READ
-      support_variable_update_rate: false
+        max_float_value: 300.0
+        supported_enum_values: 1
+        access: READ
+        support_variable_update_rate: false
       }
       default_value {
-      float_values: 120.0
-    }
+        float_values: 120.0
+      }
     }
     publication_instance: "REAR_LEFT"
   }
@@ -344,14 +391,14 @@ vhal_mapping {
       area_config {
         area_id: 8
         min_float_value: 193.0
-      max_float_value: 300.0
-      supported_enum_values: 1
-      access: READ
-      support_variable_update_rate: false
+        max_float_value: 300.0
+        supported_enum_values: 1
+        access: READ
+        support_variable_update_rate: false
       }
       default_value {
-      float_values: 120.0
-    }
+        float_values: 120.0
+      }
     }
     publication_instance: "REAR_RIGHT"
   }
