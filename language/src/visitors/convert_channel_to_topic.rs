@@ -90,11 +90,13 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
                     (&node.message, false)
                 };
 
+            // LINT.IfChange(set_multipub_topic)
             if is_multipub {
                 // legacy 'MULTIPUB' publishers must always set the same topic, so they can be multiplexed.
                 // This is needed because user can define custom service_unit_names.
-                let topic = format!("{}-{}", message_name, "multipub").to_kebab_case();
+                let topic = format!("{}-{}", message_name, "unique").to_kebab_case();
                 node.topic.push(topic);
+                // LINT.ThenChange(software_defined_vehicle/middleware/transport/rust/interface/src/types.rs:set_multipub_topic)
             } else if !node.service_unit_name.is_empty() {
                 node.topic.push(node.service_unit_name.clone());
             } else {
@@ -121,7 +123,7 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
             if is_multipub {
                 // legacy 'MULTIPUB' publishers must always set the same topic, so they can be multiplexed.
                 // This is needed because user can define custom service_unit_names.
-                let topic = format!("{}-{}", message_name, "multipub").to_kebab_case();
+                let topic = format!("{}-{}", message_name, "unique").to_kebab_case();
                 node.topic.push(topic);
             } else {
                 for channel in &node.channel {
@@ -156,7 +158,7 @@ mod test {
     }
 
     #[test]
-    fn test_should_convert_to_multipub_topic_if_message_is_multipub() {
+    fn test_should_convert_to_unique_topic_if_message_is_multipub() {
         // GIVEN A catalog with a publisher using channel and a MULTI_PUB message
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
@@ -171,13 +173,13 @@ mod test {
         // WHEN executing the visitor
         ConvertChannelToTopic::traverse(&mut catalog);
 
-        // THEN topic field is implicitly created and suffixed with "multipub"
+        // THEN topic field is implicitly created and suffixed with "unique"
         let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
-        assert_eq!(publisher.topic, vec!["sdv-test-speed-multipub"]);
+        assert_eq!(publisher.topic, vec!["sdv-test-speed-unique"]);
     }
 
     #[test]
-    fn test_should_convert_to_multipub_topic_if_message_is_multipub_for_subscriber() {
+    fn test_should_convert_to_unique_topic_if_message_is_multipub_for_subscriber() {
         // GIVEN A catalog with a subscriber using channel and a MULTI_PUB message
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
@@ -192,9 +194,9 @@ mod test {
         // WHEN executing the visitor
         ConvertChannelToTopic::traverse(&mut catalog);
 
-        // THEN topic field is implicitly created and suffixed with "multipub"
+        // THEN topic field is implicitly created and suffixed with "unique"
         let subscriber = &catalog.catalog_vsidl_files[0].1.service_bundle[1].subscriber[0];
-        assert_eq!(subscriber.topic, vec!["sdv-test-speed-multipub"]);
+        assert_eq!(subscriber.topic, vec!["sdv-test-speed-unique"]);
     }
 
     #[test]
