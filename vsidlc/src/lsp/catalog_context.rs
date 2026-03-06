@@ -19,7 +19,7 @@ use crate::lsp::shadow_workspace::ShadowWorkspace;
 use crate::Cli;
 use std::collections::HashMap;
 use std::sync::Arc;
-use vsidl_v1_parser::{Catalog, SymbolTable};
+use vsidl_v1_parser::{Catalog, Finding, SymbolTable};
 
 /// Holds the state for a single catalog context.
 #[derive(Clone)]
@@ -34,4 +34,6 @@ pub(crate) struct CatalogContext {
     pub active_findings: HashMap<String, FileDiagnostics>,
     /// Shadow workspace for handling dirty files with external parsers.
     pub shadow_workspace: Option<Arc<ShadowWorkspace>>,
+    /// PERSISTENT recovered syntax errors per file.
+    pub recovered_syntax_errors: HashMap<String, Vec<Finding>>,
 }

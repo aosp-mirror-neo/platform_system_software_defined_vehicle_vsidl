@@ -19,6 +19,7 @@ pub(crate) mod diagnostics;
 pub(crate) mod file_diagnostics;
 pub(crate) mod handlers;
 pub(crate) mod lsp_file_provider;
+pub(crate) mod recovering_parser;
 pub(crate) mod server;
 pub(crate) use server::lsp_server_start;
 pub(crate) mod shadow_workspace;

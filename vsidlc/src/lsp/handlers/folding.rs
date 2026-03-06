@@ -15,18 +15,17 @@
  */
 
 use crate::lsp::lsp_file_provider::LspFileProvider;
+use crate::lsp::recovering_parser::parse_vsidl_with_recovery;
 use crate::lsp::token_builder::keyword_length;
-use anyhow::anyhow;
 use lsp_types::Url;
 use lsp_types::{FoldingRange, FoldingRangeKind, FoldingRangeParams};
-use pest::Parser;
 use std::cmp::max;
 use vsidl_v1_parser::converter::{
     convert_to_client, convert_to_publisher, convert_to_server, convert_to_service_bundle,
     convert_to_subscriber,
 };
 use vsidl_v1_parser::file_provider::FileProvider;
-use vsidl_v1_parser::pest_parser::{Rule, VsidlParser};
+use vsidl_v1_parser::pest_parser::Rule;
 
 pub(crate) fn folding_ranges(
     params: FoldingRangeParams,
@@ -36,13 +35,15 @@ pub(crate) fn folding_ranges(
     let uri: &Url = &params.text_document.uri;
     let url = Url::parse(uri.as_ref())?;
     let path = url.to_file_path().map_err(|_| anyhow::anyhow!("invalid file path"))?;
-    let content = file_provider.read_to_string(&path)?;
-    let parsed = VsidlParser::parse(Rule::vsidl_file, &content)?
-        .next()
-        .ok_or_else(|| anyhow!("Empty parse result"))?;
+    let mut content = file_provider.read_to_string(&path)?;
+    let (result, _) = parse_vsidl_with_recovery(&mut content);
 
     let mut ranges: Vec<FoldingRange> = Vec::new();
-    extract_ranges(&mut ranges, parsed);
+    if let Ok(mut pairs) = result {
+        if let Some(parsed) = pairs.next() {
+            extract_ranges(&mut ranges, parsed);
+        }
+    }
 
     let result = serde_json::to_value(&ranges)?;
     Ok(Some(result))
