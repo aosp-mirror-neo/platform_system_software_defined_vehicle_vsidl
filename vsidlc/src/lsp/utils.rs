@@ -25,7 +25,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use vsidl_v1::syntax::Span;
 use vsidl_v1_parser::file_provider::FileProvider;
-use vsidl_v1_parser::{offset_to_line_col, Catalog, SymbolTable};
+use vsidl_v1_parser::{offset_to_line_col, Catalog, SymbolTable, TargetApi};
 
 /// Resolves the symbol table for a given URI.
 ///
@@ -108,18 +108,19 @@ pub(crate) fn location_from_span<F: FileProvider>(
 /// # Returns
 /// * `(PathBuf, Cli)` - A tuple containing the resolved catalog root path and the modified CLI configuration.
 pub(crate) fn resolve_context(path: &Path, default_cli: &Cli) -> (PathBuf, Cli) {
-    let (mut root, deps) = if let Some((root, deps)) = find_catalog_configuration(path) {
-        eprintln!("Using catalog configuration from {:?} for file {:?}", root, path);
-        (root, deps)
-    } else {
-        let root = if path.is_dir() {
-            path.to_path_buf()
+    let (mut root, deps, target_api) =
+        if let Some((root, deps, target_api)) = find_catalog_configuration(path) {
+            eprintln!("Using catalog configuration from {:?} for file {:?}", root, path);
+            (root, deps, target_api)
         } else {
-            path.parent().map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from("."))
+            let root = if path.is_dir() {
+                path.to_path_buf()
+            } else {
+                path.parent().map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from("."))
+            };
+            eprintln!("No CATALOG_UPDATE found. Using file directory as catalog root: {:?}", root);
+            (root, default_cli.dependency_catalog_path.clone(), TargetApi::Pdk29)
         };
-        eprintln!("No CATALOG_UPDATE found. Using file directory as catalog root: {:?}", root);
-        (root, default_cli.dependency_catalog_path.clone())
-    };
 
     // Try to canonicalize root to avoid redundant contexts
     if let Ok(canonical) = std::fs::canonicalize(&root) {
@@ -129,25 +130,31 @@ pub(crate) fn resolve_context(path: &Path, default_cli: &Cli) -> (PathBuf, Cli) 
     let mut c = default_cli.clone();
     c.catalog_path = Some(root.clone());
     c.dependency_catalog_path = deps;
+    c.target_api =
+        if target_api == TargetApi::Latest { "latest".to_string() } else { "pdk29".to_string() };
     (root, c)
 }
 
 /// Searches for "CATALOG_UPDATE" in the current directory and parent directories.
-/// If found, parses it to extract the catalog root (the directory containing CATALOG_UPDATE)
-/// and any dependency catalog paths defined within it.
+/// If found, parses it to extract the catalog root (the directory containing CATALOG_UPDATE),
+/// any dependency catalog paths defined within it, and the TargetApi used by the Catalog.
 ///
 /// # Arguments
 /// * `start_path` - The path to start searching from (usually the active file).
 ///
 /// # Returns
-/// * `Some((catalog_root, dependency_paths))` if found.
+/// * `Some((catalog_root, dependency_paths, TargetApi))` if found.
 /// * `None` if not found.
-fn find_catalog_configuration(start_path: &Path) -> Option<(PathBuf, Vec<PathBuf>)> {
+fn find_catalog_configuration(start_path: &Path) -> Option<(PathBuf, Vec<PathBuf>, TargetApi)> {
     let mut current_dir = if start_path.is_dir() {
         start_path.to_path_buf()
     } else {
         start_path.parent().map(|p| p.to_path_buf())?
     };
+
+    // \s+ matches one or more whitespace characters
+    // Clippy requires this to be outside the loop
+    let re = regex::Regex::new(r"--target-api\s+latest").unwrap();
 
     loop {
         let candidate = current_dir.join("CATALOG_UPDATE");
@@ -171,7 +178,13 @@ fn find_catalog_configuration(start_path: &Path) -> Option<(PathBuf, Vec<PathBuf
                 .into_iter()
                 .map(|dep| current_dir.join(dep))
                 .collect();
-            return Some((current_dir, dependency_paths));
+            let uses_latest =
+                catalog_update.vsidlc_gen_args.as_deref().is_some_and(|s| re.is_match(s));
+            return Some((
+                current_dir,
+                dependency_paths,
+                if uses_latest { TargetApi::Latest } else { TargetApi::Pdk29 },
+            ));
         }
 
         if let Some(parent) = current_dir.parent() {
