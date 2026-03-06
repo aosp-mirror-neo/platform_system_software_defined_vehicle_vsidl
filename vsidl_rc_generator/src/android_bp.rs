@@ -41,6 +41,7 @@ struct Context<'a> {
     dependencies: Vec<String>,
     package_contains_some_ip: bool,
     documentation_lines: &'a Vec<String>,
+    target_api: &'a str,
 }
 
 const ANDROID_BUILD_TOP: &str = "ANDROID_BUILD_TOP";
@@ -108,6 +109,7 @@ impl<'a> Context<'a> {
         dependencies: &'a [&std::path::Path],
         package_contains_some_ip: bool,
         documentation_lines: &'a Vec<String>,
+        target_api: &'a str,
     ) -> Self {
         Context {
             year: crate::generator::get_current_year(),
@@ -126,6 +128,7 @@ impl<'a> Context<'a> {
             dependencies: dependencies.iter().cloned().map(resolve_build_path).collect::<Vec<_>>(),
             package_contains_some_ip,
             documentation_lines,
+            target_api,
         }
     }
 }
@@ -140,6 +143,7 @@ pub(super) fn render(
     dependencies: &[&std::path::Path],
     package_contains_some_ip: bool,
     documentation_lines: &Vec<String>,
+    target_api: &str,
     tt_engine: &TinyTemplate,
 ) -> String {
     tt_engine
@@ -154,6 +158,7 @@ pub(super) fn render(
                 dependencies,
                 package_contains_some_ip,
                 documentation_lines,
+                target_api,
             ),
         )
         .unwrap()
