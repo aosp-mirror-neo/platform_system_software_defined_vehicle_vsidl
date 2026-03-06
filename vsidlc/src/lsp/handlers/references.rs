@@ -49,33 +49,136 @@ pub(crate) fn find_references<F: FileProvider>(
         if let Some(symbol_under_cursor) = symbol_table.get_symbol_at_location(&path, offset) {
             match symbol_under_cursor {
                 SymbolKind::Publisher(publisher) => {
-                    let subscribers = publisher.message(symbol_table).subscribers(symbol_table);
-                    for subscriber in subscribers {
+                    if symbol_table.uses_pdk29() {
+                        let channels = publisher.channels(symbol_table);
+                        let subscribers =
+                            publisher.publication(symbol_table).subscribers(symbol_table);
+                        for subscriber in subscribers {
+                            if subscriber
+                                .channels(symbol_table)
+                                .iter()
+                                .any(|c| channels.contains(c))
+                            {
+                                if let Some(span) = subscriber.span() {
+                                    references_spans.push(span);
+                                }
+                            }
+                        }
+                    } else {
+                        let topics = publisher.topic_symbols(symbol_table);
+                        for topic in topics {
+                            if let Some(span) = topic.span() {
+                                references_spans.push(span);
+                            }
+                            for subscriber in topic.subscribers(symbol_table) {
+                                if let Some(span) = subscriber.span() {
+                                    references_spans.push(span);
+                                }
+                            }
+                            for other_publisher in topic.publishers(symbol_table) {
+                                if other_publisher.id() != publisher.id() {
+                                    if let Some(span) = other_publisher.span() {
+                                        references_spans.push(span);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                SymbolKind::Subscriber(subscriber) => {
+                    if symbol_table.uses_pdk29() {
+                        let channels = subscriber.channels(symbol_table);
+                        let publishers =
+                            subscriber.publication(symbol_table).publishers(symbol_table);
+                        for publisher in publishers {
+                            if publisher.channels(symbol_table).iter().any(|c| channels.contains(c))
+                            {
+                                if let Some(span) = publisher.span() {
+                                    references_spans.push(span);
+                                }
+                            }
+                        }
+                    } else {
+                        let topics = subscriber.topic_symbols(symbol_table);
+                        for topic in topics {
+                            if let Some(span) = topic.span() {
+                                references_spans.push(span);
+                            }
+                            for publisher in topic.publishers(symbol_table) {
+                                if let Some(span) = publisher.span() {
+                                    references_spans.push(span);
+                                }
+                            }
+                            for other_subscriber in topic.subscribers(symbol_table) {
+                                if other_subscriber.id() != subscriber.id() {
+                                    if let Some(span) = other_subscriber.span() {
+                                        references_spans.push(span);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                SymbolKind::RpcServer(server) => {
+                    if symbol_table.uses_pdk29() {
+                        let clients = server.service(symbol_table).clients(symbol_table);
+                        for client in clients {
+                            if let Some(span) = client.span() {
+                                references_spans.push(span);
+                            }
+                        }
+                    } else {
+                        let channel_name = server.ast_node.channel.clone();
+                        let clients = server.service(symbol_table).clients(symbol_table);
+                        for client in clients {
+                            if client.ast_node.channel == channel_name {
+                                if let Some(span) = client.span() {
+                                    references_spans.push(span);
+                                }
+                            }
+                        }
+                    }
+                }
+                SymbolKind::RpcClient(client) => {
+                    if symbol_table.uses_pdk29() {
+                        let servers = client.service(symbol_table).servers(symbol_table);
+                        for server in servers {
+                            if let Some(span) = server.span() {
+                                references_spans.push(span);
+                            }
+                        }
+                    } else {
+                        let channel_name = client.ast_node.channel.clone();
+                        let servers = client.service(symbol_table).servers(symbol_table);
+                        for server in servers {
+                            if server.ast_node.channel == channel_name {
+                                if let Some(span) = server.span() {
+                                    references_spans.push(span);
+                                }
+                            }
+                        }
+                    }
+                }
+                SymbolKind::Topic(topic) => {
+                    for publisher in topic.publishers(symbol_table) {
+                        if let Some(span) = publisher.span() {
+                            references_spans.push(span);
+                        }
+                    }
+                    for subscriber in topic.subscribers(symbol_table) {
                         if let Some(span) = subscriber.span() {
                             references_spans.push(span);
                         }
                     }
                 }
-                SymbolKind::Subscriber(subscriber) => {
-                    let publishers = subscriber.message(symbol_table).publishers(symbol_table);
-                    for publisher in publishers {
-                        if let Some(span) = publisher.span() {
-                            references_spans.push(span);
-                        }
-                    }
-                }
-                SymbolKind::RpcServer(server) => {
-                    let clients = server.service(symbol_table).clients(symbol_table);
-                    for client in clients {
-                        if let Some(span) = client.span() {
-                            references_spans.push(span);
-                        }
-                    }
-                }
-                SymbolKind::RpcClient(client) => {
-                    let servers = client.service(symbol_table).servers(symbol_table);
-                    for server in servers {
+                SymbolKind::RpcChannel(channel) => {
+                    for server in channel.servers(symbol_table) {
                         if let Some(span) = server.span() {
+                            references_spans.push(span);
+                        }
+                    }
+                    for client in channel.clients(symbol_table) {
+                        if let Some(span) = client.span() {
                             references_spans.push(span);
                         }
                     }
@@ -154,6 +257,50 @@ mod tests {
         assert_eq!(location.range.start.character, 2);
         assert_eq!(location.range.end.line, 9);
         assert_eq!(location.range.end.character, 3);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_references_topic() -> anyhow::Result<()> {
+        // GIVEN A valid catalog with Latest target API
+        let temp_dir = setup_test_catalog();
+        let mut cli = setup_mock_cli(&temp_dir);
+        cli.target_api = "latest".to_string();
+        let common_cli = VsidlcCommonCli::from(cli.clone());
+
+        let document_store = Arc::new(Mutex::new(HashMap::new()));
+        let file_provider = LspFileProvider {
+            document_store: Arc::clone(&document_store),
+            file_hashes: Arc::new(Mutex::new(HashMap::new())),
+            disk_fallback: DiskFileProvider,
+        };
+        let symbol_table = common_cli.create_symbol_table(None)?;
+
+        // GIVEN cursor position on "front-right" in subscriber topic
+        let position = Position { line: 14, character: 15 };
+
+        let vsidl_file_path = temp_dir.path().join("test.vsidl");
+
+        // WHEN requesting references of the symbol under the cursor
+        let params = ReferenceParams {
+            text_document_position: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier {
+                    uri: Url::from_file_path(vsidl_file_path.clone()).unwrap(),
+                },
+                position,
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+            context: ReferenceContext { include_declaration: false },
+        };
+        let result = find_references(cli.clone(), params, &symbol_table, &file_provider)?;
+
+        // THEN publisher and subscriber for "front-right" are found
+        assert!(result.is_some());
+        let locations: Vec<Location> = serde_json::from_value(result.unwrap())?;
+        // We expect 2 locations: the publisher and the subscriber
+        assert_eq!(locations.len(), 2);
 
         Ok(())
     }
