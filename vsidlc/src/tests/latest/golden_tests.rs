@@ -79,6 +79,10 @@ fn run_golden_test(
         "--purge",
         "--rust-formatter",
         "pretty-please",
+        "--android-bp-formatter",
+        "none",
+        "--textproto-formatter",
+        "none",
         "--target-api",
         "latest",
     ];

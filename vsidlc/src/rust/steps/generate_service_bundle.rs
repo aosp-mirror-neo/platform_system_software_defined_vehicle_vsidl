@@ -52,8 +52,7 @@ impl GeneratorStepExecution for GenerateServiceBundle {
 
         service_bundle_symbols.par_iter().try_for_each(
             |&service_bundle: &&ServiceBundleSymbol| -> anyhow::Result<()> {
-                let mut rust_formatter =
-                    formatter::get_rust_formatter(state.cli.rust_formatter.clone());
+                let mut rust_formatter = formatter::get_rust_formatter(state.cli.rust_formatter);
 
                 // The following scope makes sure the mutex is unlocked as soon as printing is finished
                 {
@@ -79,6 +78,8 @@ impl GeneratorStepExecution for GenerateServiceBundle {
                         &service_bundle::render(service_bundle, symbol_table, cli, handlebars),
                         &output_dir.join("service_bundle.rs"),
                         rust_formatter.as_mut(),
+                        state.cli.android_bp_formatter,
+                        state.cli.textproto_formatter,
                     )?;
                 }
 
@@ -92,6 +93,8 @@ impl GeneratorStepExecution for GenerateServiceBundle {
                             main_genrule_name.clone(),
                         ),
                         &output_dir.join("Android.bp"),
+                        state.cli.android_bp_formatter,
+                        state.cli.textproto_formatter,
                     )?;
                 }
                 Ok(())

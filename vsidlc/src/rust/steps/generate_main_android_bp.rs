@@ -63,7 +63,12 @@ impl GeneratorStepExecution for GenerateMainAndroidBp {
             .unwrap_or_default()
             .join(GENERATED_RS_SOURCES_DIR)
             .join("Android.bp");
-        write_bytes_to_file(&bp_content, &bp_path)?;
+        write_bytes_to_file(
+            &bp_content,
+            &bp_path,
+            state.cli.android_bp_formatter,
+            state.cli.textproto_formatter,
+        )?;
         state.main_genrule_name = Some(main_genrule_name);
         Ok(())
     }

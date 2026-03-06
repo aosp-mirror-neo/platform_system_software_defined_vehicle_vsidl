@@ -17,7 +17,7 @@
 
 /// module responsible to define command line argument of vsidlc
 mod cli;
-pub use cli::Cli;
+pub use cli::{AndroidBpFormat, Cli, TextprotoFormat};
 /// module responsible for LSP server
 mod lsp;
 /// module responsible to generated rust code

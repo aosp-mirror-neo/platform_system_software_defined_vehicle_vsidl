@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use crate::Cli;
+use crate::{AndroidBpFormat, Cli, TextprotoFormat};
 use ::formatter::Format;
 use std::fs::File;
 use std::io::Write;
@@ -101,6 +101,8 @@ pub(crate) fn setup_mock_cli(temp_dir: &TempDir) -> Cli {
         no_pest: false,
         dependency_catalog_path: Vec::new(),
         rust_formatter: Format::None,
+        android_bp_formatter: AndroidBpFormat::None,
+        textproto_formatter: TextprotoFormat::None,
         explain: None,
         genrule: false,
         apex: false,
