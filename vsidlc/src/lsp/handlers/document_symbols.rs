@@ -190,7 +190,7 @@ mod tests {
         let document_store = Arc::new(Mutex::new(HashMap::new()));
         document_store
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .insert(Url::from_file_path(&vsidl_file_path).unwrap(), vsidl_content.clone());
         let file_provider = LspFileProvider {
             document_store,

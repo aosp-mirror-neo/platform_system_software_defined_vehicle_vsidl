@@ -41,13 +41,11 @@ pub(crate) fn calculate_hash<T: Hash>(t: &T) -> u64 {
 
 impl LspFileProvider {
     pub(crate) fn get_hash(&self, path: &Path) -> Option<u64> {
-        self.file_hashes.lock().ok().and_then(|h| h.get(path).cloned())
+        self.file_hashes.lock().unwrap_or_else(|e| e.into_inner()).get(path).cloned()
     }
 
     pub(crate) fn update_hash(&self, path: PathBuf, hash: u64) {
-        if let Ok(mut hashes) = self.file_hashes.lock() {
-            hashes.insert(path, hash);
-        }
+        self.file_hashes.lock().unwrap_or_else(|e| e.into_inner()).insert(path, hash);
     }
 }
 
@@ -56,7 +54,7 @@ impl FileProvider for LspFileProvider {
         let url = Url::from_file_path(path)
             .map_err(|_| anyhow!("Failed to convert path to URL: {:?}", path))?;
         let content = {
-            let store = self.document_store.lock().map_err(|e| anyhow!("Lock poisoned: {}", e))?;
+            let store = self.document_store.lock().unwrap_or_else(|e| e.into_inner());
             store.get(&url).cloned()
         };
         let content = if let Some(content) = content {
@@ -71,7 +69,7 @@ impl FileProvider for LspFileProvider {
         // We do not update the hash if it already exists to ensure
         // changes are acknowledged intentionally, e.g., by re-validating
         // the catalog.
-        let mut hashes = self.file_hashes.lock().unwrap();
+        let mut hashes = self.file_hashes.lock().unwrap_or_else(|e| e.into_inner());
         if !hashes.contains_key(path) {
             let hash = calculate_hash(&content);
             hashes.insert(path.to_path_buf(), hash);

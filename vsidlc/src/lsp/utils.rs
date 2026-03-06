@@ -154,7 +154,7 @@ fn find_catalog_configuration(start_path: &Path) -> Option<(PathBuf, Vec<PathBuf
 
     // \s+ matches one or more whitespace characters
     // Clippy requires this to be outside the loop
-    let re = regex::Regex::new(r"--target-api\s+latest").unwrap();
+    let re = regex::Regex::new(r"--target-api\s+latest").expect("Regex should be valid");
 
     loop {
         let candidate = current_dir.join("CATALOG_UPDATE");

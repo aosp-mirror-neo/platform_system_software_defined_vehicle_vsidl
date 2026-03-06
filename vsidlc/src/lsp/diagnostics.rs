@@ -134,11 +134,13 @@ impl<'a> DiagnosticSession<'a> {
         let catalog_populated = !self.context.catalog.catalog_vsidl_files.is_empty();
         let is_proto = changed_path.and_then(|p| p.extension()).is_some_and(|e| e == "proto");
 
-        if catalog_populated && changed_path.is_some() && !is_proto {
-            if let Some(success) = self.try_update_incremental(changed_path.unwrap())? {
-                return Ok(success);
+        if catalog_populated && !is_proto {
+            if let Some(path) = changed_path {
+                if let Some(success) = self.try_update_incremental(path)? {
+                    return Ok(success);
+                }
+                eprintln!("Incremental updated failed, falling back to full disk scan");
             }
-            eprintln!("Incremental updated failed, falling back to full disk scan");
         }
 
         self.perform_full_update()
@@ -371,7 +373,9 @@ impl<'a> DiagnosticSession<'a> {
         let symbols_ready = self.context.symbol_table.get_state() != SymbolTableState::NotCreated;
 
         if is_incremental && symbols_ready {
-            let raw_path = changed_path.unwrap();
+            let Some(raw_path) = changed_path else {
+                return self.prepare_symbols(None, false);
+            };
             let abs_path = self.provider.canonicalize(raw_path).unwrap_or(raw_path.to_path_buf());
 
             // Determine relative path for symbol restriction
