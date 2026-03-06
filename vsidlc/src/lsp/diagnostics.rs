@@ -394,12 +394,20 @@ impl<'a> DiagnosticSession<'a> {
                 self.context.symbol_table.clone(),
                 self.provider,
             );
+            creator.set_target_api(match self.cli.target_api.as_str() {
+                "latest" => vsidl_v1_parser::TargetApi::Latest,
+                _ => vsidl_v1_parser::TargetApi::Pdk29,
+            });
             creator.restrict_to_file(path_to_use);
             self.context.catalog.accept(&mut creator);
             creator
         } else {
             eprintln!("Full symbol table build");
             let mut creator = SymbolTableCreator::with_file_provider(self.provider);
+            creator.set_target_api(match self.cli.target_api.as_str() {
+                "latest" => vsidl_v1_parser::TargetApi::Latest,
+                _ => vsidl_v1_parser::TargetApi::Pdk29,
+            });
             self.context.catalog.accept(&mut creator);
             creator
         }
@@ -415,14 +423,10 @@ impl<'a> DiagnosticSession<'a> {
             checker.enable_warnings();
         }
 
-        use vsidl_v1_parser::visitors::detect_input_version::DetectInputVersion;
-        let mut version_detector = DetectInputVersion::default();
-        self.context.catalog.accept(&mut version_detector);
-        if version_detector.uses_pdk29 {
-            checker.enable_pdk29();
-        } else {
-            checker.enable_latest();
-        }
+        match self.cli.target_api.as_str() {
+            "latest" => checker.enable_latest(),
+            _ => checker.enable_pdk29(),
+        };
 
         // 1. AST Check
         KeywordConverter::traverse(&mut self.context.catalog);
@@ -448,6 +452,7 @@ impl<'a> DiagnosticSession<'a> {
 
         if checker.error_count() == 0 {
             self.context.symbol_table = linker.into_symbol_table();
+            self.context.last_valid_symbol_table = Some(self.context.symbol_table.clone());
         }
 
         FindingsByStage { ast, unlinked, linked: Some(checker.findings()) }

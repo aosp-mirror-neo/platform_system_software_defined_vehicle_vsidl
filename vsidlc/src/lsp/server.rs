@@ -16,6 +16,7 @@
 
 use crate::lsp::catalog_context::CatalogContext;
 use crate::lsp::diagnostics::validate_and_publish_diagnostics;
+use crate::lsp::handlers::completion::on_completion;
 use crate::lsp::handlers::definition::go_to_definition;
 use crate::lsp::handlers::document_symbols::handle_document_symbols;
 use crate::lsp::handlers::folding::folding_ranges;
@@ -75,6 +76,11 @@ pub(crate) fn lsp_server_start(cli: Cli) -> anyhow::Result<()> {
         )),
         folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
         document_symbol_provider: Some(OneOf::Left(true)),
+        completion_provider: Some(CompletionOptions {
+            resolve_provider: Some(false),
+            trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
+            ..CompletionOptions::default()
+        }),
         ..ServerCapabilities::default()
     })?;
 
@@ -90,10 +96,10 @@ pub(crate) fn lsp_server_start(cli: Cli) -> anyhow::Result<()> {
 }
 
 pub(crate) struct ServerState {
-    cli: Cli,
-    connection: Arc<Connection>,
-    contexts: Arc<Mutex<HashMap<PathBuf, CatalogContext>>>,
-    file_provider: LspFileProvider,
+    pub(crate) cli: Cli,
+    pub(crate) connection: Arc<Connection>,
+    pub(crate) contexts: Arc<Mutex<HashMap<PathBuf, CatalogContext>>>,
+    pub(crate) file_provider: LspFileProvider,
 }
 
 impl ServerState {
@@ -159,6 +165,7 @@ async fn handle_request(state: Arc<ServerState>, req: Request) {
     let method = req.method.clone();
     let id = req.id.clone();
     let result = match method.as_str() {
+        "textDocument/completion" => handle_completion(&state, req),
         "textDocument/definition" => handle_definition(&state, req),
         "textDocument/references" => handle_references(&state, req),
         "textDocument/hover" => handle_hover(&state, req),
@@ -243,6 +250,27 @@ fn handle_folding_range(state: &ServerState, req: Request) -> Result<Option<serd
 fn handle_document_symbol(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: DocumentSymbolParams = serde_json::from_value(req.params)?;
     handle_document_symbols(params, &state.file_provider)
+}
+
+fn handle_completion(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
+    let params: CompletionParams = serde_json::from_value(req.params)?;
+    let uri = &params.text_document_position.text_document.uri;
+    let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
+    let (key, _) = resolve_context(&path, &state.cli);
+
+    let mut contexts = state.lock_contexts()?;
+    let context = contexts.entry(key).or_insert_with(|| CatalogContext {
+        cli: state.cli.clone(),
+        symbol_table: SymbolTable::default(),
+        catalog: Catalog::new(),
+        last_valid_symbol_table: None,
+        recovered_syntax_errors: HashMap::new(),
+        active_findings: HashMap::new(),
+        shadow_workspace: None,
+    });
+
+    let response = on_completion(&state.file_provider, context, params)?;
+    Ok(serde_json::to_value(response).ok())
 }
 
 async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notification) {
@@ -331,6 +359,7 @@ fn process_document_internal(
         cli: cli_template,
         symbol_table: SymbolTable::default(),
         catalog: Catalog::new(),
+        last_valid_symbol_table: None,
         active_findings: HashMap::new(),
         shadow_workspace: None,
         recovered_syntax_errors: HashMap::new(),

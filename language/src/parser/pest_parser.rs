@@ -155,10 +155,10 @@ identifier_str = ${ "\"" ~ IDENTIFIER ~ "\"" }
 
 // The following rules just tag existing rules to make them distinguishable
 // The Pest Tag feature is not enabled in Android
-message_str = ${ qualified_name_str }
+message_str = ${ string }
 topic_str = ${ string }
 channel_str = ${ string }
-service_str = ${ qualified_name_str }
+service_str = ${ string }
 target_name_str = ${ string }
 skip_codegen = ${ boolean }
 register_reflection_metadata = ${ boolean }

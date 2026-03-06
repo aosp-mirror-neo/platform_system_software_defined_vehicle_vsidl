@@ -134,7 +134,7 @@ mod tests {
         let symbol_table = common_cli.create_symbol_table(None)?;
 
         // GIVEN cursor position on "TirePressure" in subscriber
-        let position = Position { line: 10, character: 20 };
+        let position = Position { line: 12, character: 20 };
 
         let vsidl_file_path = temp_dir.path().join("test.vsidl");
 
