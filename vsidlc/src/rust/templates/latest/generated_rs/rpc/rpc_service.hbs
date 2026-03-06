@@ -45,6 +45,10 @@ impl sdv::mw::clientlib::ToTypeName for dyn Interface {
 /// Client for {{service_name}} RPC service
 pub struct Client(Box<dyn sdv::mw::ClientTransport>);
 
+impl std::fmt::Debug for Client {
+    {{> rpc/impl_debug/fmt}}
+}
+
 #[allow(non_snake_case, missing_docs)]
 impl Client {
     {{#each methods}}

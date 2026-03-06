@@ -54,6 +54,45 @@ pub mod subscriber {
         pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];
     }
 }
+/// Provides access to RPC clients available to the service bundle
+pub mod client {
+    /// A strongly-typed handle identifying a specific RPC client channel.
+    ///
+    /// This struct carries the channel information required to connect to the service
+    /// and enforces type safety by associating the channel with its specific `ClientType`.
+    /// It is intended for use with middleware functions like `create_rpc_client`.
+    #[derive(Debug)]
+    pub struct Descriptor<T> {
+        channel: &'static str,
+        _phantom: std::marker::PhantomData<T>,
+    }
+    impl<T> sdv::mw::clientlib::rpc_descriptor::client::Descriptor for Descriptor<T>
+    where
+        Descriptor<T>: sdv::mw::clientlib::ToTypeName,
+        T: std::fmt::Debug + sdv::mw::RpcClient,
+    {
+        type ClientType = T;
+        fn get_channel(&self) -> &str {
+            self.channel
+        }
+    }
+    impl Descriptor<sdv_golden_rpc_tire_status_rpc::Client> {
+        /// sdv-golden-rpc-tire-status channel
+        pub const SDV_GOLDEN_RPC_TIRE_STATUS: &Self = &Self {
+            channel: "sdv-golden-rpc-tire-status",
+            _phantom: std::marker::PhantomData,
+        };
+    }
+    impl sdv::mw::clientlib::ToTypeName
+    for Descriptor<sdv_golden_rpc_tire_status_rpc::Client> {
+        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
+            sdv::mw::TypeName::builder()
+                .package_name("sdv.golden.rpc")
+                .type_name("TireStatus")
+                .build()
+        }
+    }
+}
 /// Service bundle
 pub struct GoldenClientOrSubscriberOnly {
     _comms: std::sync::Arc<dyn sdv::mw::Communicate>,

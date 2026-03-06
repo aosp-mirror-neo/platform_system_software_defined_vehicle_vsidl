@@ -43,7 +43,11 @@ pub async fn build(self) -> sdv::status::SdvResult<{{../service_bundle_name}}> {
         service.servers.push(
             sdv::mw::clientlib::create_server::<dyn {{this.unit_type.crate_name}}::Interface>(
                 comms.as_ref(),
+                {{#if this.channel}}
+                "{{this.channel}}".to_string(),
+                {{else}}
                 "{{this.user_defined_name}}".to_string(),
+                {{/if}}
                 {{this.unit_type.crate_name}}::internal::get_rpc_method_map(server.clone()),
                 server.init_server_options(),
             )

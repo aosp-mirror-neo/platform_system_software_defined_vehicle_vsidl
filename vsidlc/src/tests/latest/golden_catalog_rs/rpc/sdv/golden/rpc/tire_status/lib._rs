@@ -200,6 +200,11 @@ impl sdv::mw::clientlib::ToTypeName for dyn Interface {
 }
 /// Client for TireStatus RPC service
 pub struct Client(Box<dyn sdv::mw::ClientTransport>);
+impl std::fmt::Debug for Client {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Client").field(&"Box<dyn sdv::mw::ClientTransport>").finish()
+    }
+}
 #[allow(non_snake_case, missing_docs)]
 impl Client {
     /// Calls the `GetTirePressure` unary RPC method.
