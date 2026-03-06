@@ -30,7 +30,6 @@ const BOLD: &str = "\x1b[1m";
 const RESET: &str = "\x1b[0m";
 
 /// VSIDL (Vehicle Service Interface Description Language) compiler Command Line Interface
-#[derive(Default)]
 pub struct VsidlcCommonCli {
     /// Path to catalog directory, i.e., the directory that contains .vsidl files
     pub catalog_path: PathBuf,
@@ -59,6 +58,22 @@ pub struct VsidlcCommonCli {
     /// Optional. Specifies the target API level for code generation.
     /// Examples: "latest", "pdk29".
     pub target_api: String,
+}
+
+impl Default for VsidlcCommonCli {
+    fn default() -> Self {
+        Self {
+            catalog_path: PathBuf::default(),
+            output_path: PathBuf::default(),
+            purge: false,
+            ignore: Vec::new(),
+            no_pest: false,
+            dependency_catalog_path: Vec::new(),
+            no_warn: false,
+            genrule: false,
+            target_api: "pdk29".to_string(),
+        }
+    }
 }
 
 impl VsidlcCommonCli {
@@ -413,6 +428,6 @@ sdv_service_bundle {
         assert!(!cli.purge);
         assert_eq!(cli.ignore, Vec::<String>::default());
         assert_eq!(cli.dependency_catalog_path, Vec::<PathBuf>::default());
-        assert_eq!(cli.target_api, String::default());
+        assert_eq!(cli.target_api, "pdk29".to_string());
     }
 }
