@@ -15,18 +15,17 @@
  */
 
 use crate::lsp::lsp_file_provider::LspFileProvider;
+use crate::lsp::recovering_parser::parse_vsidl_with_recovery;
 use crate::lsp::token_builder::keyword_length;
-use anyhow::anyhow;
 use lsp_types::Url;
 use lsp_types::{FoldingRange, FoldingRangeKind, FoldingRangeParams};
-use pest::Parser;
 use std::cmp::max;
 use vsidl_v1_parser::converter::{
     convert_to_client, convert_to_publisher, convert_to_server, convert_to_service_bundle,
     convert_to_subscriber,
 };
 use vsidl_v1_parser::file_provider::FileProvider;
-use vsidl_v1_parser::pest_parser::{Rule, VsidlParser};
+use vsidl_v1_parser::pest_parser::Rule;
 
 pub(crate) fn folding_ranges(
     params: FoldingRangeParams,
@@ -36,13 +35,15 @@ pub(crate) fn folding_ranges(
     let uri: &Url = &params.text_document.uri;
     let url = Url::parse(uri.as_ref())?;
     let path = url.to_file_path().map_err(|_| anyhow::anyhow!("invalid file path"))?;
-    let content = file_provider.read_to_string(&path)?;
-    let parsed = VsidlParser::parse(Rule::vsidl_file, &content)?
-        .next()
-        .ok_or_else(|| anyhow!("Empty parse result"))?;
+    let mut content = file_provider.read_to_string(&path)?;
+    let (result, _) = parse_vsidl_with_recovery(&mut content);
 
     let mut ranges: Vec<FoldingRange> = Vec::new();
-    extract_ranges(&mut ranges, parsed);
+    if let Ok(mut pairs) = result {
+        if let Some(parsed) = pairs.next() {
+            extract_ranges(&mut ranges, parsed);
+        }
+    }
 
     let result = serde_json::to_value(&ranges)?;
     Ok(Some(result))
@@ -201,7 +202,7 @@ mod tests {
         let document_store = Arc::new(Mutex::new(HashMap::new()));
         document_store
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .insert(Url::from_file_path(&vsidl_file_path).unwrap(), vsidl_content.clone());
         let file_provider = LspFileProvider {
             document_store,
@@ -229,7 +230,7 @@ mod tests {
             FoldingRange {
                 start_line: 1,
                 start_character: Some(15),
-                end_line: 13,
+                end_line: 16,
                 end_character: Some(1),
                 kind: Some(Region),
                 collapsed_text: Some("{ Manager }".to_string()),
@@ -237,15 +238,15 @@ mod tests {
             FoldingRange {
                 start_line: 4,
                 start_character: Some(12),
-                end_line: 7,
+                end_line: 9,
                 end_character: Some(3),
                 kind: Some(Region),
                 collapsed_text: Some("{ TirePressure }".to_string()),
             },
             FoldingRange {
-                start_line: 9,
+                start_line: 11,
                 start_character: Some(13),
-                end_line: 12,
+                end_line: 15,
                 end_character: Some(3),
                 kind: Some(Region),
                 collapsed_text: Some("{ TirePressure }".to_string()),

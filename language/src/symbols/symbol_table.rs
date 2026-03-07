@@ -555,6 +555,11 @@ impl SymbolTable {
         self.scopes.values().collect()
     }
 
+    /// Returns the global scope that is the root of all scopes
+    pub fn get_global_scope(&self) -> &Scope {
+        self.scopes.get(&GLOBAL_SCOPE_ID).unwrap()
+    }
+
     /// Returns the symbol at the given location.
     pub fn get_symbol_at_location(&self, file_path: &Path, offset: usize) -> Option<&SymbolKind> {
         // 1. O(1) average time to find the file's BTreeMap
@@ -769,6 +774,9 @@ impl SymbolTable {
                 SymbolKind::ProtoRpcService(s) => {
                     s.servers.retain(|id| !deleted_ids.contains(id));
                     s.clients.retain(|id| !deleted_ids.contains(id));
+                }
+                SymbolKind::ProtoMessage(s) => {
+                    s.topics.retain(|id| !deleted_ids.contains(id));
                 }
                 _ => {}
             }

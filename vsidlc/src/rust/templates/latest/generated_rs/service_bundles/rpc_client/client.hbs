@@ -1,0 +1,38 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+/// Provides access to RPC clients available to the service bundle
+pub mod client {
+
+    /// A strongly-typed handle identifying a specific RPC client channel.
+    ///
+    /// This struct carries the channel information required to connect to the service
+    /// and enforces type safety by associating the channel with its specific `ClientType`.
+    /// It is intended for use with middleware functions like `create_rpc_client`.
+    #[derive(Debug)]
+    pub struct Descriptor<T> {
+      channel: &'static str,
+      _phantom: std::marker::PhantomData<T>,
+    }
+
+    {{> service_bundles/rpc_client/impl_descriptor_trait/impl}}
+
+    {{#each rpc_client_groups}}
+    {{> service_bundles/rpc_client/impl_descriptor/impl}}
+
+    {{> service_bundles/rpc_client/impl_to_type_name/impl}}
+    {{/each}}
+
+}

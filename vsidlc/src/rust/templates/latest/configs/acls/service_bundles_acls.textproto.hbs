@@ -95,4 +95,13 @@ service_units {
     name: "{{this.name}}"
     acl_names: "{{this.acl_name}}"
 }
+
+# TODO: b/490087524 remove channel name when permission is done
+{{#if this.channel_name}}
+# {{this.channel_name}} RPC service unit (channel name).
+service_units {
+    name: "{{this.channel_name}}"
+    acl_names: "{{this.acl_name}}"
+}
+{{/if}}
 {{/each}}

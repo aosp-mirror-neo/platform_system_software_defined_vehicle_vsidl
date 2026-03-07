@@ -16,6 +16,7 @@
 
 use crate::lsp::catalog_context::CatalogContext;
 use crate::lsp::diagnostics::validate_and_publish_diagnostics;
+use crate::lsp::handlers::completion::on_completion;
 use crate::lsp::handlers::definition::go_to_definition;
 use crate::lsp::handlers::document_symbols::handle_document_symbols;
 use crate::lsp::handlers::folding::folding_ranges;
@@ -75,6 +76,11 @@ pub(crate) fn lsp_server_start(cli: Cli) -> anyhow::Result<()> {
         )),
         folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
         document_symbol_provider: Some(OneOf::Left(true)),
+        completion_provider: Some(CompletionOptions {
+            resolve_provider: Some(false),
+            trigger_characters: Some(vec![":".to_string(), " ".to_string()]),
+            ..CompletionOptions::default()
+        }),
         ..ServerCapabilities::default()
     })?;
 
@@ -90,10 +96,10 @@ pub(crate) fn lsp_server_start(cli: Cli) -> anyhow::Result<()> {
 }
 
 pub(crate) struct ServerState {
-    cli: Cli,
-    connection: Arc<Connection>,
-    contexts: Arc<Mutex<HashMap<PathBuf, CatalogContext>>>,
-    file_provider: LspFileProvider,
+    pub(crate) cli: Cli,
+    pub(crate) connection: Arc<Connection>,
+    pub(crate) contexts: Arc<Mutex<HashMap<PathBuf, CatalogContext>>>,
+    pub(crate) file_provider: LspFileProvider,
 }
 
 impl ServerState {
@@ -108,8 +114,8 @@ impl ServerState {
 
     pub(crate) fn lock_contexts(
         &self,
-    ) -> Result<std::sync::MutexGuard<'_, HashMap<PathBuf, CatalogContext>>> {
-        self.contexts.lock().map_err(|e| anyhow!("Lock poisoned: {}", e))
+    ) -> std::sync::MutexGuard<'_, HashMap<PathBuf, CatalogContext>> {
+        self.contexts.lock().unwrap_or_else(|e| e.into_inner())
     }
 }
 
@@ -159,6 +165,7 @@ async fn handle_request(state: Arc<ServerState>, req: Request) {
     let method = req.method.clone();
     let id = req.id.clone();
     let result = match method.as_str() {
+        "textDocument/completion" => handle_completion(&state, req),
         "textDocument/definition" => handle_definition(&state, req),
         "textDocument/references" => handle_references(&state, req),
         "textDocument/hover" => handle_hover(&state, req),
@@ -204,7 +211,7 @@ async fn handle_request(state: Arc<ServerState>, req: Request) {
 fn handle_definition(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: GotoDefinitionParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position_params.text_document.uri;
-    let mut ctxs = state.lock_contexts()?;
+    let mut ctxs = state.lock_contexts();
     let sym_table = get_symbol_table_for_file(uri, &state.cli, &mut ctxs);
     go_to_definition(state.cli.clone(), params, sym_table, &state.file_provider)
 }
@@ -212,7 +219,7 @@ fn handle_definition(state: &ServerState, req: Request) -> Result<Option<serde_j
 fn handle_references(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: ReferenceParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position.text_document.uri;
-    let mut ctxs = state.lock_contexts()?;
+    let mut ctxs = state.lock_contexts();
     let sym_table = get_symbol_table_for_file(uri, &state.cli, &mut ctxs);
     find_references(state.cli.clone(), params, sym_table, &state.file_provider)
 }
@@ -220,7 +227,7 @@ fn handle_references(state: &ServerState, req: Request) -> Result<Option<serde_j
 fn handle_hover(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: HoverParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position_params.text_document.uri;
-    let mut ctxs = state.lock_contexts()?;
+    let mut ctxs = state.lock_contexts();
     let sym_table = get_symbol_table_for_file(uri, &state.cli, &mut ctxs);
     hover(state.cli.clone(), &params, sym_table, &state.file_provider)
 }
@@ -243,6 +250,27 @@ fn handle_folding_range(state: &ServerState, req: Request) -> Result<Option<serd
 fn handle_document_symbol(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
     let params: DocumentSymbolParams = serde_json::from_value(req.params)?;
     handle_document_symbols(params, &state.file_provider)
+}
+
+fn handle_completion(state: &ServerState, req: Request) -> Result<Option<serde_json::Value>> {
+    let params: CompletionParams = serde_json::from_value(req.params)?;
+    let uri = &params.text_document_position.text_document.uri;
+    let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
+    let (key, _) = resolve_context(&path, &state.cli);
+
+    let mut contexts = state.lock_contexts();
+    let context = contexts.entry(key).or_insert_with(|| CatalogContext {
+        cli: state.cli.clone(),
+        symbol_table: SymbolTable::default(),
+        catalog: Catalog::new(),
+        last_valid_symbol_table: None,
+        recovered_syntax_errors: HashMap::new(),
+        active_findings: HashMap::new(),
+        shadow_workspace: None,
+    });
+
+    let response = on_completion(&state.file_provider, context, params)?;
+    Ok(serde_json::to_value(response).ok())
 }
 
 async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notification) {
@@ -272,9 +300,9 @@ async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notificat
         }
         "textDocument/didClose" => {
             if let Ok(params) = serde_json::from_value::<DidCloseTextDocumentParams>(not.params) {
-                if let Ok(mut store) = state.file_provider.document_store.lock() {
-                    store.remove(&params.text_document.uri);
-                }
+                let mut store =
+                    state.file_provider.document_store.lock().unwrap_or_else(|e| e.into_inner());
+                store.remove(&params.text_document.uri);
                 if let Ok(path) = params.text_document.uri.to_file_path() {
                     revert_shadow_file(&state, &path);
                 }
@@ -285,29 +313,26 @@ async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notificat
 }
 
 fn update_document_store(state: &ServerState, uri: Url, text: String) {
-    if let Ok(mut store) = state.file_provider.document_store.lock() {
-        store.insert(uri, text);
-    }
+    let mut store = state.file_provider.document_store.lock().unwrap_or_else(|e| e.into_inner());
+    store.insert(uri, text);
 }
 
 fn process_doc_update(state: &ServerState, uri: &Url) {
-    if let Ok(mut contexts) = state.contexts.lock() {
-        if let Ok(path) = uri.to_file_path() {
-            if let Err(e) = process_document_internal(state, &mut contexts, uri, Some(&path)) {
-                eprintln!("Error processing document: {:?}", e);
-            }
+    let mut contexts = state.contexts.lock().unwrap_or_else(|e| e.into_inner());
+    if let Ok(path) = uri.to_file_path() {
+        if let Err(e) = process_document_internal(state, &mut contexts, uri, Some(&path)) {
+            eprintln!("Error processing document: {:?}", e);
         }
     }
 }
 
 fn revert_shadow_file(state: &ServerState, path: &Path) {
     let (key, _) = resolve_context(path, &state.cli);
-    if let Ok(contexts) = state.contexts.lock() {
-        if let Some(ctx) = contexts.get(&key) {
-            if let Some(shadow) = &ctx.shadow_workspace {
-                if let Err(e) = shadow.revert_file(path) {
-                    eprintln!("Failed to revert file: {:?}", e);
-                }
+    let contexts = state.contexts.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(ctx) = contexts.get(&key) {
+        if let Some(shadow) = &ctx.shadow_workspace {
+            if let Err(e) = shadow.revert_file(path) {
+                eprintln!("Failed to revert file: {:?}", e);
             }
         }
     }
@@ -326,8 +351,10 @@ fn process_document_internal(
         cli: cli_template,
         symbol_table: SymbolTable::default(),
         catalog: Catalog::new(),
+        last_valid_symbol_table: None,
         active_findings: HashMap::new(),
         shadow_workspace: None,
+        recovered_syntax_errors: HashMap::new(),
     });
 
     // Initialize shadow workspace if needed
@@ -336,11 +363,14 @@ fn process_document_internal(
             match ShadowWorkspace::new(root_path.clone()) {
                 Ok(ws) => {
                     // Sync all currently open dirty files
-                    if let Ok(store) = state.file_provider.document_store.lock() {
-                        for (uri, content) in store.iter() {
-                            if let Ok(p) = uri.to_file_path() {
-                                let _ = ws.update_file(&p, content);
-                            }
+                    let store = state
+                        .file_provider
+                        .document_store
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner());
+                    for (uri, content) in store.iter() {
+                        if let Ok(p) = uri.to_file_path() {
+                            let _ = ws.update_file(&p, content);
                         }
                     }
                     context.shadow_workspace = Some(Arc::new(ws));
@@ -354,15 +384,16 @@ fn process_document_internal(
     if let Ok(content) = state.file_provider.read_to_string(&path) {
         let current_hash = calculate_hash(&content);
 
-        // Update the current file in shadow workspace
-        if let Some(ws) = &context.shadow_workspace {
-            if let Err(e) = ws.update_file(&path, &content) {
-                eprintln!("Failed to update shadow file: {:?}", e);
-            }
-        }
-
         if current_hash != last_hash || path.extension() == Some(std::ffi::OsStr::new("proto")) {
             eprintln!("File content changed, reprocessing incrementally: {:?}", path);
+
+            // Update the current file in shadow workspace
+            if let Some(ws) = &context.shadow_workspace {
+                if let Err(e) = ws.update_file(&path, &content) {
+                    eprintln!("Failed to update shadow file: {:?}", e);
+                }
+            }
+
             state.file_provider.update_hash(path.to_path_buf(), current_hash);
             validate_and_publish_diagnostics(
                 context,

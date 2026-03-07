@@ -155,10 +155,10 @@ identifier_str = ${ "\"" ~ IDENTIFIER ~ "\"" }
 
 // The following rules just tag existing rules to make them distinguishable
 // The Pest Tag feature is not enabled in Android
-message_str = ${ qualified_name_str }
+message_str = ${ string }
 topic_str = ${ string }
 channel_str = ${ string }
-service_str = ${ qualified_name_str }
+service_str = ${ string }
 target_name_str = ${ string }
 skip_codegen = ${ boolean }
 register_reflection_metadata = ${ boolean }
@@ -652,3 +652,94 @@ some_ip_struct_field_field_name = { "field_name" ~ ":" ~ string }
 some_ip_struct_field_type = { "field_type" ~ "{" ~ some_ip_type ~ "}" }
 "##]
 pub struct VsidlParser;
+
+use pest::error::Error as PestError;
+use pest::error::ErrorVariant;
+use std::collections::BTreeSet;
+
+impl Rule {
+    /// Returns a human-friendly name for the rule, used in error messages.
+    pub fn to_friendly_string(&self) -> &str {
+        match self {
+            Rule::EOI => "end of file",
+            Rule::NEWLINE => "newline",
+            Rule::COMMENT => "comment",
+            Rule::IDENTIFIER => "identifier",
+
+            Rule::vsidl_file => "VSIDL content",
+            Rule::package => "'package:'",
+            Rule::sdv_service_bundle => "'service_bundle {'",
+            Rule::some_ip_mapping => "'some_ip_mapping {'",
+            Rule::vhal_mapping => "'vhal_mapping {'",
+            Rule::extension => "'[...] {'",
+
+            Rule::service_bundle_name_prop => "'name:'",
+            Rule::publisher => "'publisher {'",
+            Rule::subscriber => "'subscriber {'",
+            Rule::server => "'server {'",
+            Rule::client => "'client {'",
+            Rule::unit_type => "'unit_type {'",
+            Rule::build_configuration => "'build_cfg {'",
+
+            Rule::publisher_message | Rule::subscriber_message => "'message:' or 'type:'",
+            Rule::publisher_channel
+            | Rule::subscriber_channel
+            | Rule::server_channel
+            | Rule::client_channel => "'channel:' or 'instance:'",
+            Rule::publisher_capacity => "'capacity:'",
+            Rule::publisher_service_unit_name | Rule::server_service_unit_name => {
+                "'service_unit_name:'"
+            }
+
+            Rule::server_interface | Rule::client_interface => "'interface:' or 'service:'",
+            Rule::unit_type_type => "'type:'",
+            Rule::build_configuration_target_name => "'target_name:'",
+            Rule::build_configuration_skip_codegen => "'skip_codegen:'",
+
+            Rule::qualified_name_str | Rule::message_str | Rule::service_str => {
+                "quoted name (e.g. \"pkg.Type\")"
+            }
+            Rule::service_bundle_name_str => "quoted name (e.g. \"MyBundle\")",
+            Rule::service_unit_name_str => "quoted name (e.g. \"my-unit\")",
+            Rule::identifier_str | Rule::channel_str => "quoted identifier (e.g. \"instance1\")",
+            Rule::target_name_str => "quoted target name",
+
+            Rule::string => "string literal",
+            Rule::boolean => "boolean (true/false)",
+            Rule::number => "number",
+            Rule::integer => "integer",
+            Rule::float => "float",
+
+            _ => "valid VSIDL construct",
+        }
+    }
+}
+
+/// Formats a Pest error into a human-friendly single-line string.
+pub fn format_pest_error(e: &PestError<Rule>) -> String {
+    match &e.variant {
+        ErrorVariant::ParsingError { positives, .. } => {
+            let friendly_positives: BTreeSet<&str> =
+                positives.iter().map(|r| r.to_friendly_string()).collect();
+
+            if friendly_positives.is_empty() {
+                return e.to_string();
+            }
+
+            let mut v: Vec<_> = friendly_positives.into_iter().collect();
+            // Filter out generic "valid VSIDL construct" if we have more specific ones
+            if v.len() > 1 {
+                v.retain(|&s| s != "valid VSIDL construct");
+            }
+
+            let expected = if v.len() > 1 {
+                let last = v.pop().unwrap();
+                format!("{} or {}", v.join(", "), last)
+            } else {
+                v[0].to_string()
+            };
+            format!("Expected {}", expected)
+        }
+        ErrorVariant::CustomError { message } => message.clone(),
+    }
+}

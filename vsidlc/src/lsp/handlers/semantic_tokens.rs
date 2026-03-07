@@ -15,11 +15,10 @@
  */
 
 use crate::lsp::lsp_file_provider::LspFileProvider;
+use crate::lsp::recovering_parser::parse_vsidl_with_recovery;
 use crate::lsp::token_builder::TokenBuilder;
 use lsp_types::SemanticTokensParams;
-use pest::Parser;
 use vsidl_v1_parser::file_provider::FileProvider;
-use vsidl_v1_parser::pest_parser::{Rule, VsidlParser};
 
 pub(crate) fn semantic_tokens(
     params: SemanticTokensParams,
@@ -29,10 +28,11 @@ pub(crate) fn semantic_tokens(
 
     let uri = params.text_document.uri;
     if let Ok(path) = uri.to_file_path() {
-        let content = file_provider.read_to_string(&path).unwrap_or_default();
+        let mut content = file_provider.read_to_string(&path).unwrap_or_default();
 
         let mut token_builder = TokenBuilder::new();
-        if let Ok(pairs) = VsidlParser::parse(Rule::vsidl_file, &content) {
+        let (result, _) = parse_vsidl_with_recovery(&mut content);
+        if let Ok(pairs) = result {
             for pair in pairs {
                 token_builder.push(pair);
             }
@@ -68,7 +68,7 @@ mod tests {
         let document_store = Arc::new(Mutex::new(HashMap::new()));
         document_store
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .insert(Url::from_file_path(&vsidl_file_path).unwrap(), vsidl_content.clone());
         let file_provider = LspFileProvider {
             document_store,

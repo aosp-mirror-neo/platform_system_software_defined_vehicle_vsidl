@@ -43,6 +43,10 @@ use crate::diagnostics::Diagnostics;
 {{> service_bundles/subscriber/subscriber}}
 {{/if}}
 
+{{#if is_client}}
+{{> service_bundles/rpc_client/client}}
+{{/if}}
+
 {{> service_bundles/struct}}
 
 impl {{service_bundle_name}} {

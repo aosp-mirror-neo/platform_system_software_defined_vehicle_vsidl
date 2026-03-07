@@ -15,16 +15,12 @@
  */
 
 use crate::lsp::lsp_file_provider::LspFileProvider;
+use crate::lsp::recovering_parser::parse_vsidl_with_recovery;
 use crate::lsp::utils::convert_line_col_1_based_to_0_based_index;
 use anyhow::anyhow;
 use lsp_types::{DocumentSymbol, DocumentSymbolParams, Position, Range, SymbolKind, Url};
-use pest::Parser;
-use vsidl_v1_parser::converter::{
-    convert_to_client, convert_to_publisher, convert_to_server, convert_to_service_bundle,
-    convert_to_subscriber,
-};
 use vsidl_v1_parser::file_provider::FileProvider;
-use vsidl_v1_parser::pest_parser::{Rule, VsidlParser};
+use vsidl_v1_parser::pest_parser::Rule;
 
 pub(crate) fn handle_document_symbols(
     params: DocumentSymbolParams,
@@ -34,10 +30,11 @@ pub(crate) fn handle_document_symbols(
 
     let uri: &Url = &params.text_document.uri;
     let path = uri.to_file_path().map_err(|_| anyhow!("invalid file path"))?;
-    let content = file_provider.read_to_string(&path).unwrap_or_default();
+    let mut content = file_provider.read_to_string(&path).unwrap_or_default();
 
     let mut symbols: Vec<DocumentSymbol> = Vec::new();
-    if let Ok(mut pairs) = VsidlParser::parse(Rule::vsidl_file, &content) {
+    let (result, _) = parse_vsidl_with_recovery(&mut content);
+    if let Ok(mut pairs) = result {
         if let Some(pair) = pairs.next() {
             for inner_pair in pair.into_inner() {
                 extract_document_symbols(&mut symbols, inner_pair);
@@ -86,11 +83,67 @@ fn extract_document_symbols(symbols: &mut Vec<DocumentSymbol>, pair: pest::itera
                 .next()
                 .map(|p| p.as_str().trim_matches('"').to_string())
                 .unwrap_or_else(|| "package".to_string()),
-            Rule::sdv_service_bundle => convert_to_service_bundle(pair.clone(), "").name,
-            Rule::publisher => convert_to_publisher(pair.clone(), "").message,
-            Rule::subscriber => convert_to_subscriber(pair.clone(), "").message,
-            Rule::server => convert_to_server(pair.clone(), "").service,
-            Rule::client => convert_to_client(pair.clone(), "").service,
+            Rule::sdv_service_bundle => pair
+                .clone()
+                .into_inner()
+                .find(|p| p.as_rule() == Rule::service_bundle_body)
+                .and_then(|body| {
+                    body.into_inner().find(|p| p.as_rule() == Rule::service_bundle_name_prop)
+                })
+                .and_then(|prop| prop.into_inner().next())
+                .map(|v| v.as_str().trim_matches('"').to_string())
+                .unwrap_or_else(|| "unnamed bundle".to_string()),
+            Rule::publisher | Rule::subscriber => {
+                let rule = pair.as_rule();
+                let body_rule = if rule == Rule::publisher {
+                    Rule::publisher_body
+                } else {
+                    Rule::subscriber_body
+                };
+                let msg_rule = if rule == Rule::publisher {
+                    Rule::publisher_message
+                } else {
+                    Rule::subscriber_message
+                };
+
+                pair.clone()
+                    .into_inner()
+                    .find(|p| p.as_rule() == body_rule)
+                    .and_then(|body| body.into_inner().find(|p| p.as_rule() == msg_rule))
+                    .and_then(|msg| msg.into_inner().next())
+                    .map(|v| v.as_str().trim_matches('"').to_string())
+                    .unwrap_or_else(|| {
+                        if rule == Rule::publisher {
+                            "publisher".to_string()
+                        } else {
+                            "subscriber".to_string()
+                        }
+                    })
+            }
+            Rule::server | Rule::client => {
+                let rule = pair.as_rule();
+                let body_rule =
+                    if rule == Rule::server { Rule::server_body } else { Rule::client_body };
+                let iface_rule = if rule == Rule::server {
+                    Rule::server_interface
+                } else {
+                    Rule::client_interface
+                };
+
+                pair.clone()
+                    .into_inner()
+                    .find(|p| p.as_rule() == body_rule)
+                    .and_then(|body| body.into_inner().find(|p| p.as_rule() == iface_rule))
+                    .and_then(|iface| iface.into_inner().next())
+                    .map(|v| v.as_str().trim_matches('"').to_string())
+                    .unwrap_or_else(|| {
+                        if rule == Rule::server {
+                            "server".to_string()
+                        } else {
+                            "client".to_string()
+                        }
+                    })
+            }
             _ => format!("{:?}", pair.as_rule()),
         };
 
@@ -137,7 +190,7 @@ mod tests {
         let document_store = Arc::new(Mutex::new(HashMap::new()));
         document_store
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .insert(Url::from_file_path(&vsidl_file_path).unwrap(), vsidl_content.clone());
         let file_provider = LspFileProvider {
             document_store,

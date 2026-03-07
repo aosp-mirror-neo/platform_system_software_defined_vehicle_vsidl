@@ -34,11 +34,14 @@ service_bundle {
   publisher {
     message: "com.sdv.tm.TirePressure"
     channel: "FRONT_RIGHT"
+    topic: "front-right"
+    capacity: 8
   }
 
   subscriber {
     message: "TirePressure"
     channel: "FRONT_RIGHT"
+    topic: "front-right"
   }
 }"##;
     vsidl_file.write_all(file_content.as_bytes()).expect("Failed to write to vsidl file");
@@ -69,7 +72,9 @@ message TirePressure {
   };
 
   uint32 pressure = 1;
-}"##;
+}
+
+service TestService { rpc Do(google.protobuf.Empty) returns (google.protobuf.Empty); }"##;
     proto_file.write_all(file_content.as_bytes()).expect("Failed to write to proto file");
 
     // Create a dummy Android.bp file
@@ -101,7 +106,7 @@ pub(crate) fn setup_mock_cli(temp_dir: &TempDir) -> Cli {
         apex: false,
         services: false,
         target_api: "pdk29".to_string(),
-        no_warn: false,
+        no_warn: true,
         lsp: true,
     }
 }
