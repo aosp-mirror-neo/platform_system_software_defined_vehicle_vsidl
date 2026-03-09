@@ -405,7 +405,7 @@ mod test {
 
     fn fqin(test_name: &str) -> ServiceFqin {
         let fqin_str =
-            format!("ignored:com.google.sdv.vsidl_provider_unit_test.{test_name}.Client/ignored");
+            format!("ignored:com.android.sdv.vsidl_provider_unit_test.{test_name}.Client/ignored");
         ServiceFqin::from_str(&fqin_str).expect("Valid ServiceFqin")
     }
 
