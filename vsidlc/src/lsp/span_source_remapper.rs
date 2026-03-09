@@ -79,6 +79,8 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.span);
         self.update_message_field_span(&mut node.message_span);
         self.update_spans(&mut node.channel_span);
+        self.update_spans(&mut node.topic_span);
+        self.update_message_field_span(&mut node.capacity_span);
         self.update_message_field_span(&mut node.service_unit_name_span);
     }
 
@@ -86,17 +88,20 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.span);
         self.update_message_field_span(&mut node.message_span);
         self.update_spans(&mut node.channel_span);
+        self.update_spans(&mut node.topic_span);
     }
 
     fn start_visit_server(&mut self, node: &mut Server) {
         self.update_message_field_span(&mut node.span);
         self.update_message_field_span(&mut node.service_span);
+        self.update_message_field_span(&mut node.channel_span);
         self.update_message_field_span(&mut node.service_unit_name_span);
     }
 
     fn start_visit_client(&mut self, node: &mut Client) {
         self.update_message_field_span(&mut node.span);
         self.update_message_field_span(&mut node.service_span);
+        self.update_message_field_span(&mut node.channel_span);
     }
 
     fn start_visit_build_cfg(&mut self, node: &mut BuildConfiguration) {
