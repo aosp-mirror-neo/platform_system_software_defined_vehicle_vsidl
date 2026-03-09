@@ -21,7 +21,7 @@ acls {name : "Internal" include : "com.android.sdv.vsidl_provider.Agent"}
 
 acls {
   name : "VsidlProviderClients"
-  include : "com.sdv.someip.SomeIpBroker"
+  include : "com.android.sdv.someip.SomeIpBroker"
   include : "com.sdv.oem.diagnostics.DiagnosticsAgent"
   include : "com.google.sdv.telemetry.TelemetryService"
 
