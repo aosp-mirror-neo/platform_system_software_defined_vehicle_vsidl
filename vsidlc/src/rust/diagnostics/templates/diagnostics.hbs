@@ -89,6 +89,7 @@ impl Diagnostics {
 
     /// Create DataItemService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `data_item_server_builder` instead")]
     pub fn create_data_item_server(
         {{#each data_items}}
         {{this.handler_name}}: Arc<dyn {{this.handler_type}}<{{this.message}}>>,
@@ -96,15 +97,22 @@ impl Diagnostics {
     ) -> Arc<dyn DataItemService> {
         Arc::new(DataItemServer {
                 {{#each data_items}}
-                {{this.handler_name}},
+                {{this.handler_name}}: Some({{this.handler_name}}),
                 {{/each}}
         })
     }
+
+    /// Returns a builder for `DataItemServer`.
+    pub fn data_item_server_builder() -> DataItemServerBuilder {
+        DataItemServerBuilder::default()
+    }
 {{/if}}
+
 {{#if routine_controls}}
 
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `routine_control_server_builder` instead")]
     pub fn create_routine_control_server(
         {{#each routine_controls}}
         {{this.handler_name}}: Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>,
@@ -112,15 +120,21 @@ impl Diagnostics {
     ) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
                 {{#each routine_controls}}
-                {{this.handler_name}},
+                {{this.handler_name}}: Some({{this.handler_name}}),
                 {{/each}}
         })
+    }
+
+    /// Returns a builder for `RoutineControlServer`.
+    pub fn routine_control_server_builder() -> RoutineControlServerBuilder {
+        RoutineControlServerBuilder::default()
     }
 {{/if}}
 {{#if io_controls}}
 
     /// Create IoControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `io_control_server_builder` instead")]
     pub fn create_io_control_server(
         {{#each io_controls}}
         {{this.handler_name}}: Arc<dyn IoControlHandler<{{this.message}}>>,
@@ -128,15 +142,21 @@ impl Diagnostics {
     ) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
                 {{#each io_controls}}
-                {{this.handler_name}},
+                {{this.handler_name}}: Some({{this.handler_name}}),
                 {{/each}}
         })
+    }
+
+    /// Returns a builder for `IoControlServer`.
+    pub fn io_control_server_builder() -> IoControlServerBuilder {
+        IoControlServerBuilder::default()
     }
 {{/if}}
 {{#if has_fault_listeners}}
 
     /// Create FaultListenerSrvice implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(since = "2.0.0", note = "please use `fault_listener_server_builder` instead")]
     pub fn create_fault_listener_server(
         {{#each events}}
         {{#if this.has_fault_listener}}
@@ -152,8 +172,131 @@ impl Diagnostics {
                 {{/each}}
         })
     }
+
+    /// Returns a builder for `FaultListenerServer`.
+    pub fn fault_listener_server_builder() -> FaultListenerServerBuilder {
+        FaultListenerServerBuilder::default()
+    }
+
 {{/if}}
 }
+
+{{#if data_items}}
+/// Builder for `DataItemServer`.
+#[derive(Default)]
+pub struct DataItemServerBuilder {
+{{#each data_items}}
+    {{this.handler_name}}: Option<Arc<dyn {{this.handler_type}}<{{this.message}}>>>,
+{{/each}}
+}
+
+impl DataItemServerBuilder {
+{{#each data_items}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.handler_name}}(mut self, handler: Arc<dyn {{this.handler_type}}<{{this.message}}>>) -> Self {
+        self.{{this.handler_name}} = Some(handler);
+        self
+    }
+{{/each}}
+
+    /// Builds a `DataItemServer`.
+    pub fn build(self) -> Arc<dyn DataItemService> {
+        Arc::new(DataItemServer {
+        {{#each data_items}}
+            {{this.handler_name}}: self.{{this.handler_name}},
+        {{/each}}
+        })
+    }
+}
+{{/if}}
+
+{{#if io_controls}}
+/// Builder for `IoControlServer`.
+#[derive(Default)]
+pub struct IoControlServerBuilder {
+{{#each io_controls}}
+    {{this.handler_name}}: Option<Arc<dyn IoControlHandler<{{this.message}}>>>,
+{{/each}}
+}
+
+impl IoControlServerBuilder {
+{{#each io_controls}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.handler_name}}(mut self, handler: Arc<dyn IoControlHandler<{{this.message}}>>) -> Self {
+        self.{{this.handler_name}} = Some(handler);
+        self
+    }
+{{/each}}
+
+    /// Builds an `IoControlServer`.
+    ///
+    pub fn build(self) -> Arc<dyn IoControlService> {
+        Arc::new(IoControlServer {
+        {{#each io_controls}}
+            {{this.handler_name}}: self.{{this.handler_name}},
+        {{/each}}
+        })
+    }
+}
+{{/if}}
+
+{{#if routine_controls}}
+/// Builder for `RoutineControlServer`.
+#[derive(Default)]
+pub struct RoutineControlServerBuilder {
+{{#each routine_controls}}
+    {{this.handler_name}}: Option<Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>>,
+{{/each}}
+}
+
+impl RoutineControlServerBuilder {
+{{#each routine_controls}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.handler_name}}(mut self, handler: Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>) -> Self {
+        self.{{this.handler_name}} = Some(handler);
+        self
+    }
+{{/each}}
+
+    /// Builds a `RoutineControlServer`.
+    pub fn build(self) -> Arc<dyn RoutineControlService> {
+        Arc::new(RoutineServer {
+        {{#each routine_controls}}
+            {{this.handler_name}}: self.{{this.handler_name}},
+        {{/each}}
+        })
+    }
+}
+{{/if}}
+
+{{#if has_fault_listeners}}
+/// Builder for `FaultListenerServer`.
+#[derive(Default)]
+pub struct FaultListenerServerBuilder {
+{{#each events}}
+{{#if this.has_fault_listener}}
+    {{this.fault_listener_handler_name}}: Option<Arc<dyn FaultListenerHandler<{{this.full_message_name}}>>>,
+{{/if}}
+{{/each}}
+}
+
+impl FaultListenerServerBuilder {
+{{#each events}}
+{{#if this.has_fault_listener}}
+    /// Adds a handler for {{this.id}}.
+    pub fn add_{{this.fault_listener_handler_name}}(mut self, handler: Arc<dyn FaultListenerHandler<{{this.full_message_name}}>>) -> Self {
+        self.{{this.fault_listener_handler_name}} = Some(handler);
+        self
+    }
+{{/if}}
+{{/each}}
+
+    /// Builds a `FaultListenerServer`.
+    pub fn build(self) -> Arc<dyn FaultListenerService> {
+        Arc::new(FaultListenerServer::from(self))
+    }
+}
+{{/if}}
 
 {{#if data_items}}
 
