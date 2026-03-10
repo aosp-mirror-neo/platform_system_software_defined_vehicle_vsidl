@@ -109,6 +109,10 @@ impl Diagnostics {
     }
     /// Create DataItemService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `data_item_server_builder` instead"
+    )]
     pub fn create_data_item_server(
         data_item_handler: Arc<
             dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
@@ -118,12 +122,20 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn DataItemService> {
         Arc::new(DataItemServer {
-            data_item_handler,
-            data_item_with_dot_handler,
+            data_item_handler: Some(data_item_handler),
+            data_item_with_dot_handler: Some(data_item_with_dot_handler),
         })
+    }
+    /// Returns a builder for `DataItemServer`.
+    pub fn data_item_server_builder() -> DataItemServerBuilder {
+        DataItemServerBuilder::default()
     }
     /// Create RoutineControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `routine_control_server_builder` instead"
+    )]
     pub fn create_routine_control_server(
         routine_handler: Arc<
             dyn RoutineHandler<
@@ -147,12 +159,20 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn RoutineControlService> {
         Arc::new(RoutineServer {
-            routine_handler,
-            routine_with_dot_handler,
+            routine_handler: Some(routine_handler),
+            routine_with_dot_handler: Some(routine_with_dot_handler),
         })
+    }
+    /// Returns a builder for `RoutineControlServer`.
+    pub fn routine_control_server_builder() -> RoutineControlServerBuilder {
+        RoutineControlServerBuilder::default()
     }
     /// Create IoControlService implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `io_control_server_builder` instead"
+    )]
     pub fn create_io_control_server(
         io_control_handler: Arc<
             dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
@@ -162,12 +182,20 @@ impl Diagnostics {
         >,
     ) -> Arc<dyn IoControlService> {
         Arc::new(IoControlServer {
-            io_control_handler,
-            io_control_with_dot_handler,
+            io_control_handler: Some(io_control_handler),
+            io_control_with_dot_handler: Some(io_control_with_dot_handler),
         })
+    }
+    /// Returns a builder for `IoControlServer`.
+    pub fn io_control_server_builder() -> IoControlServerBuilder {
+        IoControlServerBuilder::default()
     }
     /// Create FaultListenerSrvice implementation.
     #[allow(clippy::too_many_arguments)]
+    #[deprecated(
+        since = "2.0.0",
+        note = "please use `fault_listener_server_builder` instead"
+    )]
     pub fn create_fault_listener_server(
         event_with_dot_handler: Arc<
             dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
@@ -181,13 +209,203 @@ impl Diagnostics {
             event_with_uppercase_handler,
         })
     }
+    /// Returns a builder for `FaultListenerServer`.
+    pub fn fault_listener_server_builder() -> FaultListenerServerBuilder {
+        FaultListenerServerBuilder::default()
+    }
+}
+/// Builder for `DataItemServer`.
+#[derive(Default)]
+pub struct DataItemServerBuilder {
+    data_item_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+    data_item_with_dot_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+}
+impl DataItemServerBuilder {
+    /// Adds a handler for data_item.
+    pub fn add_data_item_handler(
+        mut self,
+        handler: Arc<
+            dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.data_item_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for data_item.with.dot.
+    pub fn add_data_item_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.data_item_with_dot_handler = Some(handler);
+        self
+    }
+    /// Builds a `DataItemServer`.
+    pub fn build(self) -> Arc<dyn DataItemService> {
+        Arc::new(DataItemServer {
+            data_item_handler: self.data_item_handler,
+            data_item_with_dot_handler: self.data_item_with_dot_handler,
+        })
+    }
+}
+/// Builder for `IoControlServer`.
+#[derive(Default)]
+pub struct IoControlServerBuilder {
+    io_control_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+    io_control_with_dot_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
+    >,
+}
+impl IoControlServerBuilder {
+    /// Adds a handler for io_control.
+    pub fn add_io_control_handler(
+        mut self,
+        handler: Arc<
+            dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.io_control_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for io_control.with.dot.
+    pub fn add_io_control_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+        >,
+    ) -> Self {
+        self.io_control_with_dot_handler = Some(handler);
+        self
+    }
+    /// Builds an `IoControlServer`.
+    ///
+    pub fn build(self) -> Arc<dyn IoControlService> {
+        Arc::new(IoControlServer {
+            io_control_handler: self.io_control_handler,
+            io_control_with_dot_handler: self.io_control_with_dot_handler,
+        })
+    }
+}
+/// Builder for `RoutineControlServer`.
+#[derive(Default)]
+pub struct RoutineControlServerBuilder {
+    routine_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    >,
+    routine_with_dot_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    >,
+}
+impl RoutineControlServerBuilder {
+    /// Adds a handler for routine.
+    pub fn add_routine_handler(
+        mut self,
+        handler: Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    ) -> Self {
+        self.routine_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for routine.with.dot.
+    pub fn add_routine_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
+        >,
+    ) -> Self {
+        self.routine_with_dot_handler = Some(handler);
+        self
+    }
+    /// Builds a `RoutineControlServer`.
+    pub fn build(self) -> Arc<dyn RoutineControlService> {
+        Arc::new(RoutineServer {
+            routine_handler: self.routine_handler,
+            routine_with_dot_handler: self.routine_with_dot_handler,
+        })
+    }
+}
+/// Builder for `FaultListenerServer`.
+#[derive(Default)]
+pub struct FaultListenerServerBuilder {
+    event_with_dot_handler: Option<
+        Arc<dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>>,
+    >,
+    event_with_uppercase_handler: Option<
+        Arc<dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>>,
+    >,
+}
+impl FaultListenerServerBuilder {
+    /// Adds a handler for event.with.dot.
+    pub fn add_event_with_dot_handler(
+        mut self,
+        handler: Arc<
+            dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
+        >,
+    ) -> Self {
+        self.event_with_dot_handler = Some(handler);
+        self
+    }
+    /// Adds a handler for EVENT.WITH.UPPERCASE.
+    pub fn add_event_with_uppercase_handler(
+        mut self,
+        handler: Arc<
+            dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
+        >,
+    ) -> Self {
+        self.event_with_uppercase_handler = Some(handler);
+        self
+    }
+    /// Builds a `FaultListenerServer`.
+    pub fn build(self) -> Arc<dyn FaultListenerService> {
+        Arc::new(FaultListenerServer::from(self))
+    }
 }
 struct DataItemServer {
-    data_item_handler: Arc<
-        dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    data_item_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
-    data_item_with_dot_handler: Arc<
-        dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    data_item_with_dot_handler: Option<
+        Arc<dyn ReadOnlyDataItemHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
 }
 #[async_trait::async_trait]
@@ -198,9 +416,27 @@ impl DataItemService for DataItemServer {
         request: &ReadDataItemRequest,
     ) -> SdvResult<ReadDataItemResponse> {
         match request.id.as_str() {
-            "data_item" => Ok(self.data_item_handler.read_untyped().await),
+            "data_item" => {
+                match &self.data_item_handler {
+                    Some(handler) => Ok(handler.read_untyped().await),
+                    None => {
+                        Ok(ReadDataItemResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             "data_item.with.dot" => {
-                Ok(self.data_item_with_dot_handler.read_untyped().await)
+                match &self.data_item_with_dot_handler {
+                    Some(handler) => Ok(handler.read_untyped().await),
+                    None => {
+                        Ok(ReadDataItemResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(ReadDataItemResponse {
@@ -227,24 +463,28 @@ impl DataItemService for DataItemServer {
     }
 }
 struct RoutineServer {
-    routine_handler: Arc<
-        dyn RoutineHandler<
-            protobuf::well_known_types::timestamp::Timestamp,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
+    routine_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
         >,
     >,
-    routine_with_dot_handler: Arc<
-        dyn RoutineHandler<
-            protobuf::well_known_types::timestamp::Timestamp,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
-            protobuf::well_known_types::empty::Empty,
+    routine_with_dot_handler: Option<
+        Arc<
+            dyn RoutineHandler<
+                protobuf::well_known_types::timestamp::Timestamp,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+                protobuf::well_known_types::empty::Empty,
+            >,
         >,
     >,
 }
@@ -256,9 +496,27 @@ impl RoutineControlService for RoutineServer {
         request: &RoutineControlRequest,
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
-            "routine" => Ok(self.routine_handler.start_untyped(&request.request).await),
+            "routine" => {
+                match &self.routine_handler {
+                    Some(handler) => Ok(handler.start_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             "routine.with.dot" => {
-                Ok(self.routine_with_dot_handler.start_untyped(&request.request).await)
+                match &self.routine_with_dot_handler {
+                    Some(handler) => Ok(handler.start_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {
@@ -274,9 +532,27 @@ impl RoutineControlService for RoutineServer {
         request: &RoutineControlRequest,
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
-            "routine" => Ok(self.routine_handler.stop_untyped(&request.request).await),
+            "routine" => {
+                match &self.routine_handler {
+                    Some(handler) => Ok(handler.stop_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
+            }
             "routine.with.dot" => {
-                Ok(self.routine_with_dot_handler.stop_untyped(&request.request).await)
+                match &self.routine_with_dot_handler {
+                    Some(handler) => Ok(handler.stop_untyped(&request.request).await),
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {
@@ -293,15 +569,30 @@ impl RoutineControlService for RoutineServer {
     ) -> SdvResult<RoutineControlResponse> {
         match request.id.as_str() {
             "routine" => {
-                Ok(self.routine_handler.request_result_untyped(&request.request).await)
+                match &self.routine_handler {
+                    Some(handler) => {
+                        Ok(handler.request_result_untyped(&request.request).await)
+                    }
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             "routine.with.dot" => {
-                Ok(
-                    self
-                        .routine_with_dot_handler
-                        .request_result_untyped(&request.request)
-                        .await,
-                )
+                match &self.routine_with_dot_handler {
+                    Some(handler) => {
+                        Ok(handler.request_result_untyped(&request.request).await)
+                    }
+                    None => {
+                        Ok(RoutineControlResponse {
+                            response_code: REQUEST_OUT_OF_RANGE.into(),
+                            ..Default::default()
+                        })
+                    }
+                }
             }
             _ => {
                 Ok(RoutineControlResponse {
@@ -313,11 +604,11 @@ impl RoutineControlService for RoutineServer {
     }
 }
 struct IoControlServer {
-    io_control_handler: Arc<
-        dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    io_control_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
-    io_control_with_dot_handler: Arc<
-        dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>,
+    io_control_with_dot_handler: Option<
+        Arc<dyn IoControlHandler<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed>>,
     >,
 }
 #[async_trait::async_trait]
@@ -329,20 +620,24 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(
-                    self
-                        .io_control_handler
-                        .return_control_to_ecu_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(handler.return_control_to_ecu_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .return_control_to_ecu_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(handler.return_control_to_ecu_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -359,15 +654,24 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(self.io_control_handler.reset_to_default_untyped(&request.mask).await)
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(handler.reset_to_default_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .reset_to_default_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(handler.reset_to_default_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -384,20 +688,24 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(
-                    self
-                        .io_control_handler
-                        .freeze_current_state_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(handler.freeze_current_state_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .freeze_current_state_untyped(&request.mask)
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(handler.freeze_current_state_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -414,26 +722,38 @@ impl IoControlService for IoControlServer {
     ) -> SdvResult<IoControlResponse> {
         match request.id.as_str() {
             "io_control" => {
-                Ok(
-                    self
-                        .io_control_handler
-                        .short_term_adjustment_untyped(
-                            &request.adjusted_value,
-                            &request.mask,
-                        )
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_handler {
+                    Ok(
+                        handler
+                            .short_term_adjustment_untyped(
+                                &request.adjusted_value,
+                                &request.mask,
+                            )
+                            .await,
+                    )
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             "io_control.with.dot" => {
-                Ok(
-                    self
-                        .io_control_with_dot_handler
-                        .short_term_adjustment_untyped(
-                            &request.adjusted_value,
-                            &request.mask,
-                        )
-                        .await,
-                )
+                if let Some(handler) = &self.io_control_with_dot_handler {
+                    Ok(
+                        handler
+                            .short_term_adjustment_untyped(
+                                &request.adjusted_value,
+                                &request.mask,
+                            )
+                            .await,
+                    )
+                } else {
+                    Ok(IoControlResponse {
+                        response_code: REQUEST_OUT_OF_RANGE.into(),
+                        ..Default::default()
+                    })
+                }
             }
             _ => {
                 Ok(IoControlResponse {
@@ -451,6 +771,14 @@ struct FaultListenerServer {
     event_with_uppercase_handler: Arc<
         dyn FaultListenerHandler<sdv_vsidlc_goldens_catalog::tire::TIREPressure>,
     >,
+}
+impl From<FaultListenerServerBuilder> for FaultListenerServer {
+    fn from(builder: FaultListenerServerBuilder) -> Self {
+        Self {
+            event_with_dot_handler: builder.event_with_dot_handler.unwrap(),
+            event_with_uppercase_handler: builder.event_with_uppercase_handler.unwrap(),
+        }
+    }
 }
 #[async_trait::async_trait]
 impl FaultListenerService for FaultListenerServer {

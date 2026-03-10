@@ -16,7 +16,7 @@
 {{!-- The template is used in "../diagnostics.tpl" template. --}}
 struct IoControlServer {
     {{#each this}}
-    {{this.handler_name}}: Arc<dyn IoControlHandler<{{this.message}}>>,
+    {{this.handler_name}}: Option<Arc<dyn IoControlHandler<{{this.message}}>>>,
     {{/each}}
 }
 
@@ -28,7 +28,11 @@ impl IoControlService for IoControlServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.return_control_to_ecu_untyped(&request.mask).await)
+                if let Some(handler) = &self.{{this.handler_name}} {
+                    Ok(handler.return_control_to_ecu_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() })
+                }
             },
             {{/each}}
             _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
@@ -41,7 +45,11 @@ impl IoControlService for IoControlServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.reset_to_default_untyped(&request.mask).await)
+                if let Some(handler) = &self.{{this.handler_name}} {
+                    Ok(handler.reset_to_default_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() })
+                }
             },
             {{/each}}
             _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
@@ -54,7 +62,11 @@ impl IoControlService for IoControlServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.freeze_current_state_untyped(&request.mask).await)
+                if let Some(handler) = &self.{{this.handler_name}} {
+                    Ok(handler.freeze_current_state_untyped(&request.mask).await)
+                } else {
+                    Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() })
+                }
             },
             {{/each}}
             _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
@@ -67,7 +79,11 @@ impl IoControlService for IoControlServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.short_term_adjustment_untyped(&request.adjusted_value, &request.mask).await)
+                if let Some(handler) = &self.{{this.handler_name}} {
+                    Ok(handler.short_term_adjustment_untyped(&request.adjusted_value, &request.mask).await)
+                } else {
+                    Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() })
+                }
             },
             {{/each}}
             _ => Ok(IoControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),

@@ -16,7 +16,7 @@
 {{!-- The template is used in "../diagnostics.tpl" template. --}}
 struct DataItemServer {
     {{#each this}}
-    {{this.handler_name}}: Arc<dyn {{this.handler_type}}<{{this.message}}>>,
+    {{this.handler_name}}: Option<Arc<dyn {{this.handler_type}}<{{this.message}}>>>,
     {{/each}}
 }
 
@@ -28,7 +28,10 @@ impl DataItemService for DataItemServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.read_untyped().await)
+                match &self.{{this.handler_name}} {
+                    Some(handler) => Ok(handler.read_untyped().await),
+                    None => Ok(ReadDataItemResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+                }
             },
             {{/each}}
             _ => Ok(ReadDataItemResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
@@ -43,7 +46,10 @@ impl DataItemService for DataItemServer {
             {{#each this}}
             {{#if this.is_writable}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.write_untyped(&request.value).await)
+                match &self.{{this.handler_name}} {
+                    Some(handler) => Ok(handler.write_untyped(&request.value).await),
+                    None => Ok(WriteDataItemResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+                }
             },
             {{/if}}
             {{/each}}

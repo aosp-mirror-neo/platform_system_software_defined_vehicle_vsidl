@@ -77,7 +77,8 @@ fn diag_fqin(ctx: Option<ContextRef>, subpackage: &Subpackage) -> ServiceFqin {
 }
 
 fn someip_config_fqin(ctx: Option<ContextRef>) -> ServiceFqin {
-    ServiceFqin::from_str(&(get_vm_name(ctx) + ":com.sdv.someip.SomeIpBroker/ignored")).unwrap()
+    ServiceFqin::from_str(&(get_vm_name(ctx) + ":com.android.sdv.someip.SomeIpBroker/ignored"))
+        .unwrap()
 }
 
 fn non_existent_fqin(ctx: Option<ContextRef>) -> ServiceFqin {

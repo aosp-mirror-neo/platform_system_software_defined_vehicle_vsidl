@@ -16,7 +16,7 @@
 {{!-- The template is used in "../diagnostics.tpl" template. --}}
 struct RoutineServer {
     {{#each this}}
-    {{this.handler_name}}: Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>,
+    {{this.handler_name}}: Option<Arc<dyn RoutineHandler<{{> routine_handler_types_list this}}>>>,
     {{/each}}
 }
 
@@ -28,7 +28,10 @@ impl RoutineControlService for RoutineServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.start_untyped(&request.request).await)
+                match &self.{{this.handler_name}} {
+                    Some(handler) => Ok(handler.start_untyped(&request.request).await),
+                    None => Ok(RoutineControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+                }
             },
             {{/each}}
             _ => Ok(RoutineControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
@@ -41,7 +44,10 @@ impl RoutineControlService for RoutineServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.stop_untyped(&request.request).await)
+                match &self.{{this.handler_name}} {
+                    Some(handler) => Ok(handler.stop_untyped(&request.request).await),
+                    None => Ok(RoutineControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+                }
             },
             {{/each}}
             _ => Ok(RoutineControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
@@ -54,7 +60,10 @@ impl RoutineControlService for RoutineServer {
         match request.id.as_str() {
             {{#each this}}
             "{{this.id}}" => {
-                Ok(self.{{this.handler_name}}.request_result_untyped(&request.request).await)
+                match &self.{{this.handler_name}} {
+                    Some(handler) => Ok(handler.request_result_untyped(&request.request).await),
+                    None => Ok(RoutineControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),
+                }
             },
             {{/each}}
             _ => Ok(RoutineControlResponse { response_code: REQUEST_OUT_OF_RANGE.into(), ..Default::default() }),

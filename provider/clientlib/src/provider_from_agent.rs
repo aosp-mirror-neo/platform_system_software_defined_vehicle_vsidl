@@ -19,10 +19,9 @@ use crate::vsidl_provider_api::*;
 use dashmap::DashMap;
 use futures::Future;
 use futures::StreamExt;
-use log::{info, warn};
+use log::info;
 use protobuf::reflect::MessageDescriptor;
 use protobuf::MessageField;
-use rustutils::android::system_properties::read;
 use sdv_comms::id::ServiceFqin;
 use sdv_comms::rpc::{Client, ClientOptions};
 use sdv_comms::sd::ServiceDiscoveryManager;
@@ -39,7 +38,6 @@ use std::fmt::Display;
 use std::ops::Deref;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
 use vsidl_provider_agent_api as api;
 use vsidl_provider_agent_api::TypedRpcMethod;
 use vsidl_provider_agent_protos::messages::*;
@@ -53,14 +51,6 @@ pub(crate) struct ProviderFromAgent {
     client_cache: Arc<DashMap<String, Arc<Client>>>,
     data_types: HashSet<DataType>,
 }
-
-const VSIDL_PROVIDER_CREATE_RPC_CLIENT_TIMEOUT_MS_PROP: &str =
-    "persist.sdv.vsidl_provider.create_rpc_client_timeout_ms";
-#[cfg(not(test))]
-const DEFAULT_CREATE_RPC_CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
-/// For tests, use a shorter timeout to fail faster.
-#[cfg(test)]
-const DEFAULT_CREATE_RPC_CLIENT_TIMEOUT: Duration = Duration::from_secs(1);
 
 impl Display for ProviderFromAgent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -100,42 +90,28 @@ impl ProviderFromAgent {
 
     // Sets up the RPC Client
     async fn create_client(&self, server_vm_name: &str) -> SdvResult<Client> {
-        let creation_future = async {
-            let mut discovery_stream = ServiceDiscoveryManager::new(self.ctx)
-                .subscribe_service_unit_change_by_name(
-                    &UnitNameDiscoveryArgs::new_builder()
-                        .set_sdv_vm_name(server_vm_name)
-                        .set_sdv_package_name(api::PACKAGE_NAME)
-                        .set_service_bundle_name(api::BUNDLE_NAME)
-                        .set_service_unit_name(api::SERVICE_UNIT_NAME)
-                        .build()
-                        .unwrap(),
+        let args = UnitNameDiscoveryArgs::new_builder()
+            .set_sdv_vm_name(server_vm_name)
+            .set_sdv_package_name(api::PACKAGE_NAME)
+            .set_service_bundle_name(api::BUNDLE_NAME)
+            .set_service_unit_name(api::SERVICE_UNIT_NAME)
+            .build()?;
+
+        let registered_suds = ServiceDiscoveryManager::new(self.ctx)
+            .list_units_by_name(&args)
+            .next()
+            .await
+            .ok_or_else(|| {
+                SdvStatus::with_message(
+                    SdvStatusCode::Unavailable,
+                    format!(
+                        "VSIDL Provider Agent not available on {server_vm_name}. Try again later."
+                    ),
                 )
-                .await?;
+            })?;
 
-            let discovery_result = loop {
-                let status = discovery_stream.next().await;
-                if let Some(ServiceUnitChangeEvent::Registered(unit)) = status {
-                    break unit;
-                }
-            };
-
-            let server_identifier = discovery_result.get_unit_identifier();
-
-            Client::create(self.ctx, server_identifier, &ClientOptions::default()).await
-        };
-
-        let timeout_duration = get_create_rpc_client_timeout(read);
-        tokio::time::timeout(timeout_duration, creation_future).await.map_err(|_| {
-            SdvStatus::with_message(
-                SdvStatusCode::DeadlineExceeded,
-                format!(
-                    "Timed out creating RPC client for {} after {} seconds",
-                    server_vm_name,
-                    timeout_duration.as_secs()
-                ),
-            )
-        })?
+        let server_identifier = registered_suds.get_unit_identifier();
+        Client::create(self.ctx, server_identifier, &ClientOptions::default()).await
     }
 
     fn is_same_vm(&self, fqin: &ServiceFqin) -> bool {
@@ -184,23 +160,6 @@ impl ProviderFromAgent {
             }
         }
         result
-    }
-}
-
-fn get_create_rpc_client_timeout(
-    reader: fn(&str) -> rustutils::android::system_properties::Result<Option<String>>,
-) -> Duration {
-    match reader(VSIDL_PROVIDER_CREATE_RPC_CLIENT_TIMEOUT_MS_PROP) {
-        Ok(Some(timeout_str)) => {
-            timeout_str.parse::<u64>().map(Duration::from_millis).unwrap_or_else(|_| {
-                warn!(
-                    "Failed to parse timeout value '{}' for property '{}', using default.",
-                    timeout_str, VSIDL_PROVIDER_CREATE_RPC_CLIENT_TIMEOUT_MS_PROP
-                );
-                DEFAULT_CREATE_RPC_CLIENT_TIMEOUT
-            })
-        }
-        _ => DEFAULT_CREATE_RPC_CLIENT_TIMEOUT,
     }
 }
 
@@ -502,10 +461,8 @@ mod tests {
     use googletest::assert_that;
     use googletest::prelude::eq;
     use protobuf::MessageDyn;
-    use rustutils::android::system_properties::PropertyWatcherError;
     use std::collections::HashMap;
     use std::str::FromStr;
-    use std::time::Duration;
     use vsidl_provider_agent_api::message_descriptor_to_proto;
     use vsidl_provider_agent_api_test_protos::message::TestMessage;
 
@@ -802,22 +759,33 @@ mod tests {
         .await;
     }
 
-    #[test]
-    fn test_get_create_rpc_client_timeout() {
-        // Test with a valid integer value.
-        let duration = get_create_rpc_client_timeout(|_| Ok(Some("5000".to_string())));
-        assert_eq!(duration, Duration::from_millis(5000));
+    #[tokio::test]
+    async fn test_create_client_is_unavailable() {
+        // setup Binder thread pool to enable use of Comms "listener" API.
+        sdv_dump::ProcessState::start_thread_pool();
 
-        // Test with an invalid integer value, should fall back to default.
-        let duration = get_create_rpc_client_timeout(|_| Ok(Some("not-a-number".to_string())));
-        assert_eq!(duration, DEFAULT_CREATE_RPC_CLIENT_TIMEOUT);
+        let ctx = ContextRef::create(
+            ServiceFqin::from_str(
+                "ignored:com.sdv.google.sample.test_create_client_is_unavailable.Client/ignored",
+            )
+            .expect("Valid ServiceFqin"),
+        );
 
-        // Test with no property set, should fall back to default.
-        let duration = get_create_rpc_client_timeout(|_| Ok(None));
-        assert_eq!(duration, DEFAULT_CREATE_RPC_CLIENT_TIMEOUT);
+        let data_types: Vec<HashSet<DataType>> = vec![
+            HashSet::from([DataType::Diagnostics, DataType::VsidlSchemas]),
+            HashSet::from([DataType::Diagnostics]),
+            HashSet::from([DataType::VsidlSchemas]),
+            HashSet::new(),
+        ];
 
-        // Test with an error reading the property, should fall back to default.
-        let duration = get_create_rpc_client_timeout(|_| Err(PropertyWatcherError::WaitFailed));
-        assert_eq!(duration, DEFAULT_CREATE_RPC_CLIENT_TIMEOUT);
+        for data_type in data_types {
+            //WHEN provider from agent is created.
+            let provider = ProviderFromAgent::new_from_agent(ctx, data_type.clone());
+
+            match provider.create_client("vm-that-does-not-exist").await {
+                Ok(_) => panic!("Expected an error, but got Ok(Client)"),
+                Err(e) => assert_that!(e.status_code(), eq(SdvStatusCode::Unavailable)),
+            }
+        }
     }
 }

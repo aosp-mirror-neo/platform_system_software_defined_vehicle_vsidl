@@ -22,6 +22,19 @@ struct FaultListenerServer {
     {{/each}}
 }
 
+impl From<FaultListenerServerBuilder> for FaultListenerServer {
+    fn from(builder: FaultListenerServerBuilder) -> Self {
+        Self {
+            {{#each this}}
+            {{#if this.has_fault_listener}}
+            {{this.fault_listener_handler_name}}: builder.{{this.fault_listener_handler_name}}.unwrap(),
+            {{/if}}
+            {{/each}}
+        }
+    }
+}
+
+
 #[async_trait::async_trait]
 impl FaultListenerService for FaultListenerServer {
     async fn OnFaultStatusChange(&self,
