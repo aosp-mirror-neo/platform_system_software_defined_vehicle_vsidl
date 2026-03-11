@@ -825,7 +825,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         for (i, topic_name) in node.topic.iter().enumerate() {
             if !self.created_channels.contains(topic_name) {
                 let topic_symbol = TopicSymbol { ast_node: node.clone(), ..Default::default() };
-                let span = node.channel_span.get(i).cloned();
+                let span = node.topic_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
                     topic_name.clone(),
                     span,
@@ -878,7 +878,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             if !self.created_channels.contains(topic_name) {
                 let topic_symbol =
                     TopicSymbol { ast_node: Publisher::default(), ..Default::default() };
-                let span = node.channel_span.get(i).cloned();
+                let span = node.topic_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
                     topic_name.clone(),
                     span,

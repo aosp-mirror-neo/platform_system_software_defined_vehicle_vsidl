@@ -48,63 +48,80 @@ pub(crate) fn go_to_definition<F: FileProvider>(
         )?;
 
         if let Some(symbol_under_cursor) = symbol_table.get_symbol_at_location(&path, offset) {
-            definition_location = match symbol_under_cursor {
-                SymbolKind::Publisher(publisher) => {
-                    if !publisher.topic_span.is_empty()
-                        && offset >= publisher.topic_span[0].start as usize
-                        && offset <= publisher.topic_span[0].end as usize
-                    {
-                        publisher.topic_symbols(symbol_table)[0].span()
-                    } else if offset >= publisher.message_span.start as usize
-                        && offset <= publisher.message_span.end as usize
-                    {
-                        publisher.message(symbol_table).span()
-                    } else {
-                        // The cursor is on a part of the Publisher symbol that doesn't link
-                        // to a specific definition (e.g., a comment).
-                        None
+            definition_location =
+                match symbol_under_cursor {
+                    SymbolKind::Publisher(publisher) => {
+                        if let Some(topic_idx) = publisher.topic_span.iter().position(|span| {
+                            offset >= span.start as usize && offset <= span.end as usize
+                        }) {
+                            publisher.topic_symbols(symbol_table)[topic_idx].span()
+                        } else if publisher.channel_span.iter().any(|span| {
+                            offset >= span.start as usize && offset <= span.end as usize
+                        }) {
+                            publisher.publication(symbol_table).channels_enum(symbol_table).span()
+                        } else if offset >= publisher.message_span.start as usize
+                            && offset <= publisher.message_span.end as usize
+                        {
+                            publisher.message(symbol_table).span()
+                        } else {
+                            // The cursor is on a part of the Publisher symbol that doesn't link
+                            // to a specific definition (e.g., a comment).
+                            None
+                        }
                     }
-                }
-                SymbolKind::Subscriber(subscriber) => {
-                    if !subscriber.topic_span.is_empty()
-                        && offset >= subscriber.topic_span[0].start as usize
-                        && offset <= subscriber.topic_span[0].end as usize
-                    {
-                        subscriber.topic_symbols(symbol_table)[0].span()
-                    } else if offset >= subscriber.message_span.start as usize
-                        && offset <= subscriber.message_span.end as usize
-                    {
-                        subscriber.message(symbol_table).span()
-                    } else {
-                        // The cursor is on a part of the Subscriber symbol that doesn't link
-                        // to a specific definition (e.g., a comment).
-                        None
+                    SymbolKind::Subscriber(subscriber) => {
+                        if let Some(topic_idx) = subscriber.topic_span.iter().position(|span| {
+                            offset >= span.start as usize && offset <= span.end as usize
+                        }) {
+                            subscriber.topic_symbols(symbol_table)[topic_idx].span()
+                        } else if subscriber.channel_span.iter().any(|span| {
+                            offset >= span.start as usize && offset <= span.end as usize
+                        }) {
+                            subscriber.publication(symbol_table).channels_enum(symbol_table).span()
+                        } else if offset >= subscriber.message_span.start as usize
+                            && offset <= subscriber.message_span.end as usize
+                        {
+                            subscriber.message(symbol_table).span()
+                        } else {
+                            // The cursor is on a part of the Subscriber symbol that doesn't link
+                            // to a specific definition (e.g., a comment).
+                            None
+                        }
                     }
-                }
-                SymbolKind::RpcServer(server) => {
-                    if offset >= server.service_span.start as usize
-                        && offset <= server.service_span.end as usize
-                    {
-                        server.service(symbol_table).span()
-                    } else {
-                        // The cursor is on a part of the RpcServer symbol that doesn't link
-                        // to a specific definition (e.g., a comment).
-                        None
+                    SymbolKind::RpcServer(server) => {
+                        if offset >= server.service_span.start as usize
+                            && offset <= server.service_span.end as usize
+                        {
+                            server.service(symbol_table).span()
+                        } else if offset >= server.channel_span.start as usize
+                            && offset <= server.channel_span.end as usize
+                        {
+                            server.channel(symbol_table).span()
+                        } else {
+                            // The cursor is on a part of the RpcServer symbol that doesn't link
+                            // to a specific definition (e.g., a comment).
+                            None
+                        }
                     }
-                }
-                SymbolKind::RpcClient(client) => {
-                    if offset >= client.service_span.start as usize
-                        && offset <= client.service_span.end as usize
-                    {
-                        client.service(symbol_table).span()
-                    } else {
-                        // The cursor is on a part of the RpcClient symbol that doesn't link
-                        // to a specific definition (e.g., a comment).
-                        None
+                    SymbolKind::RpcClient(client) => {
+                        if offset >= client.service_span.start as usize
+                            && offset <= client.service_span.end as usize
+                        {
+                            client.service(symbol_table).span()
+                        } else if offset >= client.channel_span.start as usize
+                            && offset <= client.channel_span.end as usize
+                        {
+                            client.channel(symbol_table).span()
+                        } else {
+                            // The cursor is on a part of the RpcClient symbol that doesn't link
+                            // to a specific definition (e.g., a comment).
+                            None
+                        }
                     }
-                }
-                _ => None,
-            };
+                    SymbolKind::Topic(topic) => topic.span(),
+                    SymbolKind::RpcChannel(channel) => channel.span(),
+                    _ => None,
+                };
         }
     }
 
@@ -175,6 +192,56 @@ mod tests {
                 assert_eq!(location.range.start.character, 0);
                 assert_eq!(location.range.end.line, 21);
                 assert_eq!(location.range.end.character, 1);
+            }
+            _ => panic!("Expected a scalar response"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_go_to_definition_topic() -> anyhow::Result<()> {
+        // GIVEN A valid catalog with Latest target API
+        let temp_dir = setup_test_catalog();
+        let mut cli = setup_mock_cli(&temp_dir);
+        cli.target_api = "latest".to_string();
+        let common_cli = VsidlcCommonCli::from(cli.clone());
+
+        let document_store = Arc::new(Mutex::new(HashMap::new()));
+        let file_provider = LspFileProvider {
+            document_store: Arc::clone(&document_store),
+            file_hashes: Arc::new(Mutex::new(HashMap::new())),
+            disk_fallback: DiskFileProvider,
+        };
+        let symbol_table = common_cli.create_symbol_table(Some(".".into()))?;
+
+        // GIVEN cursor position on "front-right" in subscriber topic
+        let position = Position { line: 14, character: 15 };
+
+        let vsidl_file_path = temp_dir.path().join("test.vsidl");
+
+        // WHEN requesting the definition of the symbol under the cursor
+        let params = GotoDefinitionParams {
+            text_document_position_params: TextDocumentPositionParams {
+                text_document: TextDocumentIdentifier {
+                    uri: Url::from_file_path(vsidl_file_path.clone()).unwrap(),
+                },
+                position,
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            partial_result_params: PartialResultParams::default(),
+        };
+        let result = go_to_definition(cli.clone(), params, &symbol_table, &file_provider)?;
+
+        // THEN Topic "front-right" is found (defined in publisher)
+        assert!(result.is_some());
+        let response: GotoDefinitionResponse = serde_json::from_value(result.unwrap())?;
+        match response {
+            GotoDefinitionResponse::Scalar(location) => {
+                assert_eq!(location.uri, Url::from_file_path(vsidl_file_path).unwrap());
+                // Topic is defined in publisher at line 7 (0-indexed)
+                assert_eq!(location.range.start.line, 7);
+                assert_eq!(location.range.start.character, 11);
+                assert_eq!(location.range.end.character, 24);
             }
             _ => panic!("Expected a scalar response"),
         }
