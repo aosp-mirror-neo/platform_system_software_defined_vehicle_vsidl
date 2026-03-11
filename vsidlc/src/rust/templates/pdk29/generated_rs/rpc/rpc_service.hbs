@@ -37,8 +37,17 @@ pub trait Interface: Send + Sync {
     {{> rpc/interface/functions/init_server_options}}
 }
 
+/// ToTypeName implementation for the {{service_name}} service.
+impl sdv::mw::clientlib::ToTypeName for dyn Interface {
+    {{> rpc/impl_unit_type/unit_type}}
+}
+
 /// Client for {{service_name}} RPC service
 pub struct Client(Box<dyn sdv::mw::ClientTransport>);
+
+impl std::fmt::Debug for Client {
+    {{> rpc/impl_debug/fmt}}
+}
 
 #[allow(non_snake_case, missing_docs)]
 impl Client {
