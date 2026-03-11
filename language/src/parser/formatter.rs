@@ -56,6 +56,13 @@ impl FormatContext {
     }
 }
 
+fn get_first_word(s: &str) -> &str {
+    s.trim_start()
+        .split(|c: char| c.is_whitespace() || c == ':' || c == '{' || c == '[')
+        .next()
+        .unwrap_or("")
+}
+
 /// Helpers to reduce boilerplate
 fn format_block(
     result: &mut String,
@@ -237,7 +244,8 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
             format_property(result, "topic", pair, context)
         }
         Rule::publisher_channel | Rule::subscriber_channel => {
-            format_property(result, "channel", pair, context)
+            let keyword = get_first_word(pair.as_str());
+            format_property(result, keyword, pair, context)
         }
         Rule::publisher_service_unit_name | Rule::server_service_unit_name => {
             format_property(result, "service_unit_name", pair, context)
@@ -726,6 +734,28 @@ service_bundle {
         assert!(formatted.contains("# Copyright (C) 2026 The Android Open Source Project"));
         assert!(formatted.contains("# End of the bundle definition"));
         assert!(formatted.contains("name: \"TestBundle\"\n\n  # End of the bundle definition\n}"));
+    }
+
+    #[test]
+    fn test_format_alternative_keywords() {
+        let input = r#"sdv_service_bundle {
+  name: "MyBundle"
+  publisher {
+    type: "MyType"
+    instance: "MyInstance"
+  }
+  server {
+    interface: "MyInterface"
+  }
+}
+"#;
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        assert_eq!(
+            formatted,
+            "service_bundle {\n  name: \"MyBundle\"\n\n  publisher {\n    message: \"MyType\"\n    instance: \"MyInstance\"\n  }\n\n  server {\n    service: \"MyInterface\"\n  }\n}\n"
+        );
     }
 
     #[test]
