@@ -71,10 +71,6 @@ pub mod publisher {
 /// Service bundle
 pub struct GoldenNoAndroidbpPublishingBundle {
     _comms: std::sync::Arc<dyn sdv::mw::Communicate>,
-    publishers: std::collections::HashMap<
-        (std::any::TypeId, String),
-        Box<dyn std::any::Any + Send + Sync>,
-    >,
 }
 impl GoldenNoAndroidbpPublishingBundle {
     /// Creates a new instance of the service bundle
@@ -82,36 +78,12 @@ impl GoldenNoAndroidbpPublishingBundle {
     pub async fn new(
         comms: std::sync::Arc<dyn sdv::mw::Communicate>,
     ) -> sdv::status::SdvResult<Self> {
-        let mut service = Self {
-            _comms: comms.clone(),
-            publishers: std::collections::HashMap::new(),
-        };
-        sdv::mw::clientlib::fill_publication_channels(
-                comms.as_ref(),
-                publisher::Channel::<
-                    sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog,
-                >::ALL_VARIANTS,
-                &mut service.publishers,
-            )
-            .await?;
+        let service = Self { _comms: comms.clone() };
         Ok(service)
     }
     /// returns a Builder for GoldenNoAndroidbpPublishingBundle
     pub fn builder() -> GoldenNoAndroidbpPublishingBundleBuilder {
         GoldenNoAndroidbpPublishingBundleBuilder::default()
-    }
-    /// Take the ownership of the publisher object
-    /// Will return None if called more than once per publisher channel
-    pub fn take_publisher<M: protobuf::Message + 'static>(
-        &mut self,
-        channel: &publisher::Channel<M>,
-    ) -> Option<sdv::mw::Publisher<M>> {
-        let guarded_publisher = *self
-            .publishers
-            .remove(&(std::any::TypeId::of::<M>(), channel.name.to_string()))?
-            .downcast::<std::sync::Mutex<sdv::mw::Publisher<M>>>()
-            .unwrap();
-        Some(guarded_publisher.into_inner().unwrap())
     }
 }
 #[derive(Clone, Default)]
@@ -143,18 +115,9 @@ impl GoldenNoAndroidbpPublishingBundleBuilder {
                     "No comms is found in GoldenNoAndroidbpPublishingBundleBuilder",
                 )
             })?;
-        let mut service = GoldenNoAndroidbpPublishingBundle {
+        let service = GoldenNoAndroidbpPublishingBundle {
             _comms: comms.clone(),
-            publishers: std::collections::HashMap::new(),
         };
-        sdv::mw::clientlib::fill_publication_channels(
-                comms.as_ref(),
-                publisher::Channel::<
-                    sdv_vsidlc_goldens_catalog::tire::VehicleSpeedForOtherCatalog,
-                >::ALL_VARIANTS,
-                &mut service.publishers,
-            )
-            .await?;
         Ok(service)
     }
 }

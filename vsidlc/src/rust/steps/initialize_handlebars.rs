@@ -100,10 +100,6 @@ macro_rules! define_common_templates {
                 include_str!(concat!($prefix, "/generated_rs/service_bundles/functions/create_registration_event_stream.hbs")),
             ),
             (
-                "service_bundles/functions/take_publisher",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/functions/take_publisher.hbs")),
-            ),
-            (
                 "service_bundles/functions/fill_publication_channels",
                 include_str!(concat!($prefix, "/generated_rs/service_bundles/functions/fill_publication_channels.hbs")),
             ),
@@ -333,6 +329,12 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
 ];
 
 const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[
+    (
+        "service_bundles/functions/take_publisher",
+        include_str!(
+            "../templates/pdk29/generated_rs/service_bundles/functions/take_publisher.hbs"
+        ),
+    ),
     (
         "service_bundles/unit_type/unit_type",
         include_str!("../templates/pdk29/generated_rs/service_bundles/unit_type/unit_type.hbs"),

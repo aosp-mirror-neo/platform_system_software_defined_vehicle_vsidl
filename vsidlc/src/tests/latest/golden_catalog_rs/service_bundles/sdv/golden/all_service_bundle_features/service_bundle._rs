@@ -172,10 +172,6 @@ pub mod client {
 /// Service bundle
 pub struct AllServiceBundleFeatures {
     _comms: std::sync::Arc<dyn sdv::mw::Communicate>,
-    publishers: std::collections::HashMap<
-        (std::any::TypeId, String),
-        Box<dyn std::any::Any + Send + Sync>,
-    >,
     servers: std::vec::Vec<std::sync::Arc<dyn sdv::mw::ServerTransport>>,
     /// Diagnostic capabilities of the service bundle.
     pub diagnostics: Diagnostics,
@@ -189,18 +185,9 @@ impl AllServiceBundleFeatures {
     ) -> sdv::status::SdvResult<Self> {
         let mut service = Self {
             _comms: comms.clone(),
-            publishers: std::collections::HashMap::new(),
             servers: std::vec::Vec::new(),
             diagnostics: Diagnostics::new(comms).await?,
         };
-        sdv::mw::clientlib::fill_publication_channels(
-                comms.as_ref(),
-                publisher::Channel::<
-                    sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
-                >::ALL_VARIANTS,
-                &mut service.publishers,
-            )
-            .await?;
         service
             .servers
             .push(
@@ -222,19 +209,6 @@ impl AllServiceBundleFeatures {
     /// returns a Builder for AllServiceBundleFeatures
     pub fn builder() -> AllServiceBundleFeaturesBuilder {
         AllServiceBundleFeaturesBuilder::default()
-    }
-    /// Take the ownership of the publisher object
-    /// Will return None if called more than once per publisher channel
-    pub fn take_publisher<M: protobuf::Message + 'static>(
-        &mut self,
-        channel: &publisher::Channel<M>,
-    ) -> Option<sdv::mw::Publisher<M>> {
-        let guarded_publisher = *self
-            .publishers
-            .remove(&(std::any::TypeId::of::<M>(), channel.name.to_string()))?
-            .downcast::<std::sync::Mutex<sdv::mw::Publisher<M>>>()
-            .unwrap();
-        Some(guarded_publisher.into_inner().unwrap())
     }
 }
 #[derive(Clone, Default)]
@@ -280,7 +254,6 @@ impl AllServiceBundleFeaturesBuilder {
             })?;
         let mut service = AllServiceBundleFeatures {
             _comms: comms.clone(),
-            publishers: std::collections::HashMap::new(),
             servers: std::vec::Vec::new(),
             diagnostics: Diagnostics::new(comms).await?,
         };
@@ -301,14 +274,6 @@ impl AllServiceBundleFeaturesBuilder {
                         .await?,
                 );
         }
-        sdv::mw::clientlib::fill_publication_channels(
-                comms.as_ref(),
-                publisher::Channel::<
-                    sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
-                >::ALL_VARIANTS,
-                &mut service.publishers,
-            )
-            .await?;
         Ok(service)
     }
 }

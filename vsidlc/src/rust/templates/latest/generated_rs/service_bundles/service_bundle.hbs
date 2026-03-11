@@ -52,10 +52,6 @@ use crate::diagnostics::Diagnostics;
 impl {{service_bundle_name}} {
 {{> service_bundles/functions/new}}
 {{> service_bundles/functions/service_bundle_builder}}
-
-{{#if is_publisher}}
-    {{> service_bundles/functions/take_publisher}}
-{{/if}}
 }
 
 {{> service_bundles/service_bundle_builder/builder}}
