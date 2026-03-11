@@ -21,7 +21,7 @@ use handlebars::Handlebars;
 use heck::ToSnakeCase;
 use serde_derive::Serialize;
 use serde_json::json;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -33,7 +33,7 @@ use vsidl_v1_parser::SymbolTable;
 struct AclUnitType {
     name: String,
     acl_name: String,
-    members: Vec<String>,
+    members: BTreeSet<String>,
 }
 
 #[derive(Serialize)]
@@ -41,7 +41,7 @@ struct AclServiceUnit {
     name: String,
     channel_name: String,
     acl_name: String,
-    members: Vec<String>,
+    members: BTreeSet<String>,
 }
 
 #[derive(Serialize)]
@@ -126,9 +126,9 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
             message_unit_types_map.entry(message_name.clone()).or_insert_with(|| AclUnitType {
                 name: message_name.clone(),
                 acl_name: format!("{}-topic-acl", message_name.to_lowercase().replace('_', "-")),
-                members: Vec::new(),
+                members: BTreeSet::new(),
             });
-        unit_type.members.push(format!("*:{}", publisher_bundle_fqn));
+        unit_type.members.insert(format!("*:{}", publisher_bundle_fqn));
 
         // Service Unit for each channel of the Publisher
         let channels_or_topics = if symbol_table.uses_pdk29() {
@@ -138,7 +138,7 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
         };
 
         for channel in channels_or_topics {
-            let subscribers: Vec<String> = message
+            let subscribers: BTreeSet<String> = message
                 .subscribers(symbol_table)
                 .iter()
                 .map(|s| {
@@ -169,12 +169,12 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
             rpc_unit_types_map.entry(service_name.clone()).or_insert_with(|| AclUnitType {
                 name: service_name.clone(),
                 acl_name: format!("{}-service-acl", service_name.to_lowercase().replace('_', "-")),
-                members: Vec::new(),
+                members: BTreeSet::new(),
             });
-        unit_type.members.push(format!("*:{}", server_bundle_fqn));
+        unit_type.members.insert(format!("*:{}", server_bundle_fqn));
 
         // Service Unit for the specific Server
-        let clients: Vec<String> = service
+        let clients: BTreeSet<String> = service
             .clients(symbol_table)
             .iter()
             .map(|c| format!("*:{}", c.owning_service_bundle(symbol_table).full_name(symbol_table)))
