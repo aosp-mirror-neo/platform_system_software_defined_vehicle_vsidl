@@ -56,6 +56,13 @@ impl FormatContext {
     }
 }
 
+fn get_first_word(s: &str) -> &str {
+    s.trim_start()
+        .split(|c: char| c.is_whitespace() || c == ':' || c == '{' || c == '[')
+        .next()
+        .unwrap_or("")
+}
+
 /// Helpers to reduce boilerplate
 fn format_block(
     result: &mut String,
@@ -162,12 +169,12 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
             format_block(result, "service_bundle", pair.into_inner(), context);
         }
         Rule::some_ip_mapping => {
-            ensure_newline(result, context, false);
+            ensure_newline(result, context, false); // Add spacing before main blocks
             context.has_seen_code = true;
             format_block(result, "some_ip_mapping", pair.into_inner(), context);
         }
         Rule::vhal_mapping => {
-            ensure_newline(result, context, false);
+            ensure_newline(result, context, false); // Add spacing before main blocks
             context.has_seen_code = true;
             format_block(result, "vhal_mapping", pair.into_inner(), context);
         }
@@ -195,414 +202,207 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         // Service Bundle Components
         // =========================================================================
         // Blocks
-        Rule::publisher => {
+        Rule::publisher
+        | Rule::subscriber
+        | Rule::server
+        | Rule::client
+        | Rule::unit_type
+        | Rule::build_configuration
+        | Rule::diagnostics_declaration => {
             ensure_newline(result, context, false);
-            format_block(result, "publisher", pair.into_inner(), context)
-        }
-        Rule::subscriber => {
-            ensure_newline(result, context, false);
-            format_block(result, "subscriber", pair.into_inner(), context)
-        }
-        Rule::server => {
-            ensure_newline(result, context, false);
-            format_block(result, "server", pair.into_inner(), context)
-        }
-        Rule::client => {
-            ensure_newline(result, context, false);
-            format_block(result, "client", pair.into_inner(), context)
-        }
-        Rule::unit_type => {
-            ensure_newline(result, context, false);
-            format_block(result, "unit_type", pair.into_inner(), context)
-        }
-        Rule::build_configuration => {
-            ensure_newline(result, context, false);
-            format_block(result, "build_cfg", pair.into_inner(), context)
-        }
-        Rule::diagnostics_declaration => {
-            ensure_newline(result, context, false);
-            format_block(result, "diagnostics_declaration", pair.into_inner(), context)
-        }
-        // Properties
-        Rule::service_bundle_name_prop => format_property(result, "name", pair, context),
-        Rule::service_bundle_register_reflection_metadata => {
-            format_property(result, "register_reflection_metadata", pair, context)
+            let keyword = get_first_word(pair.as_str());
+            format_block(result, keyword, pair.into_inner(), context)
         }
 
-        // Inner Properties of Service Components
-        Rule::publisher_message | Rule::subscriber_message => {
-            format_property(result, "message", pair, context)
-        }
-        Rule::publisher_topic | Rule::subscriber_topic => {
-            format_property(result, "topic", pair, context)
-        }
-        Rule::publisher_channel | Rule::subscriber_channel => {
-            format_property(result, "channel", pair, context)
-        }
-        Rule::publisher_service_unit_name | Rule::server_service_unit_name => {
-            format_property(result, "service_unit_name", pair, context)
-        }
-        Rule::publisher_capacity => format_property(result, "capacity", pair, context),
-        Rule::server_interface | Rule::client_interface => {
-            format_property(result, "service", pair, context)
-        }
-        Rule::server_channel | Rule::client_channel => {
-            format_property(result, "channel", pair, context)
-        }
-        Rule::unit_type_type => format_property(result, "type", pair, context),
-        Rule::build_configuration_target_name => {
-            format_property(result, "target_name", pair, context)
-        }
-        Rule::build_configuration_skip_codegen => {
-            format_property(result, "skip_codegen", pair, context)
-        }
-
-        // =========================================================================
-        // Diagnostics
-        // =========================================================================
         // Blocks
-        Rule::diagnostics_data_item => {
-            format_block(result, "data_item", pair.into_inner(), context)
-        }
-        Rule::diagnostics_io_control => {
-            format_block(result, "io_control", pair.into_inner(), context)
-        }
-        Rule::diagnostics_routine => format_block(result, "routine", pair.into_inner(), context),
-        Rule::diagnostics_event => format_block(result, "event", pair.into_inner(), context),
-
-        // Nested Routine Blocks
-        Rule::diagnostics_routine_start => {
-            format_block(result, "start", pair.into_inner(), context)
-        }
-        Rule::diagnostics_routine_stop => format_block(result, "stop", pair.into_inner(), context),
-        Rule::diagnostics_routine_result => {
-            format_block(result, "result", pair.into_inner(), context)
-        }
-
-        // Properties
-        Rule::diagnostics_data_item_id
-        | Rule::diagnostics_io_control_id
-        | Rule::diagnostics_routine_id
-        | Rule::diagnostics_event_id => format_property(result, "id", pair, context),
-        Rule::diagnostics_data_item_message_name | Rule::diagnostics_io_control_message_name => {
-            format_property(result, "message_name", pair, context)
-        }
-        Rule::diagnostics_data_item_is_writable => {
-            format_property(result, "is_writable", pair, context)
-        }
-        Rule::diagnostics_method_request => format_property(result, "request", pair, context),
-        Rule::diagnostics_method_response => format_property(result, "response", pair, context),
-        Rule::diagnostics_event_extended_data_message_name => {
-            format_property(result, "extended_data_message_name", pair, context)
-        }
-        Rule::diagnostics_event_fault_listener_mask => {
-            format_property(result, "fault_listener_mask", pair, context)
-        }
-        Rule::diagnostics_event_service_unit_name => {
-            format_property(result, "service_unit_name", pair, context)
-        }
-
-        // =========================================================================
-        // VHAL
-        // =========================================================================
-        // Blocks
-        Rule::vhal_vehicle_property => format_block(result, "property", pair.into_inner(), context),
-        Rule::vhal_vehicle_prop_config => {
-            format_block(result, "prop_config", pair.into_inner(), context)
-        }
-        Rule::vhal_vehicle_default_value | Rule::vhal_property_area_default_value => {
-            format_block(result, "default_value", pair.into_inner(), context)
-        }
-        Rule::vhal_vehicle_default_area_config => {
-            format_block(result, "default_area_config", pair.into_inner(), context)
-        }
-        Rule::vhal_vehicle_prop_config_area_configs => {
-            format_block(result, "area_configs", pair.into_inner(), context)
-        }
-        Rule::vhal_data_source => format_block(result, "source", pair.into_inner(), context),
-        Rule::vhal_area_mapping => format_block(result, "area_mapping", pair.into_inner(), context),
-        Rule::vhal_area_mapping_area => format_block(result, "area", pair.into_inner(), context),
-        Rule::vhal_property_area_config => {
-            format_block(result, "area_config", pair.into_inner(), context)
-        }
-
-        // Properties
-        Rule::vhal_data_source_unit_type => format_property(result, "unit_type", pair, context),
-        Rule::vhal_data_source_action => format_property(result, "action", pair, context),
-        Rule::vhal_data_source_field_path => format_property(result, "field_path", pair, context),
-        Rule::vhal_data_source_status_field_path => {
-            format_property(result, "status_field_path", pair, context)
-        }
-        Rule::vhal_area_mapping_publication_instance => {
-            format_property(result, "publication_instance", pair, context)
-        }
-
-        Rule::vhal_default_value_string_value => {
-            format_property(result, "string_value", pair, context)
-        }
-        Rule::vhal_default_value_bytes_value => {
-            format_property(result, "bytes_value", pair, context)
-        }
-        Rule::vhal_default_value_int32_values => {
-            format_property(result, "int32_values", pair, context)
-        }
-        Rule::vhal_default_value_int64_values => {
-            format_property(result, "int64_values", pair, context)
-        }
-        Rule::vhal_default_value_float_values => {
-            format_property(result, "float_values", pair, context)
-        }
-
-        Rule::vhal_vehicle_prop_config_prop => format_property(result, "prop", pair, context),
-        Rule::vhal_vehicle_prop_config_access | Rule::vhal_vehicle_area_config_access => {
-            format_property(result, "access", pair, context)
-        }
-        Rule::vhal_vehicle_prop_config_change_mode => {
-            format_property(result, "change_mode", pair, context)
-        }
-        Rule::vhal_vehicle_prop_config_config_array => {
-            format_property(result, "config_array", pair, context)
-        }
-        Rule::vhal_vehicle_prop_config_config_string => {
-            format_property(result, "config_string", pair, context)
-        }
-        Rule::vhal_vehicle_prop_config_min_sample_rate => {
-            format_property(result, "min_sample_rate", pair, context)
-        }
-        Rule::vhal_vehicle_prop_config_max_sample_rate => {
-            format_property(result, "max_sample_rate", pair, context)
-        }
-
-        Rule::vhal_vehicle_area_config_area_id => format_property(result, "area_id", pair, context),
-        Rule::vhal_vehicle_area_config_min_int32_value => {
-            format_property(result, "min_int32_value", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_max_int32_value => {
-            format_property(result, "max_int32_value", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_min_int64_value => {
-            format_property(result, "min_int64_value", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_max_int64_value => {
-            format_property(result, "max_int64_value", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_min_float_value => {
-            format_property(result, "min_float_value", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_max_float_value => {
-            format_property(result, "max_float_value", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_supported_enum_values => {
-            format_property(result, "supported_enum_values", pair, context)
-        }
-        Rule::vhal_vehicle_area_config_support_variable_update_rate => {
-            format_property(result, "support_variable_update_rate", pair, context)
-        }
-
-        // =========================================================================
-        // SOME/IP
-        // =========================================================================
-        // Blocks
-        Rule::some_ip_service_mapping => {
-            format_block(result, "someip_service_mapping", pair.into_inner(), context)
-        }
-        Rule::some_ip_instance => format_block(result, "instance", pair.into_inner(), context),
-        Rule::some_ip_sdv_service_unit_parameterization_block => {
-            format_block(result, "sdv_service_unit_parameterization", pair.into_inner(), context)
-        }
-        Rule::some_ip_instance_impl => {
-            format_block(result, "instance_impl", pair.into_inner(), context)
-        }
-        Rule::some_ip_offered_interface | Rule::some_ip_sdv_offered_interface => {
-            format_block(result, "offered_interface", pair.into_inner(), context)
-        }
-        Rule::some_ip_offered_interface_sdv_unit_type
+        Rule::diagnostics_data_item
+        | Rule::diagnostics_io_control
+        | Rule::diagnostics_routine
+        | Rule::diagnostics_event
+        | Rule::diagnostics_routine_start
+        | Rule::diagnostics_routine_stop
+        | Rule::diagnostics_routine_result
+        | Rule::vhal_vehicle_property
+        | Rule::vhal_vehicle_prop_config
+        | Rule::vhal_vehicle_default_value
+        | Rule::vhal_property_area_default_value
+        | Rule::vhal_vehicle_default_area_config
+        | Rule::vhal_vehicle_prop_config_area_configs
+        | Rule::vhal_data_source
+        | Rule::vhal_area_mapping
+        | Rule::vhal_area_mapping_area
+        | Rule::vhal_property_area_config
+        | Rule::some_ip_service_mapping
+        | Rule::some_ip_instance
+        | Rule::some_ip_sdv_service_unit_parameterization_block
+        | Rule::some_ip_instance_impl
+        | Rule::some_ip_offered_interface
+        | Rule::some_ip_sdv_offered_interface
+        | Rule::some_ip_offered_interface_sdv_unit_type
         | Rule::some_ip_simple_event_sdv_unit_type
-        | Rule::some_ip_event_part_sdv_unit_type => {
-            format_block(result, "sdv_unit_type", pair.into_inner(), context)
-        }
-        Rule::some_ip_sdv_type_mapping_unit_type => {
-            format_block(result, "unit_type", pair.into_inner(), context)
-        }
-
-        Rule::some_ip_method | Rule::some_ip_sdv_method => {
-            format_block(result, "method", pair.into_inner(), context)
-        }
-        Rule::request_payload_mapping => {
-            format_block(result, "request_payload_mapping", pair.into_inner(), context)
-        }
-        Rule::response_payload_mapping => {
-            format_block(result, "response_payload_mapping", pair.into_inner(), context)
-        }
-
-        Rule::some_ip_offered_event => {
-            format_block(result, "offered_event", pair.into_inner(), context)
-        }
-        Rule::some_ip_simple_event => {
-            format_block(result, "simple_event", pair.into_inner(), context)
-        }
-        Rule::some_ip_simple_event_type_definition
+        | Rule::some_ip_event_part_sdv_unit_type
+        | Rule::some_ip_sdv_type_mapping_unit_type
+        | Rule::some_ip_method
+        | Rule::some_ip_sdv_method
+        | Rule::request_payload_mapping
+        | Rule::response_payload_mapping
+        | Rule::some_ip_offered_event
+        | Rule::some_ip_simple_event
+        | Rule::some_ip_simple_event_type_definition
         | Rule::some_ip_group_event_type_definition
-        | Rule::some_ip_offered_topic_type_definition => {
-            format_block(result, "type_definition", pair.into_inner(), context)
-        }
-
-        Rule::some_ip_group_event => {
-            format_block(result, "group_event", pair.into_inner(), context)
-        }
-        Rule::some_ip_event_part => format_block(result, "event_part", pair.into_inner(), context),
-        Rule::some_ip_event_part_field_name_mapping => {
-            format_block(result, "field_name_mapping", pair.into_inner(), context)
-        }
-
-        Rule::some_ip_sdv_type_mapping => {
-            format_block(result, "sdv_type_mapping", pair.into_inner(), context)
-        }
-        Rule::some_ip_offered_topic => {
-            format_block(result, "offered_topic", pair.into_inner(), context)
-        }
-        Rule::some_ip_simple_mapping => {
-            format_block(result, "simple_mapping", pair.into_inner(), context)
-        }
-        Rule::some_ip_multipub_topic_info => {
-            format_block(result, "multipub_topic_info", pair.into_inner(), context)
-        }
-
-        Rule::some_ip_service_unit_mapping => {
-            format_block(result, "service_unit_mapping", pair.into_inner(), context)
-        }
-        Rule::some_ip_service_unit_mapping_service_unit_id => {
-            format_block(result, "service_unit_id", pair.into_inner(), context)
-        }
-        Rule::some_ip_fire_and_forget_method => {
-            format_block(result, "fire_and_forget_method", pair.into_inner(), context)
+        | Rule::some_ip_offered_topic_type_definition
+        | Rule::some_ip_group_event
+        | Rule::some_ip_event_part
+        | Rule::some_ip_event_part_field_name_mapping
+        | Rule::some_ip_sdv_type_mapping
+        | Rule::some_ip_offered_topic
+        | Rule::some_ip_simple_mapping
+        | Rule::some_ip_multipub_topic_info
+        | Rule::some_ip_service_unit_mapping
+        | Rule::some_ip_service_unit_mapping_service_unit_id
+        | Rule::some_ip_fire_and_forget_method
+        | Rule::some_ip_array_type
+        | Rule::some_ip_struct_field
+        | Rule::some_ip_struct_field_type => {
+            let keyword = get_first_word(pair.as_str());
+            format_block(result, keyword, pair.into_inner(), context)
         }
 
         // Type System Blocks
         Rule::some_ip_string_body => format_children(result, pair.into_inner(), context),
         Rule::some_ip_array_body => format_children(result, pair.into_inner(), context),
         Rule::some_ip_struct_body => format_children(result, pair.into_inner(), context),
-        Rule::some_ip_array_type => format_block(result, "array_type", pair.into_inner(), context),
-        Rule::some_ip_struct_field => format_block(result, "field", pair.into_inner(), context),
-        Rule::some_ip_struct_field_type => {
-            format_block(result, "field_type", pair.into_inner(), context)
+
+        // Properties with deprecated keyword replacement
+        Rule::publisher_message | Rule::subscriber_message => {
+            format_property(result, "message", pair, context)
+        }
+        Rule::server_interface | Rule::client_interface => {
+            format_property(result, "service", pair, context)
         }
 
         // Properties
-        Rule::some_ip_service_id | Rule::some_ip_sdv_type_mapping_service_id => {
-            format_property(result, "someip_service_id", pair, context)
-        }
-        Rule::some_ip_fire_and_forget_method_service_id => {
-            format_property(result, "service_id", pair, context)
-        }
-        Rule::some_ip_version_major
+        Rule::service_bundle_name_prop
+        | Rule::service_bundle_register_reflection_metadata
+        | Rule::publisher_topic
+        | Rule::subscriber_topic
+        | Rule::publisher_channel
+        | Rule::subscriber_channel
+        | Rule::publisher_service_unit_name
+        | Rule::server_service_unit_name
+        | Rule::publisher_capacity
+        | Rule::server_channel
+        | Rule::client_channel
+        | Rule::unit_type_type
+        | Rule::build_configuration_target_name
+        | Rule::build_configuration_skip_codegen
+        | Rule::diagnostics_data_item_id
+        | Rule::diagnostics_io_control_id
+        | Rule::diagnostics_routine_id
+        | Rule::diagnostics_event_id
+        | Rule::diagnostics_data_item_message_name
+        | Rule::diagnostics_io_control_message_name
+        | Rule::diagnostics_data_item_is_writable
+        | Rule::diagnostics_method_request
+        | Rule::diagnostics_method_response
+        | Rule::diagnostics_event_extended_data_message_name
+        | Rule::diagnostics_event_fault_listener_mask
+        | Rule::diagnostics_event_service_unit_name
+        | Rule::vhal_data_source_unit_type
+        | Rule::vhal_data_source_action
+        | Rule::vhal_data_source_field_path
+        | Rule::vhal_data_source_status_field_path
+        | Rule::vhal_area_mapping_publication_instance
+        | Rule::vhal_default_value_string_value
+        | Rule::vhal_default_value_bytes_value
+        | Rule::vhal_default_value_int32_values
+        | Rule::vhal_default_value_int64_values
+        | Rule::vhal_default_value_float_values
+        | Rule::vhal_vehicle_prop_config_prop
+        | Rule::vhal_vehicle_prop_config_access
+        | Rule::vhal_vehicle_area_config_access
+        | Rule::vhal_vehicle_prop_config_change_mode
+        | Rule::vhal_vehicle_prop_config_config_array
+        | Rule::vhal_vehicle_prop_config_config_string
+        | Rule::vhal_vehicle_prop_config_min_sample_rate
+        | Rule::vhal_vehicle_prop_config_max_sample_rate
+        | Rule::vhal_vehicle_area_config_area_id
+        | Rule::vhal_vehicle_area_config_min_int32_value
+        | Rule::vhal_vehicle_area_config_max_int32_value
+        | Rule::vhal_vehicle_area_config_min_int64_value
+        | Rule::vhal_vehicle_area_config_max_int64_value
+        | Rule::vhal_vehicle_area_config_min_float_value
+        | Rule::vhal_vehicle_area_config_max_float_value
+        | Rule::vhal_vehicle_area_config_supported_enum_values
+        | Rule::vhal_vehicle_area_config_support_variable_update_rate
+        | Rule::some_ip_service_id
+        | Rule::some_ip_sdv_type_mapping_service_id
+        | Rule::some_ip_fire_and_forget_method_service_id
+        | Rule::some_ip_version_major
         | Rule::some_ip_sdv_type_mapping_version_major
-        | Rule::some_ip_fire_and_forget_method_version_major => {
-            format_property(result, "version_major", pair, context)
-        }
-        Rule::some_ip_version_minor
+        | Rule::some_ip_fire_and_forget_method_version_major
+        | Rule::some_ip_version_minor
         | Rule::some_ip_sdv_type_mapping_version_minor
-        | Rule::some_ip_fire_and_forget_method_version_minor => {
-            format_property(result, "version_minor", pair, context)
-        }
-        Rule::some_ip_sd_behavior => format_property(result, "sd_behavior", pair, context),
-        Rule::some_ip_instance_id
+        | Rule::some_ip_fire_and_forget_method_version_minor
+        | Rule::some_ip_sd_behavior
+        | Rule::some_ip_instance_id
         | Rule::some_ip_service_unit_mapping_instance_id
-        | Rule::some_ip_fire_and_forget_method_instance_id => {
-            format_property(result, "instance_id", pair, context)
-        }
-        Rule::some_ip_multipub_topic_info_someip_instance_id => {
-            format_property(result, "someip_instance_id", pair, context)
-        }
-
-        Rule::some_ip_sdv_service_unit_parameterization_block_key | Rule::some_ip_map_entry_key => {
-            format_property(result, "key", pair, context)
-        }
-        Rule::some_ip_sdv_service_unit_parameterization_block_value
-        | Rule::some_ip_map_entry_value => format_property(result, "value", pair, context),
-
-        Rule::some_ip_service_unit
+        | Rule::some_ip_fire_and_forget_method_instance_id
+        | Rule::some_ip_multipub_topic_info_someip_instance_id
+        | Rule::some_ip_sdv_service_unit_parameterization_block_key
+        | Rule::some_ip_map_entry_key
+        | Rule::some_ip_sdv_service_unit_parameterization_block_value
+        | Rule::some_ip_map_entry_value
+        | Rule::some_ip_service_unit
         | Rule::some_ip_simple_event_service_unit
-        | Rule::some_ip_event_part_service_unit => {
-            format_property(result, "service_unit", pair, context)
-        }
-
-        Rule::some_ip_unit_type_ref_package_name | Rule::some_ip_service_unit_id_package_name => {
-            format_property(result, "package_name", pair, context)
-        }
-        Rule::some_ip_unit_type_ref_service_bundle_name
-        | Rule::some_ip_service_unit_id_service_bundle_name => {
-            format_property(result, "service_bundle_name", pair, context)
-        }
-        Rule::some_ip_unit_type_ref_type_name => {
-            format_property(result, "type_name", pair, context)
-        }
-
-        Rule::some_ip_method_procedure | Rule::some_ip_sdv_method_procedure => {
-            format_property(result, "procedure", pair, context)
-        }
-        Rule::some_ip_method_method_id
+        | Rule::some_ip_event_part_service_unit
+        | Rule::some_ip_unit_type_ref_package_name
+        | Rule::some_ip_service_unit_id_package_name
+        | Rule::some_ip_unit_type_ref_service_bundle_name
+        | Rule::some_ip_service_unit_id_service_bundle_name
+        | Rule::some_ip_unit_type_ref_type_name
+        | Rule::some_ip_method_procedure
+        | Rule::some_ip_sdv_method_procedure
+        | Rule::some_ip_method_method_id
         | Rule::some_ip_sdv_method_method_id
-        | Rule::some_ip_fire_and_forget_method_method_id => {
-            format_property(result, "method_id", pair, context)
-        }
-
-        Rule::some_ip_offered_event_group_id | Rule::some_ip_simple_mapping_group_id => {
-            format_property(result, "group_id", pair, context)
-        }
-        Rule::some_ip_offered_event_event_id | Rule::some_ip_simple_mapping_event_id => {
-            format_property(result, "event_id", pair, context)
-        }
-        Rule::some_ip_simple_event_message_translation_mode => {
-            format_property(result, "message_translation_mode", pair, context)
-        }
-
-        Rule::some_ip_offered_topic_someip_ff_methods => {
-            format_property(result, "someip_ff_methods", pair, context)
-        }
-
-        Rule::some_ip_service_unit_id_vm_name => format_property(result, "vm_name", pair, context),
-        Rule::some_ip_service_unit_id_service_instance_name => {
-            format_property(result, "service_instance_name", pair, context)
-        }
-        Rule::some_ip_service_unit_id_service_unit_name => {
-            format_property(result, "service_unit_name", pair, context)
+        | Rule::some_ip_fire_and_forget_method_method_id
+        | Rule::some_ip_offered_event_group_id
+        | Rule::some_ip_simple_mapping_group_id
+        | Rule::some_ip_offered_event_event_id
+        | Rule::some_ip_simple_mapping_event_id
+        | Rule::some_ip_simple_event_message_translation_mode
+        | Rule::some_ip_offered_topic_someip_ff_methods
+        | Rule::some_ip_service_unit_id_vm_name
+        | Rule::some_ip_service_unit_id_service_instance_name
+        | Rule::some_ip_service_unit_id_service_unit_name
+        | Rule::some_ip_string_body_fixed_length
+        | Rule::some_ip_array_body_fixed_length
+        | Rule::some_ip_string_body_length_field_size
+        | Rule::some_ip_array_body_length_field_size
+        | Rule::some_ip_struct_body_length_field_size
+        | Rule::some_ip_string_body_string_encoding
+        | Rule::some_ip_struct_field_data_tag
+        | Rule::some_ip_struct_field_field_name => {
+            let keyword = get_first_word(pair.as_str());
+            format_property(result, keyword, pair, context)
         }
 
         // Type Properties
         Rule::some_ip_type => {
             // handle primitive/string/array/struct wrapper
             let inner = pair.into_inner().next().unwrap();
+            let keyword = get_first_word(inner.as_str());
             match inner.as_rule() {
                 Rule::some_ip_type_someip_primitive => {
-                    format_property(result, "someip_primitive", inner, context)
+                    format_property(result, keyword, inner, context)
                 }
-                Rule::some_ip_string_body => {
-                    format_block(result, "someip_string", inner.into_inner(), context)
-                }
-                Rule::some_ip_array_body => {
-                    format_block(result, "someip_array", inner.into_inner(), context)
-                }
-                Rule::some_ip_struct_body => {
-                    format_block(result, "someip_struct", inner.into_inner(), context)
+                Rule::some_ip_string_body
+                | Rule::some_ip_array_body
+                | Rule::some_ip_struct_body => {
+                    format_block(result, keyword, inner.into_inner(), context)
                 }
                 _ => {}
             }
-        }
-        Rule::some_ip_string_body_fixed_length | Rule::some_ip_array_body_fixed_length => {
-            format_property(result, "fixed_length", pair, context)
-        }
-        Rule::some_ip_string_body_length_field_size
-        | Rule::some_ip_array_body_length_field_size
-        | Rule::some_ip_struct_body_length_field_size => {
-            format_property(result, "length_field_size", pair, context)
-        }
-        Rule::some_ip_string_body_string_encoding => {
-            format_property(result, "string_encoding", pair, context)
-        }
-        Rule::some_ip_struct_field_data_tag => format_property(result, "data_tag", pair, context),
-        Rule::some_ip_struct_field_field_name => {
-            format_property(result, "field_name", pair, context)
         }
 
         // =========================================================================
@@ -726,6 +526,28 @@ service_bundle {
         assert!(formatted.contains("# Copyright (C) 2026 The Android Open Source Project"));
         assert!(formatted.contains("# End of the bundle definition"));
         assert!(formatted.contains("name: \"TestBundle\"\n\n  # End of the bundle definition\n}"));
+    }
+
+    #[test]
+    fn test_format_alternative_keywords() {
+        let input = r#"sdv_service_bundle {
+  name: "MyBundle"
+  publisher {
+    type: "MyType"
+    instance: "MyInstance"
+  }
+  server {
+    interface: "MyInterface"
+  }
+}
+"#;
+        let pairs = VsidlParser::parse(Rule::vsidl_file, input).unwrap();
+        let formatted = format(pairs.into_iter().next().unwrap(), 2);
+
+        assert_eq!(
+            formatted,
+            "service_bundle {\n  name: \"MyBundle\"\n\n  publisher {\n    message: \"MyType\"\n    instance: \"MyInstance\"\n  }\n\n  server {\n    service: \"MyInterface\"\n  }\n}\n"
+        );
     }
 
     #[test]

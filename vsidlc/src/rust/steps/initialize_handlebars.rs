@@ -61,6 +61,14 @@ macro_rules! define_common_templates {
                 "rpc/impl_rpc_client/functions/new",
                 include_str!(concat!($prefix, "/generated_rs/rpc/impl_rpc_client/functions/new.hbs")),
             ),
+            (
+                "rpc/impl_unit_type/unit_type",
+                include_str!(concat!($prefix, "/generated_rs/rpc/impl_unit_type/unit_type.hbs")),
+            ),
+            (
+                "rpc/impl_debug/fmt",
+                include_str!(concat!($prefix, "/generated_rs/rpc/impl_debug/fmt.hbs")),
+            ),
 
             /* Service Bundle Functions */
             (
@@ -98,10 +106,6 @@ macro_rules! define_common_templates {
             (
                 "service_bundles/functions/create_registration_event_stream",
                 include_str!(concat!($prefix, "/generated_rs/service_bundles/functions/create_registration_event_stream.hbs")),
-            ),
-            (
-                "service_bundles/functions/take_publisher",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/functions/take_publisher.hbs")),
             ),
             (
                 "service_bundles/functions/fill_publication_channels",
@@ -320,19 +324,15 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
         "service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel",
         include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel.hbs")
     ),
-
-    /* RPC Service Functions */
-    (
-        "rpc/impl_unit_type/unit_type",
-        include_str!("../templates/latest/generated_rs/rpc/impl_unit_type/unit_type.hbs")
-    ),
-    (
-        "rpc/impl_debug/fmt",
-        include_str!("../templates/latest/generated_rs/rpc/impl_debug/fmt.hbs")
-    ),
 ];
 
 const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[
+    (
+        "service_bundles/functions/take_publisher",
+        include_str!(
+            "../templates/pdk29/generated_rs/service_bundles/functions/take_publisher.hbs"
+        ),
+    ),
     (
         "service_bundles/unit_type/unit_type",
         include_str!("../templates/pdk29/generated_rs/service_bundles/unit_type/unit_type.hbs"),

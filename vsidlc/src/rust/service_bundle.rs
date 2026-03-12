@@ -376,7 +376,7 @@ impl ServiceBundleContext {
                 .map(|server| ServiceUnitContext::from_rpc_server(server, symbol_table))
                 .collect(),
             rpc_client_groups: Self::get_rpc_client_groups(service_bundle, symbol_table),
-            mutable_service: is_publisher || is_server,
+            mutable_service: is_server || (is_publisher && cli.target_api == "pdk29"),
             used_comms: (is_subscriber || is_publisher || is_client || is_server)
                 && cli.target_api == "pdk29",
             register_reflection_metadata: service_bundle.register_reflection_metadata,

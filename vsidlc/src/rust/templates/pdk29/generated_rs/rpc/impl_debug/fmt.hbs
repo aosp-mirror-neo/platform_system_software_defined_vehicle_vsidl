@@ -13,18 +13,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-
-/// Take the ownership of the publisher object
-/// Will return None if called more than once per publisher channel
-pub fn take_publisher<M: protobuf::Message + 'static>(
-    &mut self,
-    channel: &publisher::Channel<M>,
-) -> Option<sdv::mw::Publisher<M>> {
-    let guarded_publisher = *self
-            .publishers
-            .remove(&(std::any::TypeId::of::<M>(), channel.name.to_string()))?
-            .downcast::<std::sync::Mutex<sdv::mw::Publisher<M>>>()
-            .unwrap();
-    Some(guarded_publisher.into_inner().unwrap())
+fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_tuple("Client").field(&"Box<dyn sdv::mw::ClientTransport>").finish()
 }
-

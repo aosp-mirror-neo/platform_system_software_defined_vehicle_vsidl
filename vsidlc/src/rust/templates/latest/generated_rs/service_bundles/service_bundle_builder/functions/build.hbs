@@ -27,9 +27,6 @@ pub async fn build(self) -> sdv::status::SdvResult<{{../service_bundle_name}}> {
 
     let {{#if mutable_service}}mut{{/if}} service = {{../service_bundle_name}} {
         {{#unless used_comms}}_{{/unless}}comms: comms.clone(),
-        {{#if is_publisher}}
-        publishers: std::collections::HashMap::new(),
-        {{/if}}
         {{#if is_server}}
         servers: std::vec::Vec::new(),
         {{/if}}
@@ -56,8 +53,5 @@ pub async fn build(self) -> sdv::status::SdvResult<{{../service_bundle_name}}> {
     }
     {{/each}}
 
-    {{#each publications}}
-    sdv::mw::clientlib::fill_publication_channels(comms.as_ref(), publisher::Channel::<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>::ALL_VARIANTS, &mut service.publishers).await?;
-    {{/each}}
     Ok(service)
 }

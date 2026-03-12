@@ -16,6 +16,7 @@
 
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition;
+use sdv_comms_id_validator::topic_name_validation::validate_topic_name;
 use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
@@ -30,32 +31,7 @@ fn is_kebab_case(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
-    let mut chars = s.chars().peekable();
-
-    // Must start with a lowercase letter
-    if let Some(c) = chars.next() {
-        if !c.is_ascii_lowercase() {
-            return false;
-        }
-    }
-
-    while let Some(c) = chars.next() {
-        if c == '-' {
-            // Cannot have consecutive hyphens
-            if let Some(&next) = chars.peek() {
-                if next == '-' {
-                    return false;
-                }
-            } else {
-                // Cannot end with a hyphen
-                return false;
-            }
-        } else if !c.is_ascii_lowercase() && !c.is_ascii_digit() {
-            // Only lowercase alphanumeric and hyphens allowed
-            return false;
-        }
-    }
-    true
+    validate_topic_name(s).is_ok()
 }
 
 impl VsidlVisitor for TopicNameKebabCase {

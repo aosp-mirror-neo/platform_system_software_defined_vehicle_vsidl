@@ -27,9 +27,6 @@ pub async fn new(comms: std::sync::Arc<dyn sdv::mw::Communicate>,
     ) -> sdv::status::SdvResult<Self> {
     let {{#if mutable_service}}mut{{/if}} service = Self {
         {{#unless used_comms}}_{{/unless}}comms: comms.clone(),
-        {{#if is_publisher}}
-            publishers: std::collections::HashMap::new(),
-        {{/if}}
 
         {{#if is_server}}
         servers: std::vec::Vec::new(),
@@ -38,9 +35,6 @@ pub async fn new(comms: std::sync::Arc<dyn sdv::mw::Communicate>,
         diagnostics: Diagnostics::new(comms).await?,
         {{/if}}
     };
-    {{#each publications}}
-    sdv::mw::clientlib::fill_publication_channels(comms.as_ref(), publisher::Channel::<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>::ALL_VARIANTS, &mut service.publishers).await?;
-    {{/each}}
     {{#each rpc_servers}}
     service.servers.push(
         sdv::mw::clientlib::create_server::<dyn {{this.unit_type.crate_name}}::Interface>(
