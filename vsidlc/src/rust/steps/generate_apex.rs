@@ -21,7 +21,7 @@ use handlebars::Handlebars;
 use heck::ToSnakeCase;
 use serde_derive::Serialize;
 use serde_json::json;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -112,10 +112,19 @@ impl GeneratorStepExecution for GenerateApex {
 }
 
 fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
-    let mut message_unit_types_map: HashMap<String, AclUnitType> = HashMap::new();
+    let mut message_unit_types_map: BTreeMap<String, AclUnitType> = BTreeMap::new();
     let mut message_service_units = Vec::new();
 
-    for publisher in symbol_table.get_all_publisher_symbols() {
+    // Keep stable order across multiple runs of VSIDLC
+    let mut publishers = symbol_table.get_all_publisher_symbols();
+    publishers.sort_by_cached_key(|p| {
+        (
+            p.message(symbol_table).name().to_string(),
+            p.owning_service_bundle(symbol_table).full_name(symbol_table),
+        )
+    });
+
+    for publisher in publishers {
         let message = publisher.message(symbol_table);
         let message_name = message.name().to_string();
         let publisher_bundle_fqn =
@@ -156,10 +165,19 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
         }
     }
 
-    let mut rpc_unit_types_map: HashMap<String, AclUnitType> = HashMap::new();
+    let mut rpc_unit_types_map: BTreeMap<String, AclUnitType> = BTreeMap::new();
     let mut rpc_service_units = Vec::new();
 
-    for server in symbol_table.get_all_rpc_server_symbols() {
+    // Keep stable order across multiple runs of VSIDLC
+    let mut rpc_servers = symbol_table.get_all_rpc_server_symbols();
+    rpc_servers.sort_by_cached_key(|s| {
+        (
+            s.service(symbol_table).name().to_string(),
+            s.owning_service_bundle(symbol_table).full_name(symbol_table),
+        )
+    });
+
+    for server in rpc_servers {
         let service = server.service(symbol_table);
         let service_name = service.name().to_string();
         let server_bundle_fqn = server.owning_service_bundle(symbol_table).full_name(symbol_table);
