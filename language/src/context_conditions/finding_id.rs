@@ -96,6 +96,8 @@ macro_rules! finding_ids {
             E20E: (0x20E, RpcChannelNamingConvention),
             /// Topics must not exceed 127 characters.
             E20F: (0x20F, TopicNameTooLong),
+            /// Proto descriptor names must not exceed 127 characters.
+            E210: (0x210, ProtoDescriptorNameTooLong),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),
