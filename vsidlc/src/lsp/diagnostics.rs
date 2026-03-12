@@ -489,6 +489,13 @@ impl<'a> DiagnosticSession<'a> {
         }
 
         for path in targets {
+            // Only send diagnostics for files that belong to the main catalog.
+            // Diagnostics for dependency catalogs should be handled by their own context
+            // if they are also open in the IDE.
+            if !self.is_in_main_catalog(&path) {
+                continue;
+            }
+
             let ast = Some(ast_map.get(&path).cloned().unwrap_or_default());
             let unlinked = unlinked_map.as_ref().map(|m| m.get(&path).cloned().unwrap_or_default());
             let linked = linked_map.as_ref().map(|m| m.get(&path).cloned().unwrap_or_default());
@@ -519,6 +526,13 @@ impl<'a> DiagnosticSession<'a> {
             .map(|s| s.map_to_source(path))
             .unwrap_or_else(|| path.to_string());
         mapped
+    }
+
+    /// Checks if a file path belongs to the main catalog being validated in this session.
+    fn is_in_main_catalog(&self, path: &str) -> bool {
+        let path_buf = PathBuf::from(path);
+        let abs_path = self.provider.canonicalize(&path_buf).unwrap_or(path_buf);
+        abs_path.starts_with(&self.cli.catalog_path)
     }
 
     fn send_diagnostics(
@@ -594,5 +608,56 @@ impl<'a> DiagnosticSession<'a> {
         }
         self.context.recovered_syntax_errors.insert(file_path, findings);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lsp::lsp_file_provider::LspFileProvider;
+    use crate::lsp::test_utils::{setup_mock_cli, setup_test_catalog};
+    use lsp_server::Connection;
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+    use vsidl_v1_parser::file_provider::DiskFileProvider;
+    use vsidl_v1_parser::Catalog;
+
+    #[test]
+    fn test_is_in_main_catalog() {
+        let temp_dir = setup_test_catalog();
+        let cli = setup_mock_cli(&temp_dir);
+        let catalog_path = cli.catalog_path.clone().unwrap();
+
+        let document_store = Arc::new(Mutex::new(HashMap::new()));
+        let file_provider = LspFileProvider {
+            document_store: Arc::clone(&document_store),
+            file_hashes: Arc::new(Mutex::new(HashMap::new())),
+            disk_fallback: DiskFileProvider,
+        };
+
+        let mut context = CatalogContext {
+            cli: cli.clone(),
+            symbol_table: Default::default(),
+            catalog: Catalog::new(),
+            last_valid_symbol_table: None,
+            active_findings: HashMap::new(),
+            shadow_workspace: None,
+            recovered_syntax_errors: HashMap::new(),
+        };
+
+        let (connection, _) = Connection::memory();
+        let session = DiagnosticSession::new(&mut context, &connection, &file_provider);
+
+        // File inside main catalog
+        let inside = catalog_path.join("test.vsidl").to_string_lossy().to_string();
+        assert!(session.is_in_main_catalog(&inside));
+
+        // File in subdirectory
+        let sub = catalog_path.join("protos/test.proto").to_string_lossy().to_string();
+        assert!(session.is_in_main_catalog(&sub));
+
+        // File outside main catalog
+        let outside = "/tmp/outside.vsidl";
+        assert!(!session.is_in_main_catalog(outside));
     }
 }
