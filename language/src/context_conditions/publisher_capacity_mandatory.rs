@@ -28,7 +28,8 @@ impl_context_condition!(PublisherCapacityMandatory);
 
 impl VsidlVisitor for PublisherCapacityMandatory {
     fn start_visit_publisher(&mut self, node: &Publisher) {
-        if node.capacity_span.is_none() {
+        // If the capacity is set neither by the AST transformation nor by the user.
+        if node.capacity == 0 && node.capacity_span.is_none() {
             self.finding_collector.error(
                 FindingId::PublisherCapacityMandatory,
                 "Publisher capacity is mandatory in latest VSIDL syntax. Please specify 'capacity: <even_number_ge_2>'",
