@@ -90,6 +90,10 @@ pub use rpc_server_type::RpcServerType;
 mod service_bundle_fqn_duplicate;
 pub use service_bundle_fqn_duplicate::ServiceBundleFqnDuplicate;
 
+// Checks that Proto message names are not longer than buffer size
+mod proto_descriptor_name_too_long;
+pub use proto_descriptor_name_too_long::ProtoDescriptorNameTooLong;
+
 /// Checks that the fully-qualified names of each Protobuf message / RPC service is unique
 mod proto_fqn_duplicate;
 pub use proto_fqn_duplicate::ProtoFqnDuplicate;
