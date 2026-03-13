@@ -188,6 +188,9 @@ message SomeIpMapping {
         // Topic name that will be created inside SOME/IP broker bundle
         // for this event instance.
         string topic = 5;
+        // Capacity of the publisher created inside SOME/IP broker bundle for
+        // this event instance.
+        uint32 capacity = 6;
 
         // Parsing metadata that describes where the syntax element was found in
         // the input. Do not fill fields of this type manually.
@@ -197,6 +200,7 @@ message SomeIpMapping {
         sdv.vsidl.v1.Span type_definition_span = 10003;
         sdv.vsidl.v1.Span message_translation_mode_span = 10004;
         sdv.vsidl.v1.Span topic_span = 10005;
+        sdv.vsidl.v1.Span capacity_span = 10006;
       }
       message GroupEventPart {
         // SDV Unit Type corresponding to this group event part
@@ -215,6 +219,9 @@ message SomeIpMapping {
         // Topic name that will be created inside SOME/IP broker bundle
         // for this event instance.
         string topic = 4;
+        // Capacity of the publisher created inside SOME/IP broker bundle for
+        // this event instance.
+        uint32 capacity = 5;
 
         // Parsing metadata that describes where the syntax element was found in
         // the input. Do not fill fields of this type manually.
@@ -223,6 +230,7 @@ message SomeIpMapping {
         sdv.vsidl.v1.Span service_unit_span = 10002;
         map<string, sdv.vsidl.v1.Span> field_name_mapping_span = 10003;
         sdv.vsidl.v1.Span topic_span = 10004;
+        sdv.vsidl.v1.Span capacity_span = 10005;
       }
       message GroupEvent {
         // SOME/IP data format of the event
