@@ -444,11 +444,13 @@ some_ip_instance_impl = { "instance_impl" ~ "{" ~ (
 some_ip_offered_interface = { "offered_interface" ~ "{" ~ (
     some_ip_offered_interface_sdv_unit_type |
     some_ip_service_unit |
+    some_ip_channel |
     some_ip_method
 )* ~ "}" }
 
 some_ip_offered_interface_sdv_unit_type = { "sdv_unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
 some_ip_service_unit = { "service_unit" ~ ":" ~ integer }
+some_ip_channel = { "channel" ~ ":" ~ channel_str }
 
 some_ip_unit_type_ref = { (
     some_ip_unit_type_ref_package_name |
@@ -487,13 +489,17 @@ some_ip_simple_event = { "simple_event" ~ "{" ~ (
     some_ip_simple_event_sdv_unit_type |
     some_ip_simple_event_service_unit |
     some_ip_simple_event_type_definition |
-    some_ip_simple_event_message_translation_mode
+    some_ip_simple_event_message_translation_mode |
+    some_ip_simple_event_topic |
+    some_ip_simple_event_capacity
 )* ~ "}" }
 
 some_ip_simple_event_sdv_unit_type = { "sdv_unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
 some_ip_simple_event_service_unit = { "service_unit" ~ ":" ~ integer }
 some_ip_simple_event_type_definition = { "type_definition" ~ "{" ~ some_ip_struct_body ~ "}" }
 some_ip_simple_event_message_translation_mode = { "message_translation_mode" ~ ":" ~ IDENTIFIER }
+some_ip_simple_event_topic = { "topic" ~ ":" ~ topic_str }
+some_ip_simple_event_capacity = { "capacity" ~ ":" ~ integer }
 
 some_ip_group_event = { "group_event" ~ "{" ~ (
     some_ip_group_event_type_definition |
@@ -505,12 +511,16 @@ some_ip_group_event_type_definition = { "type_definition" ~ "{" ~ some_ip_struct
 some_ip_event_part = { "event_part" ~ "{" ~ (
     some_ip_event_part_sdv_unit_type |
     some_ip_event_part_service_unit |
-    some_ip_event_part_field_name_mapping
+    some_ip_event_part_field_name_mapping |
+    some_ip_event_part_topic |
+    some_ip_event_part_capacity
 )* ~ "}" }
 
 some_ip_event_part_sdv_unit_type = { "sdv_unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
 some_ip_event_part_service_unit = { "service_unit" ~ ":" ~ integer }
 some_ip_event_part_field_name_mapping = { "field_name_mapping" ~ "{" ~ some_ip_map_entry_str_str* ~ "}" }
+some_ip_event_part_topic = { "topic" ~ ":" ~ topic_str }
+some_ip_event_part_capacity = { "capacity" ~ ":" ~ integer }
 
 some_ip_map_entry_str_str = { some_ip_map_entry_key | some_ip_map_entry_value }
 
@@ -524,7 +534,8 @@ some_ip_sdv_type_mapping = { "sdv_type_mapping" ~ "{" ~ (
     some_ip_sdv_type_mapping_version_minor |
     some_ip_sdv_offered_interface |
     some_ip_offered_topic |
-    some_ip_service_unit_mapping
+    some_ip_service_unit_mapping |
+    some_ip_service_oriented_mapping
 )* ~ "}" }
 
 some_ip_sdv_type_mapping_unit_type = { "unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
@@ -545,6 +556,38 @@ some_ip_sdv_method = { "method" ~ "{" ~ (
 
 some_ip_sdv_method_procedure = { "procedure" ~ ":" ~ string }
 some_ip_sdv_method_method_id = { "method_id" ~ ":" ~ integer }
+
+some_ip_service_oriented_mapping = { "service_oriented_mapping" ~ "{" ~ (
+    some_ip_rpc_interface_mapping |
+    some_ip_publication_mapping
+)* ~ "}" }
+
+some_ip_rpc_interface_mapping = { "rpc_interface_mapping" ~ "{" ~ (
+    some_ip_offered_interface |
+    some_ip_rpc_channel_mapping
+)* ~ "}" }
+
+some_ip_rpc_channel_mapping = { "rpc_channel_mapping" ~ "{" ~ (
+    some_ip_rpc_channel_mapping_channel |
+    some_ip_rpc_channel_mapping_instance_id
+)* ~ "}" }
+
+some_ip_rpc_channel_mapping_channel = { "channel" ~ ":" ~ channel_str }
+some_ip_rpc_channel_mapping_instance_id = { "instance_id" ~ ":" ~ integer }
+
+some_ip_publication_mapping = { "publication_mapping" ~ "{" ~ (
+    some_ip_offered_topic |
+    some_ip_topic_mapping
+)* ~ "}" }
+
+some_ip_topic_mapping = { "topic_mapping" ~ "{" ~ (
+    some_ip_topic_mapping_topic |
+    some_ip_topic_mapping_instance_id |
+    some_ip_fire_and_forget_method
+)* ~ "}" }
+
+some_ip_topic_mapping_topic = { "topic" ~ ":" ~ topic_str }
+some_ip_topic_mapping_instance_id = { "instance_id" ~ ":" ~ integer }
 
 some_ip_offered_topic = { "offered_topic" ~ "{" ~ (
     some_ip_offered_topic_type_definition |
@@ -681,6 +724,12 @@ impl Rule {
             Rule::unit_type => "'unit_type {'",
             Rule::build_configuration => "'build_cfg {'",
 
+            Rule::some_ip_service_oriented_mapping => "'service_oriented_mapping {'",
+            Rule::some_ip_rpc_interface_mapping => "'rpc_interface_mapping {'",
+            Rule::some_ip_rpc_channel_mapping => "'rpc_channel_mapping {'",
+            Rule::some_ip_publication_mapping => "'publication_mapping {'",
+            Rule::some_ip_topic_mapping => "'topic_mapping {'",
+
             Rule::publisher_message | Rule::subscriber_message => "'message:' or 'type:'",
             Rule::publisher_channel
             | Rule::subscriber_channel
@@ -690,6 +739,17 @@ impl Rule {
             Rule::publisher_service_unit_name | Rule::server_service_unit_name => {
                 "'service_unit_name:'"
             }
+
+            Rule::some_ip_channel
+            | Rule::some_ip_rpc_channel_mapping_channel
+            | Rule::some_ip_simple_event_topic
+            | Rule::some_ip_event_part_topic
+            | Rule::some_ip_topic_mapping_topic => "'channel:' or 'topic:'",
+            Rule::some_ip_simple_event_capacity | Rule::some_ip_event_part_capacity => {
+                "'capacity:'"
+            }
+            Rule::some_ip_rpc_channel_mapping_instance_id
+            | Rule::some_ip_topic_mapping_instance_id => "'instance_id:'",
 
             Rule::server_interface | Rule::client_interface => "'interface:' or 'service:'",
             Rule::unit_type_type => "'type:'",
