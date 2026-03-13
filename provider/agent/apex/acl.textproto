@@ -35,3 +35,10 @@ service_units {
   name : "vsidl-provider-server"
   acl_names : "VsidlProviderClients"
 }
+
+# Permissions
+
+server {
+  service : "com.android.sdv.vsidl_provider.VsidlProviderService"
+  channel : "vsidl-provider-server"
+}
