@@ -260,6 +260,11 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::some_ip_multipub_topic_info
         | Rule::some_ip_service_unit_mapping
         | Rule::some_ip_service_unit_mapping_service_unit_id
+        | Rule::some_ip_service_oriented_mapping
+        | Rule::some_ip_rpc_interface_mapping
+        | Rule::some_ip_rpc_channel_mapping
+        | Rule::some_ip_publication_mapping
+        | Rule::some_ip_topic_mapping
         | Rule::some_ip_fire_and_forget_method
         | Rule::some_ip_array_type
         | Rule::some_ip_struct_field
@@ -355,7 +360,11 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::some_ip_map_entry_value
         | Rule::some_ip_service_unit
         | Rule::some_ip_simple_event_service_unit
+        | Rule::some_ip_simple_event_topic
+        | Rule::some_ip_simple_event_capacity
         | Rule::some_ip_event_part_service_unit
+        | Rule::some_ip_event_part_topic
+        | Rule::some_ip_event_part_capacity
         | Rule::some_ip_unit_type_ref_package_name
         | Rule::some_ip_service_unit_id_package_name
         | Rule::some_ip_unit_type_ref_service_bundle_name
@@ -375,6 +384,11 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::some_ip_service_unit_id_vm_name
         | Rule::some_ip_service_unit_id_service_instance_name
         | Rule::some_ip_service_unit_id_service_unit_name
+        | Rule::some_ip_channel
+        | Rule::some_ip_rpc_channel_mapping_channel
+        | Rule::some_ip_rpc_channel_mapping_instance_id
+        | Rule::some_ip_topic_mapping_topic
+        | Rule::some_ip_topic_mapping_instance_id
         | Rule::some_ip_string_body_fixed_length
         | Rule::some_ip_array_body_fixed_length
         | Rule::some_ip_string_body_length_field_size

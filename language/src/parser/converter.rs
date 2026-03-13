@@ -35,7 +35,13 @@ use vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::rpc_inte
 use vsidl_v1::someip::{
     some_ip_mapping,
     some_ip_mapping::{
-        sdv_type_mapping, some_ip_instance_implementation, some_ip_instance_implementation::event,
+        sdv_type_mapping,
+        sdv_type_mapping::{
+            publication_mapping, rpc_interface_mapping, service_oriented_mapping,
+            PublicationMapping, RpcInterfaceMapping, ServiceOrientedMapping,
+        },
+        some_ip_instance_implementation,
+        some_ip_instance_implementation::event,
         some_ip_service_mapping,
     },
     SomeIpMapping,
@@ -478,7 +484,8 @@ pub fn convert_to_diagnostics_event(pair: Pair<Rule>) -> diagnostics_declaration
 }
 
 pub fn convert_to_some_ip_mapping(pair: Pair<Rule>, file_path: &str) -> SomeIpMapping {
-    let mut mapping = SomeIpMapping::default();
+    let mut mapping =
+        SomeIpMapping { span: proto_span(pair.clone(), file_path), ..Default::default() };
     let body = pair
         .into_inner()
         .find(|inner_pair| inner_pair.as_rule() == Rule::some_ip_mapping_body)
@@ -487,14 +494,18 @@ pub fn convert_to_some_ip_mapping(pair: Pair<Rule>, file_path: &str) -> SomeIpMa
     for item in body.into_inner() {
         match item.as_rule() {
             Rule::some_ip_service_mapping => {
+                let inner = item.clone();
                 mapping.mapping_type = Some(some_ip_mapping::Mapping_type::SomeipServiceMapping(
-                    convert_to_some_ip_service_mapping(item, file_path),
+                    convert_to_some_ip_service_mapping(inner, file_path),
                 ));
+                mapping.someip_service_mapping_span = proto_span(item, file_path);
             }
             Rule::some_ip_sdv_type_mapping => {
+                let inner = item.clone();
                 mapping.mapping_type = Some(some_ip_mapping::Mapping_type::SdvTypeMapping(
-                    convert_to_some_ip_sdv_type_mapping(item, file_path),
+                    convert_to_some_ip_sdv_type_mapping(inner, file_path),
                 ));
+                mapping.sdv_type_mapping_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -504,31 +515,47 @@ pub fn convert_to_some_ip_mapping(pair: Pair<Rule>, file_path: &str) -> SomeIpMa
 
 pub fn convert_to_some_ip_service_mapping(
     pair: Pair<Rule>,
-    _file_path: &str,
+    file_path: &str,
 ) -> some_ip_mapping::SomeIpServiceMapping {
-    let mut service_mapping = some_ip_mapping::SomeIpServiceMapping::default();
+    let mut service_mapping = some_ip_mapping::SomeIpServiceMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_service_id => {
+                let inner = get_inner_pair(item.clone());
                 service_mapping.someip_service_id =
                     parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                service_mapping.someip_service_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_version_major => {
+                let inner = get_inner_pair(item.clone());
                 service_mapping.version_major =
                     parse_string::<u8>(get_inner_str(item)).unwrap() as u32;
+                service_mapping.version_major_span = proto_span(inner, file_path);
             }
             Rule::some_ip_version_minor => {
+                let inner = get_inner_pair(item.clone());
                 service_mapping.version_minor = parse_string::<u32>(get_inner_str(item)).unwrap();
+                service_mapping.version_minor_span = proto_span(inner, file_path);
             }
             Rule::some_ip_instance => {
-                service_mapping.instance.push(convert_to_some_ip_instance_mapping(item));
+                let inner = item.clone();
+                service_mapping
+                    .instance
+                    .push(convert_to_some_ip_instance_mapping(inner, file_path));
+                service_mapping.instance_span.push(proto_span(item, file_path).unwrap());
             }
             Rule::some_ip_instance_impl => {
+                let inner = item.clone();
                 service_mapping
                     .instance_impl
-                    .push(convert_to_some_ip_instance_implementation(item));
+                    .push(convert_to_some_ip_instance_implementation(inner, file_path));
+                service_mapping.instance_impl_span.push(proto_span(item, file_path).unwrap());
             }
             Rule::some_ip_sd_behavior => {
+                let inner = get_inner_pair(item.clone());
                 service_mapping.sd_behavior = match get_inner_str(item) {
                     "EXACT_OR_ANY_MINOR_VERSION" => {
                         Some(some_ip_service_mapping::SdVersionDrivenBehavior::EXACT_OR_ANY_MINOR_VERSION.into())
@@ -538,6 +565,7 @@ pub fn convert_to_some_ip_service_mapping(
                     ),
                     _ => Some(some_ip_service_mapping::SdVersionDrivenBehavior::UNKNOWN.into()),
                 };
+                service_mapping.sd_behavior_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -547,43 +575,68 @@ pub fn convert_to_some_ip_service_mapping(
 
 pub fn convert_to_some_ip_sdv_type_mapping(
     pair: Pair<Rule>,
-    _file_path: &str,
+    file_path: &str,
 ) -> some_ip_mapping::SdvTypeMapping {
-    let mut sdv_type_mapping = some_ip_mapping::SdvTypeMapping::default();
+    let mut sdv_type_mapping = some_ip_mapping::SdvTypeMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_sdv_type_mapping_unit_type => {
-                let inner = get_inner_pair(item); // some_ip_unit_type_ref
+                let inner = get_inner_pair(item.clone()); // some_ip_unit_type_ref
                 sdv_type_mapping.unit_type =
-                    MessageField::some(convert_to_some_ip_unit_type(inner));
+                    MessageField::some(convert_to_some_ip_unit_type(inner, file_path));
+                sdv_type_mapping.unit_type_span = proto_span(item, file_path);
             }
             Rule::some_ip_sdv_type_mapping_service_id => {
+                let inner = get_inner_pair(item.clone());
                 sdv_type_mapping.someip_service_id =
-                    parse_string::<u16>(get_inner_str(item)).unwrap() as u32
+                    parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                sdv_type_mapping.someip_service_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_sdv_type_mapping_version_major => {
+                let inner = get_inner_pair(item.clone());
                 sdv_type_mapping.version_major =
-                    parse_string::<u8>(get_inner_str(item)).unwrap() as u32
+                    parse_string::<u8>(get_inner_str(item)).unwrap() as u32;
+                sdv_type_mapping.version_major_span = proto_span(inner, file_path);
             }
             Rule::some_ip_sdv_type_mapping_version_minor => {
-                sdv_type_mapping.version_minor = parse_string::<u32>(get_inner_str(item)).unwrap()
+                let inner = get_inner_pair(item.clone());
+                sdv_type_mapping.version_minor = parse_string::<u32>(get_inner_str(item)).unwrap();
+                sdv_type_mapping.version_minor_span = proto_span(inner, file_path);
             }
             Rule::some_ip_sdv_offered_interface => {
+                let inner = item.clone();
                 sdv_type_mapping.interface_type =
                     Some(sdv_type_mapping::Interface_type::OfferedInterface(
-                        convert_to_some_ip_sdv_rpc_interface(item),
+                        convert_to_some_ip_sdv_rpc_interface(inner, file_path),
                     ));
+                sdv_type_mapping.offered_interface_span = proto_span(item, file_path);
             }
             Rule::some_ip_offered_topic => {
+                let inner = item.clone();
                 sdv_type_mapping.interface_type =
                     Some(sdv_type_mapping::Interface_type::OfferedTopic(
-                        convert_to_some_ip_offered_topic(item),
+                        convert_to_some_ip_offered_topic(inner, file_path),
                     ));
+                sdv_type_mapping.offered_topic_span = proto_span(item, file_path);
             }
             Rule::some_ip_service_unit_mapping => {
+                let inner = item.clone();
                 sdv_type_mapping
                     .service_unit_mapping
-                    .push(convert_to_some_ip_service_unit_mapping(item));
+                    .push(convert_to_some_ip_service_unit_mapping(inner, file_path));
+                sdv_type_mapping
+                    .service_unit_mapping_span
+                    .push(proto_span(item, file_path).unwrap());
+            }
+            Rule::some_ip_service_oriented_mapping => {
+                let inner = item.clone();
+                sdv_type_mapping.service_oriented_mapping = MessageField::some(
+                    convert_to_some_ip_service_oriented_mapping(inner, file_path),
+                );
+                sdv_type_mapping.service_oriented_mapping_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -593,13 +646,19 @@ pub fn convert_to_some_ip_sdv_type_mapping(
 
 pub fn convert_to_some_ip_instance_mapping(
     pair: Pair<Rule>,
+    file_path: &str,
 ) -> some_ip_mapping::SomeIpInstanceMapping {
-    let mut instance_mapping = some_ip_mapping::SomeIpInstanceMapping::default();
+    let mut instance_mapping = some_ip_mapping::SomeIpInstanceMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_instance_id => {
+                let inner = get_inner_pair(item.clone());
                 instance_mapping.instance_id =
                     parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                instance_mapping.instance_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_sdv_service_unit_parameterization_block => {
                 let mut key = 0;
@@ -607,7 +666,10 @@ pub fn convert_to_some_ip_instance_mapping(
                 for sub_item in item.into_inner() {
                     match sub_item.as_rule() {
                         Rule::some_ip_sdv_service_unit_parameterization_block_key => {
-                            key = parse_string::<u32>(get_inner_str(sub_item)).unwrap();
+                            key = parse_string::<u32>(get_inner_str(sub_item.clone())).unwrap();
+                            instance_mapping
+                                .sdv_service_unit_parameterization_span
+                                .insert(key, proto_span(sub_item, file_path).unwrap());
                         }
                         Rule::some_ip_sdv_service_unit_parameterization_block_value => {
                             value = unquote(get_inner_str(sub_item));
@@ -625,21 +687,29 @@ pub fn convert_to_some_ip_instance_mapping(
 
 pub fn convert_to_some_ip_instance_implementation(
     pair: Pair<Rule>,
+    file_path: &str,
 ) -> some_ip_mapping::SomeIpInstanceImplementation {
-    let mut instance_impl = some_ip_mapping::SomeIpInstanceImplementation::default();
+    let mut instance_impl = some_ip_mapping::SomeIpInstanceImplementation {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_offered_interface => {
+                let inner = item.clone();
                 instance_impl.interface_type =
                     Some(some_ip_instance_implementation::Interface_type::OfferedInterface(
-                        convert_to_some_ip_rpc_interface(item),
+                        convert_to_some_ip_rpc_interface(inner, file_path),
                     ));
+                instance_impl.offered_interface_span = proto_span(item, file_path);
             }
             Rule::some_ip_offered_event => {
+                let inner = item.clone();
                 instance_impl.interface_type =
                     Some(some_ip_instance_implementation::Interface_type::OfferedEvent(
-                        convert_to_some_ip_event(item),
+                        convert_to_some_ip_event(inner, file_path),
                     ));
+                instance_impl.offered_event_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -649,20 +719,36 @@ pub fn convert_to_some_ip_instance_implementation(
 
 pub fn convert_to_some_ip_rpc_interface(
     pair: Pair<Rule>,
+    file_path: &str,
 ) -> some_ip_instance_implementation::RpcInterface {
-    let mut rpc_interface = some_ip_instance_implementation::RpcInterface::default();
+    let mut rpc_interface = some_ip_instance_implementation::RpcInterface {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_offered_interface_sdv_unit_type => {
-                let inner = get_inner_pair(item);
+                let inner = get_inner_pair(item.clone());
                 rpc_interface.sdv_unit_type =
-                    MessageField::some(convert_to_some_ip_unit_type(inner));
+                    MessageField::some(convert_to_some_ip_unit_type(inner, file_path));
+                rpc_interface.sdv_unit_type_span = proto_span(item, file_path);
             }
             Rule::some_ip_service_unit => {
+                let inner = get_inner_pair(item.clone());
                 rpc_interface.service_unit = parse_string::<u32>(get_inner_str(item)).unwrap();
+                rpc_interface.service_unit_span = proto_span(inner, file_path);
             }
             Rule::some_ip_method => {
-                rpc_interface.method.push(convert_to_some_ip_request_response_method(item));
+                let inner = item.clone();
+                rpc_interface
+                    .method
+                    .push(convert_to_some_ip_request_response_method(inner, file_path));
+                rpc_interface.method_span.push(proto_span(item, file_path).unwrap());
+            }
+            Rule::some_ip_channel => {
+                let inner = get_inner_pair(item.clone());
+                rpc_interface.channel = unquote(get_inner_str(item));
+                rpc_interface.channel_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -670,18 +756,30 @@ pub fn convert_to_some_ip_rpc_interface(
     rpc_interface
 }
 
-pub fn convert_to_some_ip_unit_type(pair: Pair<Rule>) -> some_ip_mapping::UnitType {
-    let mut unit_type = some_ip_mapping::UnitType::default();
+pub fn convert_to_some_ip_unit_type(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> some_ip_mapping::UnitType {
+    let mut unit_type = some_ip_mapping::UnitType {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_unit_type_ref_package_name => {
+                let inner = get_inner_pair(item.clone());
                 unit_type.package_name = unquote(get_inner_str(item));
+                unit_type.package_name_span = proto_span(inner, file_path);
             }
             Rule::some_ip_unit_type_ref_service_bundle_name => {
+                let inner = get_inner_pair(item.clone());
                 unit_type.service_bundle_name = unquote(get_inner_str(item));
+                unit_type.service_bundle_name_span = proto_span(inner, file_path);
             }
             Rule::some_ip_unit_type_ref_type_name => {
+                let inner = get_inner_pair(item.clone());
                 unit_type.type_name = unquote(get_inner_str(item));
+                unit_type.type_name_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -691,25 +789,35 @@ pub fn convert_to_some_ip_unit_type(pair: Pair<Rule>) -> some_ip_mapping::UnitTy
 
 pub fn convert_to_some_ip_request_response_method(
     pair: Pair<Rule>,
+    file_path: &str,
 ) -> rpc_interface::RequestResponseMethod {
-    let mut method = rpc_interface::RequestResponseMethod::default();
+    let mut method = rpc_interface::RequestResponseMethod {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_method_procedure => {
+                let inner = get_inner_pair(item.clone());
                 method.procedure = unquote(get_inner_str(item));
+                method.procedure_span = proto_span(inner, file_path);
             }
             Rule::some_ip_method_method_id => {
+                let inner = get_inner_pair(item.clone());
                 method.method_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                method.method_id_span = proto_span(inner, file_path);
             }
             Rule::request_payload_mapping => {
-                let inner = get_inner_pair(item); // some_ip_struct_body
+                let inner = get_inner_pair(item.clone()); // some_ip_struct_body
                 method.request_payload_mapping =
-                    MessageField::some(convert_to_some_ip_struct(inner));
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                method.request_payload_mapping_span = proto_span(item, file_path);
             }
             Rule::response_payload_mapping => {
-                let inner = get_inner_pair(item); // some_ip_struct_body
+                let inner = get_inner_pair(item.clone()); // some_ip_struct_body
                 method.response_payload_mapping =
-                    MessageField::some(convert_to_some_ip_struct(inner));
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                method.response_payload_mapping_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -717,23 +825,39 @@ pub fn convert_to_some_ip_request_response_method(
     method
 }
 
-pub fn convert_to_some_ip_event(pair: Pair<Rule>) -> some_ip_instance_implementation::Event {
-    let mut event = some_ip_instance_implementation::Event::default();
+pub fn convert_to_some_ip_event(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> some_ip_instance_implementation::Event {
+    let mut event = some_ip_instance_implementation::Event {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_offered_event_group_id => {
+                let inner = get_inner_pair(item.clone());
                 event.group_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                event.group_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_offered_event_event_id => {
+                let inner = get_inner_pair(item.clone());
                 event.event_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                event.event_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_simple_event => {
-                event.event_type =
-                    Some(event::Event_type::SimpleEvent(convert_to_some_ip_simple_event(item)));
+                let inner = item.clone();
+                event.event_type = Some(event::Event_type::SimpleEvent(
+                    convert_to_some_ip_simple_event(inner, file_path),
+                ));
+                event.simple_event_span = proto_span(item, file_path);
             }
             Rule::some_ip_group_event => {
-                event.event_type =
-                    Some(event::Event_type::GroupEvent(convert_to_some_ip_group_event(item)));
+                let inner = item.clone();
+                event.event_type = Some(event::Event_type::GroupEvent(
+                    convert_to_some_ip_group_event(inner, file_path),
+                ));
+                event.group_event_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -741,23 +865,30 @@ pub fn convert_to_some_ip_event(pair: Pair<Rule>) -> some_ip_instance_implementa
     event
 }
 
-pub fn convert_to_some_ip_simple_event(pair: Pair<Rule>) -> event::SimpleEvent {
-    let mut simple_event = event::SimpleEvent::default();
+pub fn convert_to_some_ip_simple_event(pair: Pair<Rule>, file_path: &str) -> event::SimpleEvent {
+    let mut simple_event =
+        event::SimpleEvent { span: proto_span(pair.clone(), file_path), ..Default::default() };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_simple_event_sdv_unit_type => {
-                let inner = get_inner_pair(item);
+                let inner = get_inner_pair(item.clone());
                 simple_event.sdv_unit_type =
-                    MessageField::some(convert_to_some_ip_unit_type(inner));
+                    MessageField::some(convert_to_some_ip_unit_type(inner, file_path));
+                simple_event.sdv_unit_type_span = proto_span(item, file_path);
             }
             Rule::some_ip_simple_event_service_unit => {
+                let inner = get_inner_pair(item.clone());
                 simple_event.service_unit = parse_string::<u32>(get_inner_str(item)).unwrap();
+                simple_event.service_unit_span = proto_span(inner, file_path);
             }
             Rule::some_ip_simple_event_type_definition => {
-                let inner = get_inner_pair(item); // struct_body
-                simple_event.type_definition = MessageField::some(convert_to_some_ip_struct(inner));
+                let inner = get_inner_pair(item.clone()); // struct_body
+                simple_event.type_definition =
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                simple_event.type_definition_span = proto_span(item, file_path);
             }
             Rule::some_ip_simple_event_message_translation_mode => {
+                let inner = get_inner_pair(item.clone());
                 simple_event.message_translation_mode = match get_inner_str(item) {
                     "DYNAMIC_LIBRARY" => {
                         Some(event::simple_event::MessageTranslationMode::DYNAMIC_LIBRARY.into())
@@ -767,6 +898,17 @@ pub fn convert_to_some_ip_simple_event(pair: Pair<Rule>) -> event::SimpleEvent {
                     }
                     _ => Some(event::simple_event::MessageTranslationMode::REFLECTION.into()),
                 };
+                simple_event.message_translation_mode_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_simple_event_topic => {
+                let inner = get_inner_pair(item.clone());
+                simple_event.topic = unquote(get_inner_str(item));
+                simple_event.topic_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_simple_event_capacity => {
+                let inner = get_inner_pair(item.clone());
+                simple_event.capacity = parse_string::<u32>(get_inner_str(item)).unwrap();
+                simple_event.capacity_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -774,16 +916,21 @@ pub fn convert_to_some_ip_simple_event(pair: Pair<Rule>) -> event::SimpleEvent {
     simple_event
 }
 
-pub fn convert_to_some_ip_group_event(pair: Pair<Rule>) -> event::GroupEvent {
-    let mut group_event = event::GroupEvent::default();
+pub fn convert_to_some_ip_group_event(pair: Pair<Rule>, file_path: &str) -> event::GroupEvent {
+    let mut group_event =
+        event::GroupEvent { span: proto_span(pair.clone(), file_path), ..Default::default() };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_group_event_type_definition => {
-                let inner = get_inner_pair(item); // struct_body
-                group_event.type_definition = MessageField::some(convert_to_some_ip_struct(inner));
+                let inner = get_inner_pair(item.clone()); // struct_body
+                group_event.type_definition =
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                group_event.type_definition_span = proto_span(item, file_path);
             }
             Rule::some_ip_event_part => {
-                group_event.event_part.push(convert_to_some_ip_group_event_part(item));
+                let inner = item.clone();
+                group_event.event_part.push(convert_to_some_ip_group_event_part(inner, file_path));
+                group_event.event_part_span.push(proto_span(item, file_path).unwrap());
             }
             _ => (),
         }
@@ -791,27 +938,37 @@ pub fn convert_to_some_ip_group_event(pair: Pair<Rule>) -> event::GroupEvent {
     group_event
 }
 
-pub fn convert_to_some_ip_group_event_part(pair: Pair<Rule>) -> event::GroupEventPart {
-    let mut group_event_part = event::GroupEventPart::default();
+pub fn convert_to_some_ip_group_event_part(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> event::GroupEventPart {
+    let mut group_event_part =
+        event::GroupEventPart { span: proto_span(pair.clone(), file_path), ..Default::default() };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_event_part_sdv_unit_type => {
-                let inner = get_inner_pair(item);
+                let inner = get_inner_pair(item.clone());
                 group_event_part.sdv_unit_type =
-                    MessageField::some(convert_to_some_ip_unit_type(inner));
+                    MessageField::some(convert_to_some_ip_unit_type(inner, file_path));
+                group_event_part.sdv_unit_type_span = proto_span(item, file_path);
             }
             Rule::some_ip_event_part_service_unit => {
+                let inner = get_inner_pair(item.clone());
                 group_event_part.service_unit = parse_string::<u32>(get_inner_str(item)).unwrap();
+                group_event_part.service_unit_span = proto_span(inner, file_path);
             }
             Rule::some_ip_event_part_field_name_mapping => {
                 let mut key = String::new();
                 let mut value = String::new();
-                for sub_item in item.into_inner() {
+                let mut key_span = None;
+                let inner_body = item.clone();
+                for sub_item in inner_body.into_inner() {
                     if let Rule::some_ip_map_entry_str_str = sub_item.as_rule() {
                         for entry_part in sub_item.into_inner() {
                             match entry_part.as_rule() {
                                 Rule::some_ip_map_entry_key => {
-                                    key = unquote(get_inner_str(entry_part));
+                                    key = unquote(get_inner_str(entry_part.clone()));
+                                    key_span = proto_span(entry_part, file_path).into();
                                 }
                                 Rule::some_ip_map_entry_value => {
                                     value = unquote(get_inner_str(entry_part));
@@ -821,7 +978,20 @@ pub fn convert_to_some_ip_group_event_part(pair: Pair<Rule>) -> event::GroupEven
                         }
                     }
                 }
-                group_event_part.field_name_mapping.insert(key, value);
+                group_event_part.field_name_mapping.insert(key.clone(), value);
+                if let Some(s) = key_span {
+                    group_event_part.field_name_mapping_span.insert(key, s.unwrap());
+                }
+            }
+            Rule::some_ip_event_part_topic => {
+                let inner = get_inner_pair(item.clone());
+                group_event_part.topic = unquote(get_inner_str(item));
+                group_event_part.topic_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_event_part_capacity => {
+                let inner = get_inner_pair(item.clone());
+                group_event_part.capacity = parse_string::<u32>(get_inner_str(item)).unwrap();
+                group_event_part.capacity_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -829,35 +999,49 @@ pub fn convert_to_some_ip_group_event_part(pair: Pair<Rule>) -> event::GroupEven
     group_event_part
 }
 
-pub fn convert_to_some_ip_sdv_rpc_interface(pair: Pair<Rule>) -> sdv_type_mapping::RpcInterface {
-    let mut rpc_interface = sdv_type_mapping::RpcInterface::default();
+pub fn convert_to_some_ip_sdv_rpc_interface(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> sdv_type_mapping::RpcInterface {
+    let mut rpc_interface = sdv_type_mapping::RpcInterface {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         if let Rule::some_ip_sdv_method = item.as_rule() {
-            rpc_interface.method.push(convert_to_some_ip_sdv_method(item));
+            let inner = item.clone();
+            rpc_interface.method.push(convert_to_some_ip_sdv_method(inner, file_path));
+            rpc_interface.method_span.push(proto_span(item, file_path).unwrap());
         }
     }
     rpc_interface
 }
 
-pub fn convert_to_some_ip_sdv_method(pair: Pair<Rule>) -> Method {
-    let mut method = Method::default();
+pub fn convert_to_some_ip_sdv_method(pair: Pair<Rule>, file_path: &str) -> Method {
+    let mut method = Method { span: proto_span(pair.clone(), file_path), ..Default::default() };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_sdv_method_procedure => {
+                let inner = get_inner_pair(item.clone());
                 method.procedure = unquote(get_inner_str(item));
+                method.procedure_span = proto_span(inner, file_path);
             }
             Rule::some_ip_sdv_method_method_id => {
+                let inner = get_inner_pair(item.clone());
                 method.method_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                method.method_id_span = proto_span(inner, file_path);
             }
             Rule::request_payload_mapping => {
-                let inner = get_inner_pair(item);
+                let inner = get_inner_pair(item.clone());
                 method.request_payload_mapping =
-                    MessageField::some(convert_to_some_ip_struct(inner));
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                method.request_payload_mapping_span = proto_span(item, file_path);
             }
             Rule::response_payload_mapping => {
-                let inner = get_inner_pair(item);
+                let inner = get_inner_pair(item.clone());
                 method.response_payload_mapping =
-                    MessageField::some(convert_to_some_ip_struct(inner));
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                method.response_payload_mapping_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -865,27 +1049,39 @@ pub fn convert_to_some_ip_sdv_method(pair: Pair<Rule>) -> Method {
     method
 }
 
-pub fn convert_to_some_ip_offered_topic(pair: Pair<Rule>) -> sdv_type_mapping::Topic {
-    let mut topic = sdv_type_mapping::Topic::default();
+pub fn convert_to_some_ip_offered_topic(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> sdv_type_mapping::Topic {
+    let mut topic =
+        sdv_type_mapping::Topic { span: proto_span(pair.clone(), file_path), ..Default::default() };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_offered_topic_type_definition => {
-                let inner = get_inner_pair(item);
-                topic.type_definition = MessageField::some(convert_to_some_ip_struct(inner));
+                let inner = get_inner_pair(item.clone());
+                topic.type_definition =
+                    MessageField::some(convert_to_some_ip_struct(inner, file_path));
+                topic.type_definition_span = proto_span(item, file_path);
             }
             Rule::some_ip_simple_mapping => {
+                let inner = item.clone();
                 topic.topic_mapping = Some(topic::Topic_mapping::SimpleMapping(
-                    convert_to_some_ip_simple_topic_mapping(item),
+                    convert_to_some_ip_simple_topic_mapping(inner, file_path),
                 ));
+                topic.simple_mapping_span = proto_span(item, file_path);
             }
             Rule::some_ip_offered_topic_someip_ff_methods => {
+                let inner = get_inner_pair(item.clone());
                 topic.topic_mapping = Some(topic::Topic_mapping::SomeipFfMethods(
                     get_inner_str(item).parse().unwrap(),
                 ));
+                topic.someip_ff_methods_span = proto_span(inner, file_path);
             }
             Rule::some_ip_multipub_topic_info => {
+                let inner = item.clone();
                 topic.multipub_topic_info =
-                    MessageField::some(convert_to_some_ip_multipub_topic_info(item));
+                    MessageField::some(convert_to_some_ip_multipub_topic_info(inner, file_path));
+                topic.multipub_topic_info_span = proto_span(item, file_path);
             }
             _ => (),
         }
@@ -893,15 +1089,25 @@ pub fn convert_to_some_ip_offered_topic(pair: Pair<Rule>) -> sdv_type_mapping::T
     topic
 }
 
-pub fn convert_to_some_ip_simple_topic_mapping(pair: Pair<Rule>) -> topic::SimpleTopicMapping {
-    let mut mapping = topic::SimpleTopicMapping::default();
+pub fn convert_to_some_ip_simple_topic_mapping(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> topic::SimpleTopicMapping {
+    let mut mapping = topic::SimpleTopicMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_simple_mapping_group_id => {
+                let inner = get_inner_pair(item.clone());
                 mapping.group_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                mapping.group_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_simple_mapping_event_id => {
+                let inner = get_inner_pair(item.clone());
                 mapping.event_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                mapping.event_id_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -909,11 +1115,19 @@ pub fn convert_to_some_ip_simple_topic_mapping(pair: Pair<Rule>) -> topic::Simpl
     mapping
 }
 
-pub fn convert_to_some_ip_multipub_topic_info(pair: Pair<Rule>) -> topic::MultipubTopicInfo {
-    let mut info = topic::MultipubTopicInfo::default();
+pub fn convert_to_some_ip_multipub_topic_info(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> topic::MultipubTopicInfo {
+    let mut info = topic::MultipubTopicInfo {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         if let Rule::some_ip_multipub_topic_info_someip_instance_id = item.as_rule() {
+            let inner = get_inner_pair(item.clone());
             info.someip_instance_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+            info.someip_instance_id_span = proto_span(inner, file_path);
         }
     }
     info
@@ -921,20 +1135,29 @@ pub fn convert_to_some_ip_multipub_topic_info(pair: Pair<Rule>) -> topic::Multip
 
 pub fn convert_to_some_ip_service_unit_mapping(
     pair: Pair<Rule>,
+    file_path: &str,
 ) -> sdv_type_mapping::SdvServiceUnitMapping {
-    let mut mapping = sdv_type_mapping::SdvServiceUnitMapping::default();
+    let mut mapping = sdv_type_mapping::SdvServiceUnitMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_service_unit_mapping_service_unit_id => {
-                let inner = get_inner_pair(item); // service_unit_id_block
+                let inner = get_inner_pair(item.clone()); // service_unit_id_block
                 mapping.service_unit_id =
-                    MessageField::some(convert_to_some_ip_service_unit_id(inner));
+                    MessageField::some(convert_to_some_ip_service_unit_id(inner, file_path));
+                mapping.service_unit_id_span = proto_span(item, file_path);
             }
             Rule::some_ip_service_unit_mapping_instance_id => {
+                let inner = get_inner_pair(item.clone());
                 mapping.instance_id = parse_string::<u32>(get_inner_str(item)).unwrap();
+                mapping.instance_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_fire_and_forget_method => {
-                mapping.fire_and_forget_method.push(convert_to_some_ip_ff_method(item));
+                let inner = item.clone();
+                mapping.fire_and_forget_method.push(convert_to_some_ip_ff_method(inner, file_path));
+                mapping.fire_and_forget_method_span.push(proto_span(item, file_path).unwrap());
             }
             _ => (),
         }
@@ -942,24 +1165,40 @@ pub fn convert_to_some_ip_service_unit_mapping(
     mapping
 }
 
-pub fn convert_to_some_ip_service_unit_id(pair: Pair<Rule>) -> sdv_type_mapping::ServiceUnitId {
-    let mut id = sdv_type_mapping::ServiceUnitId::default();
+pub fn convert_to_some_ip_service_unit_id(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> sdv_type_mapping::ServiceUnitId {
+    let mut id = sdv_type_mapping::ServiceUnitId {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_service_unit_id_vm_name => {
+                let inner = get_inner_pair(item.clone());
                 id.vm_name = Some(unquote(get_inner_str(item)));
+                id.vm_name_span = proto_span(inner, file_path);
             }
             Rule::some_ip_service_unit_id_package_name => {
+                let inner = get_inner_pair(item.clone());
                 id.package_name = unquote(get_inner_str(item));
+                id.package_name_span = proto_span(inner, file_path);
             }
             Rule::some_ip_service_unit_id_service_bundle_name => {
+                let inner = get_inner_pair(item.clone());
                 id.service_bundle_name = unquote(get_inner_str(item));
+                id.service_bundle_name_span = proto_span(inner, file_path);
             }
             Rule::some_ip_service_unit_id_service_instance_name => {
+                let inner = get_inner_pair(item.clone());
                 id.service_instance_name = Some(unquote(get_inner_str(item)));
+                id.service_instance_name_span = proto_span(inner, file_path);
             }
             Rule::some_ip_service_unit_id_service_unit_name => {
+                let inner = get_inner_pair(item.clone());
                 id.service_unit_name = unquote(get_inner_str(item));
+                id.service_unit_name_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -967,24 +1206,40 @@ pub fn convert_to_some_ip_service_unit_id(pair: Pair<Rule>) -> sdv_type_mapping:
     id
 }
 
-pub fn convert_to_some_ip_ff_method(pair: Pair<Rule>) -> sdv_type_mapping::SomeIpFFMethod {
-    let mut method = sdv_type_mapping::SomeIpFFMethod::default();
+pub fn convert_to_some_ip_ff_method(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> sdv_type_mapping::SomeIpFFMethod {
+    let mut method = sdv_type_mapping::SomeIpFFMethod {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_fire_and_forget_method_service_id => {
+                let inner = get_inner_pair(item.clone());
                 method.service_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                method.service_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_fire_and_forget_method_instance_id => {
+                let inner = get_inner_pair(item.clone());
                 method.instance_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                method.instance_id_span = proto_span(inner, file_path);
             }
             Rule::some_ip_fire_and_forget_method_version_major => {
+                let inner = get_inner_pair(item.clone());
                 method.version_major = parse_string::<u8>(get_inner_str(item)).unwrap() as u32;
+                method.version_major_span = proto_span(inner, file_path);
             }
             Rule::some_ip_fire_and_forget_method_version_minor => {
+                let inner = get_inner_pair(item.clone());
                 method.version_minor = parse_string::<u32>(get_inner_str(item)).unwrap();
+                method.version_minor_span = proto_span(inner, file_path);
             }
             Rule::some_ip_fire_and_forget_method_method_id => {
+                let inner = get_inner_pair(item.clone());
                 method.method_id = parse_string::<u16>(get_inner_str(item)).unwrap() as u32;
+                method.method_id_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -992,11 +1247,137 @@ pub fn convert_to_some_ip_ff_method(pair: Pair<Rule>) -> sdv_type_mapping::SomeI
     method
 }
 
-pub fn convert_to_some_ip_some_ip_type(pair: Pair<Rule>) -> someip_type::SomeIpType {
+pub fn convert_to_some_ip_service_oriented_mapping(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> ServiceOrientedMapping {
+    let mut som =
+        ServiceOrientedMapping { span: proto_span(pair.clone(), file_path), ..Default::default() };
+    for item in pair.into_inner() {
+        match item.as_rule() {
+            Rule::some_ip_rpc_interface_mapping => {
+                let inner = item.clone();
+                som.soa_mapping_type =
+                    Some(service_oriented_mapping::Soa_mapping_type::RpcInterfaceMapping(
+                        convert_to_some_ip_rpc_interface_mapping(inner, file_path),
+                    ));
+                som.rpc_interface_mapping_span = proto_span(item, file_path);
+            }
+            Rule::some_ip_publication_mapping => {
+                let inner = item.clone();
+                som.soa_mapping_type =
+                    Some(service_oriented_mapping::Soa_mapping_type::PublicationMapping(
+                        convert_to_some_ip_publication_mapping(inner, file_path),
+                    ));
+                som.publication_mapping_span = proto_span(item, file_path);
+            }
+            _ => (),
+        }
+    }
+    som
+}
+
+pub fn convert_to_some_ip_rpc_interface_mapping(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> RpcInterfaceMapping {
+    let mut mapping =
+        RpcInterfaceMapping { span: proto_span(pair.clone(), file_path), ..Default::default() };
+    for item in pair.into_inner() {
+        match item.as_rule() {
+            Rule::some_ip_rpc_channel_mapping => {
+                let inner = item.clone();
+                mapping
+                    .rpc_channel_mapping
+                    .push(convert_to_some_ip_rpc_channel_mapping(inner, file_path));
+                mapping.rpc_channel_mapping_span.push(proto_span(item, file_path).unwrap());
+            }
+            _ => (),
+        }
+    }
+    mapping
+}
+
+pub fn convert_to_some_ip_rpc_channel_mapping(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> rpc_interface_mapping::RpcChannelMapping {
+    let mut mapping = rpc_interface_mapping::RpcChannelMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
+    for item in pair.into_inner() {
+        match item.as_rule() {
+            Rule::some_ip_rpc_channel_mapping_channel => {
+                let inner = get_inner_pair(item.clone());
+                mapping.channel = unquote(get_inner_str(item));
+                mapping.channel_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_rpc_channel_mapping_instance_id => {
+                let inner = get_inner_pair(item.clone());
+                mapping.instance_id = parse_string::<u32>(get_inner_str(item)).unwrap();
+                mapping.instance_id_span = proto_span(inner, file_path);
+            }
+            _ => (),
+        }
+    }
+    mapping
+}
+
+pub fn convert_to_some_ip_publication_mapping(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> PublicationMapping {
+    let mut mapping =
+        PublicationMapping { span: proto_span(pair.clone(), file_path), ..Default::default() };
+    for item in pair.into_inner() {
+        match item.as_rule() {
+            Rule::some_ip_topic_mapping => {
+                let inner = item.clone();
+                mapping.topic_mapping.push(convert_to_some_ip_topic_mapping(inner, file_path));
+                mapping.topic_mapping_span.push(proto_span(item, file_path).unwrap());
+            }
+            _ => (),
+        }
+    }
+    mapping
+}
+
+pub fn convert_to_some_ip_topic_mapping(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> publication_mapping::TopicMapping {
+    let mut mapping = publication_mapping::TopicMapping {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
+    for item in pair.into_inner() {
+        match item.as_rule() {
+            Rule::some_ip_topic_mapping_topic => {
+                let inner = get_inner_pair(item.clone());
+                mapping.topic = unquote(get_inner_str(item));
+                mapping.topic_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_topic_mapping_instance_id => {
+                let inner = get_inner_pair(item.clone());
+                mapping.instance_id = parse_string::<u32>(get_inner_str(item)).unwrap();
+                mapping.instance_id_span = proto_span(inner, file_path);
+            }
+            _ => (),
+        }
+    }
+    mapping
+}
+
+pub fn convert_to_some_ip_some_ip_type(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> someip_type::SomeIpType {
     let mut someip_type = someip_type::SomeIpType::default();
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::some_ip_type_someip_primitive => {
+                let _inner = get_inner_pair(item.clone());
                 someip_type.someip_type =
                     Some(some_ip_type::Someip_type::SomeipPrimitive(match get_inner_str(item) {
                         "BOOL" => some_ip_type::SomeIpPrimitive::BOOL.into(),
@@ -1014,16 +1395,22 @@ pub fn convert_to_some_ip_some_ip_type(pair: Pair<Rule>) -> someip_type::SomeIpT
                     }));
             }
             Rule::some_ip_string_body => {
-                someip_type.someip_type =
-                    Some(some_ip_type::Someip_type::SomeipString(convert_to_some_ip_string(item)));
+                let inner = item.clone();
+                someip_type.someip_type = Some(some_ip_type::Someip_type::SomeipString(
+                    convert_to_some_ip_string(inner, file_path),
+                ));
             }
             Rule::some_ip_array_body => {
-                someip_type.someip_type =
-                    Some(some_ip_type::Someip_type::SomeipArray(convert_to_some_ip_array(item)));
+                let inner = item.clone();
+                someip_type.someip_type = Some(some_ip_type::Someip_type::SomeipArray(
+                    convert_to_some_ip_array(inner, file_path),
+                ));
             }
             Rule::some_ip_struct_body => {
-                someip_type.someip_type =
-                    Some(some_ip_type::Someip_type::SomeipStruct(convert_to_some_ip_struct(item)));
+                let inner = item.clone();
+                someip_type.someip_type = Some(some_ip_type::Someip_type::SomeipStruct(
+                    convert_to_some_ip_struct(inner, file_path),
+                ));
             }
             _ => (),
         }
@@ -1043,7 +1430,7 @@ pub fn convert_str_to_length_field_size(
     }
 }
 
-pub fn convert_to_some_ip_string(pair: Pair<Rule>) -> some_ip_type::SomeIpString {
+pub fn convert_to_some_ip_string(pair: Pair<Rule>, _file_path: &str) -> some_ip_type::SomeIpString {
     let mut s = some_ip_type::SomeIpString::default();
     for item in pair.into_inner() {
         match item.as_rule() {
@@ -1071,7 +1458,7 @@ pub fn convert_to_some_ip_string(pair: Pair<Rule>) -> some_ip_type::SomeIpString
     s
 }
 
-pub fn convert_to_some_ip_array(pair: Pair<Rule>) -> some_ip_type::SomeIpArray {
+pub fn convert_to_some_ip_array(pair: Pair<Rule>, file_path: &str) -> some_ip_type::SomeIpArray {
     let mut a = some_ip_type::SomeIpArray::default();
     for item in pair.into_inner() {
         match item.as_rule() {
@@ -1086,8 +1473,9 @@ pub fn convert_to_some_ip_array(pair: Pair<Rule>) -> some_ip_type::SomeIpArray {
                 ));
             }
             Rule::some_ip_array_type => {
-                let inner = get_inner_pair(item); // some_ip_type
-                a.array_type = MessageField::some(convert_to_some_ip_some_ip_type(inner));
+                let inner = get_inner_pair(item.clone()); // some_ip_type
+                a.array_type =
+                    MessageField::some(convert_to_some_ip_some_ip_type(inner, file_path));
             }
             _ => (),
         }
@@ -1095,7 +1483,7 @@ pub fn convert_to_some_ip_array(pair: Pair<Rule>) -> some_ip_type::SomeIpArray {
     a
 }
 
-pub fn convert_to_some_ip_struct(pair: Pair<Rule>) -> some_ip_type::SomeIpStruct {
+pub fn convert_to_some_ip_struct(pair: Pair<Rule>, file_path: &str) -> some_ip_type::SomeIpStruct {
     let mut s = some_ip_type::SomeIpStruct::default();
     for item in pair.into_inner() {
         match item.as_rule() {
@@ -1103,7 +1491,8 @@ pub fn convert_to_some_ip_struct(pair: Pair<Rule>) -> some_ip_type::SomeIpStruct
                 s.length_field_size = Some(convert_str_to_length_field_size(get_inner_str(item)));
             }
             Rule::some_ip_struct_field => {
-                s.field.push(convert_to_some_ip_struct_field(item));
+                let inner = item.clone();
+                s.field.push(convert_to_some_ip_struct_field(inner, file_path));
             }
             _ => (),
         }
@@ -1111,7 +1500,10 @@ pub fn convert_to_some_ip_struct(pair: Pair<Rule>) -> some_ip_type::SomeIpStruct
     s
 }
 
-pub fn convert_to_some_ip_struct_field(pair: Pair<Rule>) -> some_ip_struct::SomeIpStructField {
+pub fn convert_to_some_ip_struct_field(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> some_ip_struct::SomeIpStructField {
     let mut f = some_ip_struct::SomeIpStructField::default();
     for item in pair.into_inner() {
         match item.as_rule() {
@@ -1122,8 +1514,9 @@ pub fn convert_to_some_ip_struct_field(pair: Pair<Rule>) -> some_ip_struct::Some
                 f.field_name = unquote(get_inner_str(item));
             }
             Rule::some_ip_struct_field_type => {
-                let inner = get_inner_pair(item); // some_ip_type
-                f.field_type = MessageField::some(convert_to_some_ip_some_ip_type(inner));
+                let inner = get_inner_pair(item.clone()); // some_ip_type
+                f.field_type =
+                    MessageField::some(convert_to_some_ip_some_ip_type(inner, file_path));
             }
             _ => (),
         }
@@ -1489,7 +1882,7 @@ mod test {
             converter::convert_to_vsidl_entry(parsed_file.into_iter().next().unwrap(), FILE_PATH);
 
         // THEN the some_ip_mapping is correct
-        assert_eq!(vsidl_entry.some_ip_mapping.len(), 3);
+        assert_eq!(vsidl_entry.some_ip_mapping.len(), 4);
         let some_ip_mapping = &vsidl_entry.some_ip_mapping[0];
         let service_mapping = some_ip_mapping.mapping_type.as_ref().unwrap();
         match service_mapping {
@@ -1510,6 +1903,49 @@ mod test {
                 );
 
                 assert_eq!(mapping.instance_impl.len(), 4);
+
+                // offered_event 1 (SimpleEvent)
+                let instance_impl_0 = &mapping.instance_impl[0];
+                if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedEvent(event)) = &instance_impl_0.interface_type {
+                    if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::event::Event_type::SimpleEvent(simple_event)) = &event.event_type {
+                        assert_eq!(simple_event.topic, "pressure-topic");
+                        assert_eq!(simple_event.capacity, 100);
+                    } else {
+                        panic!("Expected SimpleEvent");
+                    }
+                } else {
+                    panic!("Expected OfferedEvent");
+                }
+
+                // offered_event 2 (SimpleEvent)
+                let instance_impl_1 = &mapping.instance_impl[1];
+                if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedEvent(event)) = &instance_impl_1.interface_type {
+                    if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::event::Event_type::SimpleEvent(simple_event)) = &event.event_type {
+                        assert_eq!(simple_event.topic, "temperature-topic");
+                        assert_eq!(simple_event.capacity, 50);
+                    } else {
+                        panic!("Expected SimpleEvent");
+                    }
+                } else {
+                    panic!("Expected OfferedEvent");
+                }
+
+                // offered_event 3 (GroupEvent)
+                let instance_impl_2 = &mapping.instance_impl[2];
+                if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedEvent(event)) = &instance_impl_2.interface_type {
+                    if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::event::Event_type::GroupEvent(group_event)) = &event.event_type {
+                        assert_eq!(group_event.event_part.len(), 2);
+                        assert_eq!(group_event.event_part[0].topic, "bool-part-topic");
+                        assert_eq!(group_event.event_part[0].capacity, 10);
+                        assert_eq!(group_event.event_part[1].topic, "int-part-topic");
+                        assert_eq!(group_event.event_part[1].capacity, 20);
+                    } else {
+                        panic!("Expected GroupEvent");
+                    }
+                } else {
+                    panic!("Expected OfferedEvent");
+                }
+
                 let instance_impl = &mapping.instance_impl[3]; // The offered_interface is the 4th item
                 let interface_type = instance_impl.interface_type.as_ref().unwrap();
                 match interface_type {
@@ -1518,6 +1954,7 @@ mod test {
                         assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().service_bundle_name, "SomeIpBroker");
                         assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().type_name, "SomeIpInterface");
                         assert_eq!(rpc_interface.service_unit, 1);
+                        assert_eq!(rpc_interface.channel, "rpc-channel-1");
                         assert_eq!(rpc_interface.method.len(), 1);
                         assert_eq!(rpc_interface.method[0].procedure, "DoubleNum");
                         assert_eq!(rpc_interface.method[0].method_id, 0x1500);
@@ -1554,22 +1991,42 @@ mod test {
         let service_mapping_3 = some_ip_mapping_3.mapping_type.as_ref().unwrap();
         match service_mapping_3 {
             vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
-                assert_eq!(
-                    mapping.unit_type.as_ref().unwrap().package_name,
-                    "com.android.sdv.someip.sample"
-                );
-                assert_eq!(
-                    mapping.unit_type.as_ref().unwrap().service_bundle_name,
-                    "ServiceBundleFoo"
-                );
-                assert_eq!(mapping.unit_type.as_ref().unwrap().type_name, "SdvInterface");
                 assert_eq!(mapping.someip_service_id, 0x48);
-                assert_eq!(mapping.version_major, 0x1);
-                assert_eq!(mapping.version_minor, 0x0);
-                assert_eq!(mapping.service_unit_mapping.len(), 1);
-                assert_eq!(mapping.service_unit_mapping[0].instance_id, 0x0001);
+                // Check service_oriented_mapping -> RpcInterfaceMapping
+                let som = mapping.service_oriented_mapping.as_ref().unwrap();
+                match som.soa_mapping_type.as_ref().unwrap() {
+                    vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::service_oriented_mapping::Soa_mapping_type::RpcInterfaceMapping(rpc_mapping) => {
+                        assert_eq!(rpc_mapping.rpc_channel_mapping.len(), 2);
+                        assert_eq!(rpc_mapping.rpc_channel_mapping[0].channel, "rpc-channel-1");
+                        assert_eq!(rpc_mapping.rpc_channel_mapping[0].instance_id, 10);
+                        assert_eq!(rpc_mapping.rpc_channel_mapping[1].channel, "rpc-channel-2");
+                        assert_eq!(rpc_mapping.rpc_channel_mapping[1].instance_id, 11);
+                    }
+                    _ => panic!("Expected RpcInterfaceMapping"),
+                }
             }
-            _ => panic!("Expected SdvTypeMapping"),
+            _ => panic!("Expected SdvTypeMapping for mapping 3"),
+        }
+
+        let some_ip_mapping_4 = &vsidl_entry.some_ip_mapping[3];
+        let service_mapping_4 = some_ip_mapping_4.mapping_type.as_ref().unwrap();
+        match service_mapping_4 {
+            vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
+                assert_eq!(mapping.someip_service_id, 0x48);
+                // Check service_oriented_mapping -> PublicationMapping
+                let som = mapping.service_oriented_mapping.as_ref().unwrap();
+                match som.soa_mapping_type.as_ref().unwrap() {
+                    vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::service_oriented_mapping::Soa_mapping_type::PublicationMapping(pub_mapping) => {
+                        assert_eq!(pub_mapping.topic_mapping.len(), 2);
+                        assert_eq!(pub_mapping.topic_mapping[0].topic, "pressure-topic");
+                        assert_eq!(pub_mapping.topic_mapping[0].instance_id, 20);
+                        assert_eq!(pub_mapping.topic_mapping[1].topic, "temperature-topic");
+                        assert_eq!(pub_mapping.topic_mapping[1].instance_id, 21);
+                    }
+                    _ => panic!("Expected PublicationMapping"),
+                }
+            }
+            _ => panic!("Expected SdvTypeMapping for mapping 4"),
         }
     }
 
@@ -1663,6 +2120,268 @@ mod test {
                 cfg.span.clear();
                 cfg.target_name_span.clear();
                 cfg.skip_codegen_span.clear();
+                cfg.special_fields.clear();
+            }
+        }
+
+        for mapping in &mut vsidl_entry_pest.some_ip_mapping {
+            mapping.span.clear();
+            mapping.someip_service_mapping_span.clear();
+            mapping.sdv_type_mapping_span.clear();
+            mapping.special_fields.clear();
+            if mapping.has_someip_service_mapping() {
+                let s = mapping.mut_someip_service_mapping();
+                s.span.clear();
+                s.someip_service_id_span.clear();
+                s.version_major_span.clear();
+                s.version_minor_span.clear();
+                s.instance_span.clear();
+                s.instance_impl_span.clear();
+                s.sd_behavior_span.clear();
+                s.special_fields.clear();
+                for i in &mut s.instance {
+                    i.span.clear();
+                    i.instance_id_span.clear();
+                    i.sdv_service_unit_parameterization_span.clear();
+                    i.special_fields.clear();
+                }
+                for i in &mut s.instance_impl {
+                    i.span.clear();
+                    i.offered_interface_span.clear();
+                    i.offered_event_span.clear();
+                    i.special_fields.clear();
+                    if i.has_offered_interface() {
+                        let o = i.mut_offered_interface();
+                        o.span.clear();
+                        o.sdv_unit_type_span.clear();
+                        o.service_unit_span.clear();
+                        o.method_span.clear();
+                        o.channel_span.clear();
+                        o.special_fields.clear();
+                        if let Some(u) = o.sdv_unit_type.as_mut() {
+                            u.span.clear();
+                            u.package_name_span.clear();
+                            u.service_bundle_name_span.clear();
+                            u.type_name_span.clear();
+                            u.special_fields.clear();
+                        }
+                        for m in &mut o.method {
+                            m.span.clear();
+                            m.procedure_span.clear();
+                            m.method_id_span.clear();
+                            m.request_payload_mapping_span.clear();
+                            m.response_payload_mapping_span.clear();
+                            m.special_fields.clear();
+                        }
+                    }
+                    if i.has_offered_event() {
+                        let e = i.mut_offered_event();
+                        e.span.clear();
+                        e.group_id_span.clear();
+                        e.event_id_span.clear();
+                        e.simple_event_span.clear();
+                        e.group_event_span.clear();
+                        e.special_fields.clear();
+                        if e.has_simple_event() {
+                            let s = e.mut_simple_event();
+                            s.span.clear();
+                            s.sdv_unit_type_span.clear();
+                            s.type_definition_span.clear();
+                            s.service_unit_span.clear();
+                            s.message_translation_mode_span.clear();
+                            s.topic_span.clear();
+                            s.capacity_span.clear();
+                            s.special_fields.clear();
+                            if let Some(u) = s.sdv_unit_type.as_mut() {
+                                u.span.clear();
+                                u.package_name_span.clear();
+                                u.service_bundle_name_span.clear();
+                                u.type_name_span.clear();
+                                u.special_fields.clear();
+                            }
+                            if let Some(t) = s.type_definition.as_mut() {
+                                t.special_fields.clear();
+                                for f in &mut t.field {
+                                    f.special_fields.clear();
+                                }
+                            }
+                        }
+                        if e.has_group_event() {
+                            let g = e.mut_group_event();
+                            g.span.clear();
+                            g.type_definition_span.clear();
+                            g.event_part_span.clear();
+                            g.special_fields.clear();
+                            if let Some(t) = g.type_definition.as_mut() {
+                                t.special_fields.clear();
+                                for f in &mut t.field {
+                                    f.special_fields.clear();
+                                }
+                            }
+                            for p in &mut g.event_part {
+                                p.span.clear();
+                                p.sdv_unit_type_span.clear();
+                                p.field_name_mapping_span.clear();
+                                p.service_unit_span.clear();
+                                p.topic_span.clear();
+                                p.capacity_span.clear();
+                                p.special_fields.clear();
+                                if let Some(u) = p.sdv_unit_type.as_mut() {
+                                    u.span.clear();
+                                    u.package_name_span.clear();
+                                    u.service_bundle_name_span.clear();
+                                    u.type_name_span.clear();
+                                    u.special_fields.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if mapping.has_sdv_type_mapping() {
+                let t = mapping.mut_sdv_type_mapping();
+                t.span.clear();
+                t.unit_type_span.clear();
+                t.someip_service_id_span.clear();
+                t.version_major_span.clear();
+                t.version_minor_span.clear();
+                t.offered_interface_span.clear();
+                t.offered_topic_span.clear();
+                t.service_unit_mapping_span.clear();
+                t.service_oriented_mapping_span.clear();
+                t.special_fields.clear();
+                if let Some(u) = t.unit_type.as_mut() {
+                    u.span.clear();
+                    u.package_name_span.clear();
+                    u.service_bundle_name_span.clear();
+                    u.type_name_span.clear();
+                    u.special_fields.clear();
+                }
+                if t.has_offered_interface() {
+                    let o = t.mut_offered_interface();
+                    o.span.clear();
+                    o.method_span.clear();
+                    o.special_fields.clear();
+                    for m in &mut o.method {
+                        m.span.clear();
+                        m.procedure_span.clear();
+                        m.method_id_span.clear();
+                        m.request_payload_mapping_span.clear();
+                        m.response_payload_mapping_span.clear();
+                        m.special_fields.clear();
+                    }
+                }
+                if t.has_offered_topic() {
+                    let o = t.mut_offered_topic();
+                    o.span.clear();
+                    o.type_definition_span.clear();
+                    o.simple_mapping_span.clear();
+                    o.someip_ff_methods_span.clear();
+                    o.multipub_topic_info_span.clear();
+                    o.special_fields.clear();
+                    if o.has_simple_mapping() {
+                        let s = o.mut_simple_mapping();
+                        s.span.clear();
+                        s.group_id_span.clear();
+                        s.event_id_span.clear();
+                        s.special_fields.clear();
+                    }
+                    if let Some(m) = o.multipub_topic_info.as_mut() {
+                        m.span.clear();
+                        m.someip_instance_id_span.clear();
+                        m.special_fields.clear();
+                    }
+                    if let Some(td) = o.type_definition.as_mut() {
+                        td.special_fields.clear();
+                        for f in &mut td.field {
+                            f.special_fields.clear();
+                        }
+                    }
+                }
+                for s in &mut t.service_unit_mapping {
+                    s.span.clear();
+                    s.service_unit_id_span.clear();
+                    s.instance_id_span.clear();
+                    s.fire_and_forget_method_span.clear();
+                    s.special_fields.clear();
+                    if let Some(id) = s.service_unit_id.as_mut() {
+                        id.span.clear();
+                        id.vm_name_span.clear();
+                        id.package_name_span.clear();
+                        id.service_bundle_name_span.clear();
+                        id.service_instance_name_span.clear();
+                        id.service_unit_name_span.clear();
+                        id.special_fields.clear();
+                    }
+                    for f in &mut s.fire_and_forget_method {
+                        f.span.clear();
+                        f.service_id_span.clear();
+                        f.instance_id_span.clear();
+                        f.version_major_span.clear();
+                        f.version_minor_span.clear();
+                        f.method_id_span.clear();
+                        f.special_fields.clear();
+                    }
+                }
+                if let Some(s) = t.service_oriented_mapping.as_mut() {
+                    s.span.clear();
+                    s.rpc_interface_mapping_span.clear();
+                    s.publication_mapping_span.clear();
+                    s.special_fields.clear();
+                    if s.has_rpc_interface_mapping() {
+                        let r = s.mut_rpc_interface_mapping();
+                        r.span.clear();
+                        r.offered_interface_span.clear();
+                        r.rpc_channel_mapping_span.clear();
+                        r.special_fields.clear();
+                        if let Some(o) = r.offered_interface.as_mut() {
+                            o.span.clear();
+                            o.method_span.clear();
+                            o.special_fields.clear();
+                            for m in &mut o.method {
+                                m.span.clear();
+                                m.procedure_span.clear();
+                                m.method_id_span.clear();
+                                m.request_payload_mapping_span.clear();
+                                m.response_payload_mapping_span.clear();
+                                m.special_fields.clear();
+                            }
+                        }
+                        for m in &mut r.rpc_channel_mapping {
+                            m.span.clear();
+                            m.channel_span.clear();
+                            m.instance_id_span.clear();
+                            m.special_fields.clear();
+                        }
+                    }
+                    if s.has_publication_mapping() {
+                        let p = s.mut_publication_mapping();
+                        p.span.clear();
+                        p.offered_topic_span.clear();
+                        p.topic_mapping_span.clear();
+                        p.special_fields.clear();
+                        if let Some(o) = p.offered_topic.as_mut() {
+                            o.span.clear();
+                            o.type_definition_span.clear();
+                            o.simple_mapping_span.clear();
+                            o.someip_ff_methods_span.clear();
+                            o.special_fields.clear();
+                            if let Some(td) = o.type_definition.as_mut() {
+                                td.special_fields.clear();
+                                for f in &mut td.field {
+                                    f.special_fields.clear();
+                                }
+                            }
+                        }
+                        for m in &mut p.topic_mapping {
+                            m.span.clear();
+                            m.topic_span.clear();
+                            m.instance_id_span.clear();
+                            m.fire_and_forget_method_span.clear();
+                            m.special_fields.clear();
+                        }
+                    }
+                }
             }
         }
 

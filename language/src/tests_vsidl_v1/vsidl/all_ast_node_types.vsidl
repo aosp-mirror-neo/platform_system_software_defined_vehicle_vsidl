@@ -109,6 +109,8 @@ some_ip_mapping {
             type_name: "SamplePressureUnitType"
           }
           service_unit: 0
+          topic: "pressure-topic"
+          capacity: 100
           type_definition {
             length_field_size: ZERO
             field {
@@ -132,6 +134,8 @@ some_ip_mapping {
             type_name: "SampleTemperatureUnitType"
           }
           service_unit: 1
+          topic: "temperature-topic"
+          capacity: 50
           type_definition {
             length_field_size: ZERO
             field {
@@ -170,6 +174,8 @@ some_ip_mapping {
               type_name: "FirstPart"
             }
             service_unit: 0
+            topic: "bool-part-topic"
+            capacity: 10
             field_name_mapping {
               key: "some_bool"
               value: "sample_boolean"
@@ -182,6 +188,8 @@ some_ip_mapping {
               type_name: "SecondPart"
             }
             service_unit: 1
+            topic: "int-part-topic"
+            capacity: 20
             field_name_mapping {
               key: "some_int"
               value: "sample_int"
@@ -198,6 +206,7 @@ some_ip_mapping {
           type_name: "SomeIpInterface"
         }
         service_unit: 1
+        channel: "rpc-channel-1"
         method {
           procedure: "DoubleNum"
           method_id: 0x1500
@@ -305,6 +314,43 @@ some_ip_mapping {
         service_unit_name: "com-android-sdv-someip-sample-name"
       }
       instance_id: 0x0001
+    }
+    service_oriented_mapping {
+      rpc_interface_mapping {
+        rpc_channel_mapping {
+          channel: "rpc-channel-1"
+          instance_id: 10
+        }
+        rpc_channel_mapping {
+          channel: "rpc-channel-2"
+          instance_id: 11
+        }
+      }
+    }
+  }
+}
+
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.android.sdv.someip.sample"
+      service_bundle_name: "ServiceBundleFoo"
+      type_name: "SdvInterface"
+    }
+    someip_service_id: 0x48
+    version_major: 0x1
+    version_minor: 0x0
+    service_oriented_mapping {
+      publication_mapping {
+        topic_mapping {
+          topic: "pressure-topic"
+          instance_id: 20
+        }
+        topic_mapping {
+          topic: "temperature-topic"
+          instance_id: 21
+        }
+      }
     }
   }
 }
