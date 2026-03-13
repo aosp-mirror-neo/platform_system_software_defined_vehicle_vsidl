@@ -139,7 +139,7 @@ pub fn execute(cli: Cli) -> anyhow::Result<()> {
         cli.dependency_catalog_path.iter().map(PathBuf::as_path).collect();
 
     let vcli = VsidlcCommonCli::from(cli.clone());
-    let mut catalog = vcli.create_catalog_using_pest(cli.vsidl_path.clone())?;
+    let mut catalog = vcli.create_catalog(cli.vsidl_path.clone())?;
     RemoveNonGoogleOptions::traverse(&mut catalog);
     let catalog = catalog; // make catalog immutable
     let symbol_table = vcli.create_symbol_table_from_catalog(&catalog)?;

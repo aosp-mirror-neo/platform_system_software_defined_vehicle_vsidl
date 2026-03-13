@@ -1149,7 +1149,7 @@ mod test {
     fn build_catalog() -> Catalog {
         let test_cli = build_test_vsidlc();
         test_cli
-            .create_catalog_using_pest(Some(Path::new("./").to_path_buf()))
+            .create_catalog(Some(Path::new("./").to_path_buf()))
             .expect("Unable to create catalog")
     }
 
