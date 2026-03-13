@@ -36,21 +36,31 @@ pub async fn build(self) -> sdv::status::SdvResult<{{../service_bundle_name}}> {
     };
 
     {{#each rpc_servers}}
-    if let Some(server) = self.server_{{snake_case this.user_defined_name}} {
+    {{#if this.channel}}
+    if let Some(server) = self.server_{{snake_case this.channel}} {
         service.servers.push(
             sdv::mw::clientlib::create_server::<dyn {{this.unit_type.crate_name}}::Interface>(
                 comms.as_ref(),
-                {{#if this.channel}}
                 "{{this.channel}}".to_string(),
-                {{else}}
-                "{{this.user_defined_name}}".to_string(),
-                {{/if}}
                 {{this.unit_type.crate_name}}::internal::get_rpc_method_map(server.clone()),
                 server.init_server_options(),
             )
             .await?
         );
     }
+    {{else}}
+    if let Some(server) = self.server_{{snake_case this.user_defined_name}} {
+        service.servers.push(
+            sdv::mw::clientlib::create_server::<dyn {{this.unit_type.crate_name}}::Interface>(
+                comms.as_ref(),
+                "{{this.user_defined_name}}".to_string(),
+                {{this.unit_type.crate_name}}::internal::get_rpc_method_map(server.clone()),
+                server.init_server_options(),
+            )
+            .await?
+        );
+    }
+    {{/if}}
     {{/each}}
 
     Ok(service)

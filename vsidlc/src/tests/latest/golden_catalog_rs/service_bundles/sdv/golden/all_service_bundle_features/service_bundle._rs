@@ -215,9 +215,7 @@ impl AllServiceBundleFeatures {
 /// builder for AllServiceBundleFeatures
 pub struct AllServiceBundleFeaturesBuilder {
     comms: Option<std::sync::Arc<dyn sdv::mw::Communicate>>,
-    server_sdv_golden_dummy_rpc: Option<
-        std::sync::Arc<dyn sdv_golden_dummy_rpc_rpc::Interface>,
-    >,
+    server_dummy_rpc: Option<std::sync::Arc<dyn sdv_golden_dummy_rpc_rpc::Interface>>,
 }
 impl AllServiceBundleFeaturesBuilder {
     /// Sets the communication layer for the `AllServiceBundleFeatures`.
@@ -228,15 +226,15 @@ impl AllServiceBundleFeaturesBuilder {
         self.comms = Some(comms);
         self
     }
-    /// Sets the server implementation for the `sdv_golden_dummy_rpc` service.
+    /// Sets the server implementation for the `dummy_rpc` service.
     ///
     /// # Arguments
     /// * `server` - An `Arc` containing the implementation of the `Interface` trait.
-    pub fn set_server_sdv_golden_dummy_rpc(
+    pub fn set_server_dummy_rpc(
         mut self,
         server: std::sync::Arc<dyn sdv_golden_dummy_rpc_rpc::Interface>,
     ) -> Self {
-        self.server_sdv_golden_dummy_rpc = Some(server);
+        self.server_dummy_rpc = Some(server);
         self
     }
     /// Creates an instance of `AllServiceBundleFeatures`.
@@ -257,7 +255,7 @@ impl AllServiceBundleFeaturesBuilder {
             servers: std::vec::Vec::new(),
             diagnostics: Diagnostics::new(comms).await?,
         };
-        if let Some(server) = self.server_sdv_golden_dummy_rpc {
+        if let Some(server) = self.server_dummy_rpc {
             service
                 .servers
                 .push(
