@@ -21,8 +21,9 @@ use sdv_comms_id_validator::service_unit_name_validation::{
     validate_length, SERVICE_UNIT_NAME_MAX_LENGTH_BYTES,
 };
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::{Publisher, Server};
-use vsidl_v1::syntax::{Span, VsidlEntry};
+use vsidl_v1::syntax::VsidlEntry;
 use vsidl_v1_common::constants::UNIQUE_CHANNEL;
 use vsidl_v1_common::name_to_fqn;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;

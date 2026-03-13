@@ -16,7 +16,7 @@
 
 use crate::impl_context_condition_symtab;
 use std::collections::{HashMap, HashSet};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::{
     publisher_symbol::PublisherSymbol, rpc_server_symbol::RpcServerSymbol,

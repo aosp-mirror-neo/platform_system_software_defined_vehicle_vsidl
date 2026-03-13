@@ -21,8 +21,9 @@ use crate::parse_number::parse_string;
 use crate::pest_parser::Rule;
 use pest::iterators::Pair;
 use protobuf::MessageField;
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::{Client, Publisher, Server, Subscriber};
-use vsidl_v1::syntax::{BuildConfiguration, ServiceBundle, Span, VsidlEntry};
+use vsidl_v1::syntax::{BuildConfiguration, ServiceBundle, VsidlEntry};
 
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration;
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::routine::Method as DiagnosticsMethod;

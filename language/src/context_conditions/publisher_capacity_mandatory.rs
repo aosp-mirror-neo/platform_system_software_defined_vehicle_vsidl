@@ -43,7 +43,7 @@ mod tests {
     use super::*;
     use crate::context_condition::ContextCondition;
     use crate::finding_severity::FindingSeverity;
-    use vsidl_v1::syntax::Span;
+    use vsidl_v1::span::Span;
 
     #[test]
     fn test_should_reject_missing_capacity() {

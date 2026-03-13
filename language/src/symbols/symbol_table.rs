@@ -34,7 +34,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 
 /// Represents the state of the symbol table during its construction process.
 ///

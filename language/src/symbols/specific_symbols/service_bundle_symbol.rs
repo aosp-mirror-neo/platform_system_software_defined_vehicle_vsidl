@@ -20,8 +20,8 @@ use indexmap::IndexSet;
 use protobuf::MessageField;
 use std::path::PathBuf;
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::ServiceBundle;
-use vsidl_v1::syntax::Span;
 use vsidl_v1_common::DiagnosticsInfo;
 
 use super::publisher_symbol::PublisherSymbol;

@@ -19,8 +19,8 @@ use crate::{
     SymbolCommon, SymbolId, SymbolTable,
 };
 use heck::ToKebabCase;
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::Publisher;
-use vsidl_v1::syntax::Span;
 use vsidl_v1_common::{constants::UNIQUE_CHANNEL, format_service_unit_name};
 
 use super::{

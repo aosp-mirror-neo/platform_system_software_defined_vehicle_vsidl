@@ -19,7 +19,7 @@ use crate::{
     SymbolTable,
 };
 use protobuf::descriptor::DescriptorProto;
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::message_size::MessageSize;
 use vsidl_v1_common::ProtoMetadata;
 

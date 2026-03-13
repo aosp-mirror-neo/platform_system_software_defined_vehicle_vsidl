@@ -17,7 +17,7 @@
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition_symtab;
 use std::collections::{HashMap, HashSet};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::specific_symbols::publisher_symbol::PublisherSymbol;
 use vsidl_v1_symbols::symbol::{SymbolId, SymbolKind};

@@ -17,10 +17,11 @@
 use indexmap::IndexMap;
 use std::path::PathBuf;
 use vsidl_v1::annotations::{sdv_publication::PublisherModel, SdvPublication};
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::Client;
 use vsidl_v1::syntax::{
     service_bundle::{Publisher, Server, Subscriber},
-    ServiceBundle, Span, VsidlEntry,
+    ServiceBundle, VsidlEntry,
 };
 
 use super::specific_symbols::rpc_client_symbol::RpcClientSymbol;
