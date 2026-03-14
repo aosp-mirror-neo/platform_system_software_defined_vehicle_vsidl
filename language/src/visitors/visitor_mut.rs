@@ -38,9 +38,12 @@ use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
 
 // SOME/IP
 use vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::{
+    publication_mapping::TopicMapping as SomeIpTopicMapping,
     rpc_interface::Method as SomeIpMappingRpcInterfaceMethod,
+    rpc_interface_mapping::RpcChannelMapping as SomeIpRpcChannelMapping,
     topic::SimpleTopicMapping as SomeIpSimpleTopicMapping,
-    RpcInterface as SomeIpMappingRpcInterface,
+    PublicationMapping as SomeIpPublicationMapping, RpcInterface as SomeIpMappingRpcInterface,
+    RpcInterfaceMapping as SomeIpRpcInterfaceMapping,
     SdvServiceUnitMapping as SomeIpSdvServiceUnitMapping, ServiceUnitId as SomeIpServiceUnitId,
     SomeIpFFMethod, Topic as SomeIpTopic,
 };
@@ -51,6 +54,7 @@ use vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::{
     RpcInterface as SomeIpRpcInterface,
 };
 use vsidl_v1::someip::some_ip_mapping::{
+    sdv_type_mapping::ServiceOrientedMapping as SomeIpServiceOrientedMapping,
     SdvTypeMapping as SomeIpSdvTypeMapping, SomeIpInstanceImplementation, SomeIpInstanceMapping,
     SomeIpServiceMapping, UnitType as SomeIpUnitType,
 };
@@ -697,6 +701,79 @@ pub trait VsidlVisitorMut: AsDynVisitorMut {
     /// # Parameters
     /// * `_node`: A mutable reference to the [SomeIpFFMethod] being visited.
     fn end_visit_someip_ff_method(&mut self, _node: &mut SomeIpFFMethod) {}
+
+    /// Called before visiting the children of a mutable [SomeIpServiceOrientedMapping] node.
+    /// Allows modification of the [SomeIpServiceOrientedMapping] before its children are visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpServiceOrientedMapping] being visited.
+    fn start_visit_someip_service_oriented_mapping(
+        &mut self,
+        _node: &mut SomeIpServiceOrientedMapping,
+    ) {
+    }
+    /// Called after visiting the children of a mutable [SomeIpServiceOrientedMapping] node.
+    /// Allows modification of the [SomeIpServiceOrientedMapping] after its children have been visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpServiceOrientedMapping] being visited.
+    fn end_visit_someip_service_oriented_mapping(
+        &mut self,
+        _node: &mut SomeIpServiceOrientedMapping,
+    ) {
+    }
+
+    /// Called before visiting the children of a mutable [SomeIpRpcInterfaceMapping] node.
+    /// Allows modification of the [SomeIpRpcInterfaceMapping] before its children are visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpRpcInterfaceMapping] being visited.
+    fn start_visit_someip_rpc_interface_mapping(&mut self, _node: &mut SomeIpRpcInterfaceMapping) {}
+    /// Called after visiting the children of a mutable [SomeIpRpcInterfaceMapping] node.
+    /// Allows modification of the [SomeIpRpcInterfaceMapping] after its children have been visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpRpcInterfaceMapping] being visited.
+    fn end_visit_someip_rpc_interface_mapping(&mut self, _node: &mut SomeIpRpcInterfaceMapping) {}
+
+    /// Called before visiting the children of a mutable [SomeIpRpcChannelMapping] node.
+    /// Allows modification of the [SomeIpRpcChannelMapping] before its children are visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpRpcChannelMapping] being visited.
+    fn start_visit_someip_rpc_channel_mapping(&mut self, _node: &mut SomeIpRpcChannelMapping) {}
+    /// Called after visiting the children of a mutable [SomeIpRpcChannelMapping] node.
+    /// Allows modification of the [SomeIpRpcChannelMapping] after its children have been visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpRpcChannelMapping] being visited.
+    fn end_visit_someip_rpc_channel_mapping(&mut self, _node: &mut SomeIpRpcChannelMapping) {}
+
+    /// Called before visiting the children of a mutable [SomeIpPublicationMapping] node.
+    /// Allows modification of the [SomeIpPublicationMapping] before its children are visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpPublicationMapping] being visited.
+    fn start_visit_someip_publication_mapping(&mut self, _node: &mut SomeIpPublicationMapping) {}
+    /// Called after visiting the children of a mutable [SomeIpPublicationMapping] node.
+    /// Allows modification of the [SomeIpPublicationMapping] after its children have been visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A reference to the [SomeIpPublicationMapping] being visited.
+    fn end_visit_someip_publication_mapping(&mut self, _node: &mut SomeIpPublicationMapping) {}
+
+    /// Called before visiting the children of a mutable [SomeIpTopicMapping] node.
+    /// Allows modification of the [SomeIpTopicMapping] before its children are visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpTopicMapping] being visited.
+    fn start_visit_someip_topic_mapping(&mut self, _node: &mut SomeIpTopicMapping) {}
+    /// Called after visiting the children of a mutable [SomeIpTopicMapping] node.
+    /// Allows modification of the [SomeIpTopicMapping] after its children have been visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SomeIpTopicMapping] being visited.
+    fn end_visit_someip_topic_mapping(&mut self, _node: &mut SomeIpTopicMapping) {}
 
     /// Called before visiting the children of a mutable [VhalMapping] node.
     /// Allows modification of the [VhalMapping] before its children are visited.
@@ -2687,6 +2764,150 @@ impl AstNodeMut for SomeIpSdvTypeMapping {
         if self.has_offered_topic() {
             self.mut_offered_topic().accept(visitor);
         }
+        if let MessageField(Some(service_oriented_mapping)) = &mut self.service_oriented_mapping {
+            service_oriented_mapping.accept(visitor);
+        }
+    }
+}
+
+/// Implements the [AstNodeMut] trait for the [SomeIpServiceOrientedMapping] struct.
+impl AstNodeMut for SomeIpServiceOrientedMapping {
+    /// Accepts a [VsidlVisitorMut] for a SOME/IP service-oriented mapping node.
+    ///
+    /// Calls `start_visit_someip_service_oriented_mapping`, `traverse`, and `end_visit_someip_service_oriented_mapping`.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to accept.
+    fn accept(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        visitor.start_visit_someip_service_oriented_mapping(self);
+        self.traverse(visitor);
+        visitor.end_visit_someip_service_oriented_mapping(self);
+    }
+
+    /// Defines the traversal order for the children of a [SomeIpServiceOrientedMapping] mutably.
+    ///
+    /// Visits either the RPC interface mapping or the publication mapping, depending on which one is present.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to pass to the child node.
+    fn traverse(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        if self.has_rpc_interface_mapping() {
+            self.mut_rpc_interface_mapping().accept(visitor);
+        } else if self.has_publication_mapping() {
+            self.mut_publication_mapping().accept(visitor);
+        }
+    }
+}
+
+/// Implements the [AstNodeMut] trait for the [SomeIpRpcInterfaceMapping] struct.
+impl AstNodeMut for SomeIpRpcInterfaceMapping {
+    /// Accepts a [VsidlVisitorMut] for a SOME/IP RPC interface mapping node.
+    ///
+    /// Calls `start_visit_someip_rpc_interface_mapping`, `traverse`, and `end_visit_someip_rpc_interface_mapping`.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to accept.
+    fn accept(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        visitor.start_visit_someip_rpc_interface_mapping(self);
+        self.traverse(visitor);
+        visitor.end_visit_someip_rpc_interface_mapping(self);
+    }
+
+    /// Defines the traversal order for the children of a [SomeIpRpcInterfaceMapping] mutably.
+    ///
+    /// Visits the offered interface and the RPC channel mappings.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to pass to child nodes.
+    fn traverse(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        if let MessageField(Some(offered_interface)) = &mut self.offered_interface {
+            offered_interface.accept(visitor);
+        }
+        for child_node in &mut self.rpc_channel_mapping {
+            child_node.accept(visitor);
+        }
+    }
+}
+
+/// Implements the [AstNodeMut] trait for the [SomeIpRpcChannelMapping] struct.
+impl AstNodeMut for SomeIpRpcChannelMapping {
+    /// Accepts a [VsidlVisitorMut] for a SOME/IP RPC channel mapping node.
+    ///
+    /// Calls `start_visit_someip_rpc_channel_mapping`, `traverse`, and `end_visit_someip_rpc_channel_mapping`.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to accept.
+    fn accept(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        visitor.start_visit_someip_rpc_channel_mapping(self);
+        self.traverse(visitor);
+        visitor.end_visit_someip_rpc_channel_mapping(self);
+    }
+
+    /// Traverses the children of a [SomeIpRpcChannelMapping] node mutably.
+    ///
+    /// Currently, [SomeIpRpcChannelMapping] has no defined children in the AST traversal logic.
+    ///
+    /// # Parameters
+    /// * `_visitor`: The visitor (unused).
+    fn traverse(&'_ mut self, _visitor: &mut dyn VsidlVisitorMut) {
+        // No child nodes
+    }
+}
+
+/// Implements the [AstNodeMut] trait for the [SomeIpPublicationMapping] struct.
+impl AstNodeMut for SomeIpPublicationMapping {
+    /// Accepts a [VsidlVisitorMut] for a SOME/IP publication mapping node.
+    ///
+    /// Calls `start_visit_someip_publication_mapping`, `traverse`, and `end_visit_someip_publication_mapping`.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to accept.
+    fn accept(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        visitor.start_visit_someip_publication_mapping(self);
+        self.traverse(visitor);
+        visitor.end_visit_someip_publication_mapping(self);
+    }
+
+    /// Defines the traversal order for the children of a [SomeIpPublicationMapping] mutably.
+    ///
+    /// Visits the offered topic and the topic mappings.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to pass to child nodes.
+    fn traverse(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        if let MessageField(Some(offered_topic)) = &mut self.offered_topic {
+            offered_topic.accept(visitor);
+        }
+        for child_node in &mut self.topic_mapping {
+            child_node.accept(visitor);
+        }
+    }
+}
+
+/// Implements the [AstNodeMut] trait for the [SomeIpTopicMapping] struct.
+impl AstNodeMut for SomeIpTopicMapping {
+    /// Accepts a [VsidlVisitorMut] for a SOME/IP topic mapping node.
+    ///
+    /// Calls `start_visit_someip_topic_mapping`, `traverse`, and `end_visit_someip_topic_mapping`.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to accept.
+    fn accept(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        visitor.start_visit_someip_topic_mapping(self);
+        self.traverse(visitor);
+        visitor.end_visit_someip_topic_mapping(self);
+    }
+
+    /// Defines the traversal order for the children of a [SomeIpTopicMapping] mutably.
+    ///
+    /// Visits the fire and forget methods, if present.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to pass to child nodes.
+    fn traverse(&'_ mut self, visitor: &mut dyn VsidlVisitorMut) {
+        for child_node in &mut self.fire_and_forget_method {
+            child_node.accept(visitor);
+        }
     }
 }
 
@@ -3171,6 +3392,16 @@ mod test {
         mock.expect_end_visit_someip_service_unit_id().times(1..).return_const(());
         mock.expect_start_visit_someip_ff_method().times(1..).return_const(());
         mock.expect_end_visit_someip_ff_method().times(1..).return_const(());
+        mock.expect_start_visit_someip_service_oriented_mapping().times(1..).return_const(());
+        mock.expect_end_visit_someip_service_oriented_mapping().times(1..).return_const(());
+        mock.expect_start_visit_someip_rpc_interface_mapping().times(1..).return_const(());
+        mock.expect_end_visit_someip_rpc_interface_mapping().times(1..).return_const(());
+        mock.expect_start_visit_someip_rpc_channel_mapping().times(1..).return_const(());
+        mock.expect_end_visit_someip_rpc_channel_mapping().times(1..).return_const(());
+        mock.expect_start_visit_someip_publication_mapping().times(1..).return_const(());
+        mock.expect_end_visit_someip_publication_mapping().times(1..).return_const(());
+        mock.expect_start_visit_someip_topic_mapping().times(1..).return_const(());
+        mock.expect_end_visit_someip_topic_mapping().times(1..).return_const(());
 
         // VHAL methods
         mock.expect_start_visit_vhal_mapping().times(1..).return_const(());
