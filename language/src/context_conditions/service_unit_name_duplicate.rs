@@ -160,14 +160,14 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
             rpc_server.service_unit_name.clone()
         };
         self.check(
-            service_unit_name,
+            service_unit_name.clone(),
             service_bundle_name.clone(),
             !IS_PUBLISHER,
             rpc_server.span.clone().into_option(),
         );
 
         // 2. Check channel name (it's also stored as service_unit_name in SD)
-        if !rpc_server.channel.is_empty() {
+        if !rpc_server.channel.is_empty() && rpc_server.channel != service_unit_name {
             self.check(
                 rpc_server.channel.clone(),
                 service_bundle_name,
@@ -483,6 +483,40 @@ mod tests {
             FindingSeverity::Error,
             "Service unit name 'shared-name' is used multiple times in service bundle 'sdv.test.ServiceBundleOne'"
         ));
+    }
+
+    #[test]
+    fn test_should_accept_same_channel_and_service_unit_name_on_same_server() {
+        // GIVEN a catalog where a server has the same name for channel and service_unit_name
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([
+            vsidl_v1_test_data::DESCRIPTOR_MESSAGE_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_ANOTHER_DUMMY_RPC_PROTO.clone(),
+            vsidl_v1_test_data::DESCRIPTOR_DIAGNOSTICS_PROTO.clone(),
+        ]);
+
+        let mut vsidl_entry = vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.1.clone();
+        // Bundle 2: Server has channel "shared-name" and service_unit_name "shared-name"
+        vsidl_entry.service_bundle[1].server[0].channel = "shared-name".to_string();
+        vsidl_entry.service_bundle[1].server[0].service_unit_name = "shared-name".to_string();
+
+        catalog
+            .catalog_vsidl_files
+            .push((vsidl_v1_test_data::VSIDL_TWO_BUNDLES_VALID.0.clone(), vsidl_entry));
+
+        let mut creator = SymbolTableCreator::new();
+        creator.set_target_api(TargetApi::Latest);
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // WHEN Executing context condition
+        let mut check = ServiceUnitNameDuplicate::default();
+        check.check_linked_symbol_table(linker.symbol_table());
+
+        // THEN Should not have found any errors
+        assert!(check.is_ok());
     }
 
     #[test]
