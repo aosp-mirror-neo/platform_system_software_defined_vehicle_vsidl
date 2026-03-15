@@ -803,10 +803,10 @@ pub fn convert_to_some_ip_group_event_part(pair: Pair<Rule>) -> event::GroupEven
                 group_event_part.service_unit = parse_string::<u32>(get_inner_str(item)).unwrap();
             }
             Rule::some_ip_event_part_field_name_mapping => {
+                let mut key = String::new();
+                let mut value = String::new();
                 for sub_item in item.into_inner() {
                     if let Rule::some_ip_map_entry_str_str = sub_item.as_rule() {
-                        let mut key = String::new();
-                        let mut value = String::new();
                         for entry_part in sub_item.into_inner() {
                             match entry_part.as_rule() {
                                 Rule::some_ip_map_entry_key => {
@@ -818,9 +818,9 @@ pub fn convert_to_some_ip_group_event_part(pair: Pair<Rule>) -> event::GroupEven
                                 _ => (),
                             }
                         }
-                        group_event_part.field_name_mapping.insert(key, value);
                     }
                 }
+                group_event_part.field_name_mapping.insert(key, value);
             }
             _ => (),
         }
@@ -1605,5 +1605,66 @@ mod test {
         assert_eq!(vhal_mapping.area_mapping.len(), 4);
         let area_mapping = &vhal_mapping.area_mapping[0];
         assert_eq!(area_mapping.publication_instance, "FRONT_LEFT");
+    }
+
+    #[test]
+    fn test_pest_vs_protobuf_parsing() {
+        // GIVEN a VSIDL file with all AST node types
+        let vsidl_content =
+            std::fs::read_to_string("src/tests_vsidl_v1/vsidl/all_ast_node_types.vsidl").unwrap();
+
+        // WHEN parsing using Protobuf (old way)
+        let vsidl_entry_proto =
+            protobuf::text_format::parse_from_str::<vsidl_v1::syntax::VsidlEntry>(&vsidl_content)
+                .unwrap();
+
+        // WHEN parsing using Pest (new way)
+        let parsed_file = VsidlParser::parse(Rule::vsidl_file, &vsidl_content)
+            .unwrap_or_else(|e| panic!("failed to parse vsidl file: {}", e));
+        let mut vsidl_entry_pest = converter::convert_to_vsidl_entry(
+            parsed_file.into_iter().next().unwrap(),
+            "all_ast_node_types.vsidl",
+        );
+
+        // THEN they should be equal after clearing spans
+        vsidl_entry_pest.span.clear();
+        vsidl_entry_pest.package_span.clear();
+        for bundle in &mut vsidl_entry_pest.service_bundle {
+            bundle.span.clear();
+            bundle.name_span.clear();
+            bundle.register_reflection_metadata_span.clear();
+            for p in &mut bundle.publisher {
+                p.span.clear();
+                p.message_span.clear();
+                p.service_unit_name_span.clear();
+                p.capacity_span.clear();
+                p.topic_span.clear();
+                p.channel_span.clear();
+            }
+            for s in &mut bundle.subscriber {
+                s.span.clear();
+                s.message_span.clear();
+                s.topic_span.clear();
+                s.channel_span.clear();
+            }
+            for s in &mut bundle.server {
+                s.span.clear();
+                s.service_span.clear();
+                s.service_unit_name_span.clear();
+                s.channel_span.clear();
+            }
+            for c in &mut bundle.client {
+                c.span.clear();
+                c.service_span.clear();
+                c.channel_span.clear();
+            }
+            if let Some(cfg) = bundle.build_cfg.as_mut() {
+                cfg.span.clear();
+                cfg.target_name_span.clear();
+                cfg.skip_codegen_span.clear();
+            }
+        }
+
+        assert_eq!(vsidl_entry_pest, vsidl_entry_proto);
     }
 }
