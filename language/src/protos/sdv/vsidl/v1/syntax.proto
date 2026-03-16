@@ -19,21 +19,11 @@ syntax = "proto3";
 
 package sdv.vsidl.v1;
 
+import "sdv/vsidl/v1/span.proto";
 import "google/protobuf/any.proto";
 import "sdv/diagnostics/v1/diagnostics_syntax.proto";
 import "sdv/someip/v1/someip.proto";
 import "sdv/vhal/vhal_proxy.proto";
-
-// Parsing metadata that describes where the syntax element was found in the
-// input. Do not fill fields of this type manually.
-message Span {
-  // The path to the file where this syntax element was found.
-  string file_path = 1;
-  // The starting character offset of the syntax element.
-  uint32 start = 2;
-  // The ending character offset of the syntax element.
-  uint32 end = 3;
-}
 
 // Defines the metadata for a unit type within the SDV ecosystem.
 message UnitType {

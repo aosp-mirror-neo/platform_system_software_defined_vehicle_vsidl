@@ -23,7 +23,7 @@ use regenerator_proto::catalog::Catalog as CatalogUpdate;
 use std::cmp::max;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_parser::file_provider::FileProvider;
 use vsidl_v1_parser::{offset_to_line_col, Catalog, SymbolTable, TargetApi};
 

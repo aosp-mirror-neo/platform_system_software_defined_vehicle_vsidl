@@ -26,7 +26,7 @@ use lsp_types::{
 use pest::iterators::Pair;
 use std::collections::HashSet;
 use std::path::Path;
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_parser::file_provider::FileProvider;
 use vsidl_v1_parser::line_col_to_offset;
 use vsidl_v1_parser::pest_parser::Rule;

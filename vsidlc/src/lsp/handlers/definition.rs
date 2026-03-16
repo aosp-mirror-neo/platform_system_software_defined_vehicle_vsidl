@@ -18,7 +18,7 @@ use crate::lsp::utils::{convert_position_0_based_to_1_based_index, location_from
 use crate::Cli;
 use anyhow::anyhow;
 use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_parser::file_provider::FileProvider;
 use vsidl_v1_parser::symbol::SymbolKind;
 use vsidl_v1_parser::{line_col_to_offset, SymbolTable};

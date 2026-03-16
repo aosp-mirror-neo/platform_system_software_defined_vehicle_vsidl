@@ -16,7 +16,7 @@
 
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition;
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
 #[derive(Debug, Default)]

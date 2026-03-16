@@ -21,6 +21,7 @@
 syntax = "proto3";
 
 import "sdv/someip/v1/someip_type.proto";
+import "sdv/vsidl/v1/span.proto";
 
 package sdv.someip.v1;
 
@@ -32,6 +33,13 @@ message SomeIpMapping {
     string service_bundle_name = 2;
     // Unit Type name
     string type_name = 3;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    sdv.vsidl.v1.Span span = 10000;
+    sdv.vsidl.v1.Span package_name_span = 10001;
+    sdv.vsidl.v1.Span service_bundle_name_span = 10002;
+    sdv.vsidl.v1.Span type_name_span = 10003;
   }
 
   message SomeIpServiceMapping {
@@ -66,6 +74,16 @@ message SomeIpMapping {
     // Expected matching behavior when discovering services. If unset, default
     // value will be taken from the broker's configuration.
     optional SdVersionDrivenBehavior sd_behavior = 6;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    sdv.vsidl.v1.Span span = 10000;
+    sdv.vsidl.v1.Span someip_service_id_span = 10001;
+    sdv.vsidl.v1.Span version_major_span = 10002;
+    sdv.vsidl.v1.Span version_minor_span = 10003;
+    repeated sdv.vsidl.v1.Span instance_span = 10004;
+    repeated sdv.vsidl.v1.Span instance_impl_span = 10005;
+    sdv.vsidl.v1.Span sd_behavior_span = 10006;
   }
 
   // SOME/IP service instance mapping
@@ -79,6 +97,13 @@ message SomeIpMapping {
     // DEPRECATED: please use `topic` in (`GroupEventPart` or `SimpleEvent`) or
     // `channel` in `RpcInterface` instead.
     map<uint32, string> sdv_service_unit_parameterization = 2;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    sdv.vsidl.v1.Span span = 10000;
+    sdv.vsidl.v1.Span instance_id_span = 10001;
+    map<uint32, sdv.vsidl.v1.Span> sdv_service_unit_parameterization_span =
+        10002;
   }
 
   message SomeIpInstanceImplementation {
@@ -95,6 +120,14 @@ message SomeIpMapping {
         // Mapping rule for a RPC response. May be omitted to represent void
         // methods.
         optional SomeIpType.SomeIpStruct response_payload_mapping = 4;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span procedure_span = 10001;
+        sdv.vsidl.v1.Span method_id_span = 10002;
+        sdv.vsidl.v1.Span request_payload_mapping_span = 10003;
+        sdv.vsidl.v1.Span response_payload_mapping_span = 10004;
       }
       // SDV Unit Type corresponding to this RPC interface
       UnitType sdv_unit_type = 1;
@@ -111,6 +144,14 @@ message SomeIpMapping {
       // Channel name that will be created inside SOME/IP broker bundle
       // for this event instance.
       string channel = 4;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span sdv_unit_type_span = 10001;
+      sdv.vsidl.v1.Span service_unit_span = 10002;
+      repeated sdv.vsidl.v1.Span method_span = 10003;
+      sdv.vsidl.v1.Span channel_span = 10004;
     }
 
     // SOME/IP event mapping to SDV topics.
@@ -147,6 +188,19 @@ message SomeIpMapping {
         // Topic name that will be created inside SOME/IP broker bundle
         // for this event instance.
         string topic = 5;
+        // Capacity of the publisher created inside SOME/IP broker bundle for
+        // this event instance.
+        uint32 capacity = 6;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span sdv_unit_type_span = 10001;
+        sdv.vsidl.v1.Span service_unit_span = 10002;
+        sdv.vsidl.v1.Span type_definition_span = 10003;
+        sdv.vsidl.v1.Span message_translation_mode_span = 10004;
+        sdv.vsidl.v1.Span topic_span = 10005;
+        sdv.vsidl.v1.Span capacity_span = 10006;
       }
       message GroupEventPart {
         // SDV Unit Type corresponding to this group event part
@@ -165,12 +219,30 @@ message SomeIpMapping {
         // Topic name that will be created inside SOME/IP broker bundle
         // for this event instance.
         string topic = 4;
+        // Capacity of the publisher created inside SOME/IP broker bundle for
+        // this event instance.
+        uint32 capacity = 5;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span sdv_unit_type_span = 10001;
+        sdv.vsidl.v1.Span service_unit_span = 10002;
+        map<string, sdv.vsidl.v1.Span> field_name_mapping_span = 10003;
+        sdv.vsidl.v1.Span topic_span = 10004;
+        sdv.vsidl.v1.Span capacity_span = 10005;
       }
       message GroupEvent {
         // SOME/IP data format of the event
         SomeIpType.SomeIpStruct type_definition = 1;
         // Description of the event parts
         repeated GroupEventPart event_part = 2;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span type_definition_span = 10001;
+        repeated sdv.vsidl.v1.Span event_part_span = 10002;
       }
       // SOME/IP group ID of the event (several events may share same group ID)
       uint32 group_id = 1;
@@ -183,12 +255,26 @@ message SomeIpMapping {
         SimpleEvent simple_event = 3;
         GroupEvent group_event = 4;
       }
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span group_id_span = 10001;
+      sdv.vsidl.v1.Span event_id_span = 10002;
+      sdv.vsidl.v1.Span simple_event_span = 10003;
+      sdv.vsidl.v1.Span group_event_span = 10004;
     }
     // The type of interface offered by the SOME/IP service
     oneof interface_type {
       RpcInterface offered_interface = 1;
       Event offered_event = 2;
     }
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    sdv.vsidl.v1.Span span = 10000;
+    sdv.vsidl.v1.Span offered_interface_span = 10001;
+    sdv.vsidl.v1.Span offered_event_span = 10002;
   }
 
   message SdvTypeMapping {
@@ -207,6 +293,15 @@ message SomeIpMapping {
       optional string service_instance_name = 4;
       // Service unit name
       string service_unit_name = 5;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span vm_name_span = 10001;
+      sdv.vsidl.v1.Span package_name_span = 10002;
+      sdv.vsidl.v1.Span service_bundle_name_span = 10003;
+      sdv.vsidl.v1.Span service_instance_name_span = 10004;
+      sdv.vsidl.v1.Span service_unit_name_span = 10005;
     }
     // SOME/IP identifier for a fire and forget method on a specific service
     // instance. This is used in `SdvServiceUnitMapping`
@@ -221,6 +316,15 @@ message SomeIpMapping {
       uint32 version_minor = 4;
       // SOME/IP method ID. Actual size is 16 bits.
       uint32 method_id = 5;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span service_id_span = 10001;
+      sdv.vsidl.v1.Span instance_id_span = 10002;
+      sdv.vsidl.v1.Span version_major_span = 10003;
+      sdv.vsidl.v1.Span version_minor_span = 10004;
+      sdv.vsidl.v1.Span method_id_span = 10005;
     }
     // A mapping for the SDV RPC Unit Type to corresponding SOME/IP RPC. It
     // defines the structure of each method arguments and return data type in
@@ -239,9 +343,22 @@ message SomeIpMapping {
         // Mapping rule for a RPC response. May be omitted to represent void
         // methods.
         optional SomeIpType.SomeIpStruct response_payload_mapping = 4;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span procedure_span = 10001;
+        sdv.vsidl.v1.Span method_id_span = 10002;
+        sdv.vsidl.v1.Span request_payload_mapping_span = 10003;
+        sdv.vsidl.v1.Span response_payload_mapping_span = 10004;
       }
       // RPC methods available on this service
       repeated Method method = 1;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      repeated sdv.vsidl.v1.Span method_span = 10001;
     }
     // A mapping for the SDV Topic Unit Type to corresponding SOME/IP Event or
     // Fire-and-forget RPC. It defines the structure of the data type in
@@ -255,12 +372,23 @@ message SomeIpMapping {
         uint32 group_id = 1;
         // SOME/IP event ID. Actual size is 16 bits
         uint32 event_id = 2;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span group_id_span = 10001;
+        sdv.vsidl.v1.Span event_id_span = 10002;
       }
       // DEPRECATED: please use PublicationMapping instead.
       message MultipubTopicInfo {
         // Specifies the SOME/IP instance ID for the SOME/IP service that
         // corresponds to the multipub topic
         uint32 someip_instance_id = 1;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span someip_instance_id_span = 10001;
       }
       // SOME/IP data format of the event
       SomeIpType.SomeIpStruct type_definition = 1;
@@ -279,6 +407,14 @@ message SomeIpMapping {
       // Type mapping.
       // DEPRECATED: please use PublicationMapping instead.
       optional MultipubTopicInfo multipub_topic_info = 4;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span type_definition_span = 10001;
+      sdv.vsidl.v1.Span simple_mapping_span = 10002;
+      sdv.vsidl.v1.Span someip_ff_methods_span = 10003;
+      sdv.vsidl.v1.Span multipub_topic_info_span = 10004;
     }
     // Mapping from SDV Service Unit (implementation of the Unit Type) to a
     // SOME/IP instance of the translated service ID. This mapping combines with
@@ -298,6 +434,13 @@ message SomeIpMapping {
       // has data published to it, the `someip_ff_methods` flag must be set to
       // true
       repeated SomeIpFFMethod fire_and_forget_method = 3;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span service_unit_id_span = 10001;
+      sdv.vsidl.v1.Span instance_id_span = 10002;
+      repeated sdv.vsidl.v1.Span fire_and_forget_method_span = 10003;
     }
 
     message RpcInterfaceMapping {
@@ -309,9 +452,21 @@ message SomeIpMapping {
         // SOME/IP Instance ID of the service that should be offered when the
         // SDV RPC channel becomes available
         uint32 instance_id = 2;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span channel_span = 10001;
+        sdv.vsidl.v1.Span instance_id_span = 10002;
       }
       RpcInterface offered_interface = 1;
       repeated RpcChannelMapping rpc_channel_mapping = 2;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span offered_interface_span = 10001;
+      repeated sdv.vsidl.v1.Span rpc_channel_mapping_span = 10002;
     }
 
     message PublicationMapping {
@@ -325,9 +480,22 @@ message SomeIpMapping {
         // methods when the topic has data published to it, the
         // `someip_ff_methods` flag must be set to true
         repeated SomeIpFFMethod fire_and_forget_method = 3;
+
+        // Parsing metadata that describes where the syntax element was found in
+        // the input. Do not fill fields of this type manually.
+        sdv.vsidl.v1.Span span = 10000;
+        sdv.vsidl.v1.Span topic_span = 10001;
+        sdv.vsidl.v1.Span instance_id_span = 10002;
+        repeated sdv.vsidl.v1.Span fire_and_forget_method_span = 10003;
       }
       Topic offered_topic = 1;
       repeated TopicMapping topic_mapping = 2;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span offered_topic_span = 10001;
+      repeated sdv.vsidl.v1.Span topic_mapping_span = 10002;
     }
 
     // Unit type being mapped
@@ -354,15 +522,39 @@ message SomeIpMapping {
         RpcInterfaceMapping rpc_interface_mapping = 1;
         PublicationMapping publication_mapping = 2;
       }
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span rpc_interface_mapping_span = 10001;
+      sdv.vsidl.v1.Span publication_mapping_span = 10002;
     }
 
     // SOA mapping. If this field is filled, the `interface_type` and
     // `service_unit_mapping` fields are ignored.
     ServiceOrientedMapping service_oriented_mapping = 8;
+
+    // Parsing metadata that describes where the syntax element was found in the
+    // input. Do not fill fields of this type manually.
+    sdv.vsidl.v1.Span span = 10000;
+    sdv.vsidl.v1.Span unit_type_span = 10001;
+    sdv.vsidl.v1.Span someip_service_id_span = 10002;
+    sdv.vsidl.v1.Span version_major_span = 10003;
+    sdv.vsidl.v1.Span version_minor_span = 10004;
+    sdv.vsidl.v1.Span offered_interface_span = 10005;
+    sdv.vsidl.v1.Span offered_topic_span = 10006;
+    repeated sdv.vsidl.v1.Span service_unit_mapping_span = 10007;
+    sdv.vsidl.v1.Span service_oriented_mapping_span = 10008;
   }
   // A mapping can be for a SOME/IP service or an SDV Unit Type
   oneof mapping_type {
     SomeIpServiceMapping someip_service_mapping = 1;
     SdvTypeMapping sdv_type_mapping = 2;
   }
+
+  // Parsing metadata that describes where the syntax element was found in the
+  // input. Do not fill fields of this type manually.
+  sdv.vsidl.v1.Span span = 10000;
+  sdv.vsidl.v1.Span someip_service_mapping_span = 10001;
+  sdv.vsidl.v1.Span sdv_type_mapping_span = 10002;
 }

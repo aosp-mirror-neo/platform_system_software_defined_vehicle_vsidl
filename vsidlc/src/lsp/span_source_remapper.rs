@@ -16,8 +16,9 @@
 
 use crate::lsp::shadow_workspace::ShadowWorkspace;
 use protobuf::MessageField;
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::{Client, Publisher, Server, Subscriber};
-use vsidl_v1::syntax::{BuildConfiguration, ServiceBundle, Span, VsidlEntry};
+use vsidl_v1::syntax::{BuildConfiguration, ServiceBundle, VsidlEntry};
 use vsidl_v1_parser::visitors::visitor_mut::VsidlVisitorMut;
 use vsidl_v1_parser::Catalog;
 
