@@ -13,6 +13,7 @@
 // limitations under the License.
 //! Generates apex files for a VSIDL project.
 
+use crate::cli::{AndroidBpFormat, TextprotoFormat};
 use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use crate::util::write_bytes_to_file;
@@ -151,13 +152,37 @@ impl GeneratorStepExecution for GenerateApex {
             "use_acls": !use_permissions,
         });
 
-        generate_apex_files(output_path, handlebars, &data)?;
+        generate_apex_files(
+            output_path,
+            handlebars,
+            &data,
+            state.cli.android_bp_formatter,
+            state.cli.textproto_formatter,
+        )?;
         if use_permissions {
-            generate_permissions_files(output_path, handlebars, &data)?;
+            generate_permissions_files(
+                output_path,
+                handlebars,
+                &data,
+                state.cli.android_bp_formatter,
+                state.cli.textproto_formatter,
+            )?;
         } else {
-            generate_config_files(output_path, handlebars, &data)?;
+            generate_config_files(
+                output_path,
+                handlebars,
+                &data,
+                state.cli.android_bp_formatter,
+                state.cli.textproto_formatter,
+            )?;
         }
-        generate_orchestration_files(output_path, handlebars, &data)?;
+        generate_orchestration_files(
+            output_path,
+            handlebars,
+            &data,
+            state.cli.android_bp_formatter,
+            state.cli.textproto_formatter,
+        )?;
         Ok(())
     }
 }
@@ -341,6 +366,8 @@ fn generate_apex_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let apex_dir = output_path.join("apex");
     fs::create_dir_all(&apex_dir)?;
@@ -354,21 +381,43 @@ fn generate_apex_files(
     }
 
     let bp_content = handlebars.render("apex_android_bp", data)?;
-    write_bytes_to_file(&bp_content, &apex_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &apex_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let manifest_content = handlebars.render("apex_manifest_json", data)?;
-    write_bytes_to_file(&manifest_content, &apex_dir.join("apex_manifest.json"))?;
+    write_bytes_to_file(
+        &manifest_content,
+        &apex_dir.join("apex_manifest.json"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let file_contexts_content = handlebars.render("file_contexts", data)?;
-    write_bytes_to_file(&file_contexts_content, &apex_dir.join("file_contexts"))?;
+    write_bytes_to_file(
+        &file_contexts_content,
+        &apex_dir.join("file_contexts"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let linker_config_content = handlebars.render("linker_config_json", data)?;
-    write_bytes_to_file(&linker_config_content, &apex_dir.join("linker.config.json"))?;
+    write_bytes_to_file(
+        &linker_config_content,
+        &apex_dir.join("linker.config.json"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let sdv_manifest_content = handlebars.render("sdv_service_bundles_manifest", data)?;
     write_bytes_to_file(
         &sdv_manifest_content,
         &apex_dir.join("sdv_service_bundles_manifest.textproto"),
+        android_bp_format,
+        textproto_format,
     )?;
 
     Ok(())
@@ -379,16 +428,28 @@ fn generate_config_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let config_dir = output_path.join("configs/acls");
     fs::create_dir_all(&config_dir)?;
 
     let bp_content = handlebars.render("acls_android_bp", data)?;
-    write_bytes_to_file(&bp_content, &config_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &config_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let acl_file_name = format!("{}_acls.textproto", data["package_name"].as_str().unwrap());
     let acl_content = handlebars.render("service_bundles_acls", data)?;
-    write_bytes_to_file(&acl_content, &config_dir.join(acl_file_name))?;
+    write_bytes_to_file(
+        &acl_content,
+        &config_dir.join(acl_file_name),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     Ok(())
 }
@@ -398,12 +459,19 @@ fn generate_permissions_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let config_dir = output_path.join("configs/permissions");
     fs::create_dir_all(&config_dir)?;
 
     let bp_content = handlebars.render("permissions_android_bp", data)?;
-    write_bytes_to_file(&bp_content, &config_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &config_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let service_bundles = data["service_bundles"].as_array().unwrap();
     let permissions_data = data["permissions"].as_object().unwrap();
@@ -420,7 +488,12 @@ fn generate_permissions_files(
                 .insert("year".to_string(), json!(crate::rust::generator::get_current_year()));
 
             let content = handlebars.render("service_bundle_permissions", &template_data)?;
-            write_bytes_to_file(&content, &config_dir.join(file_name))?;
+            write_bytes_to_file(
+                &content,
+                &config_dir.join(file_name),
+                android_bp_format,
+                textproto_format,
+            )?;
         } else {
             // Write an empty permissions file if no permissions are defined for this bundle
             let empty_perms = json!({
@@ -431,7 +504,12 @@ fn generate_permissions_files(
                 "clients": [],
             });
             let content = handlebars.render("service_bundle_permissions", &empty_perms)?;
-            write_bytes_to_file(&content, &config_dir.join(file_name))?;
+            write_bytes_to_file(
+                &content,
+                &config_dir.join(file_name),
+                android_bp_format,
+                textproto_format,
+            )?;
         }
     }
 
@@ -443,6 +521,8 @@ fn generate_orchestration_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let config_dir = output_path.join("configs/orchestration");
     fs::create_dir_all(&config_dir)?;
@@ -453,7 +533,12 @@ fn generate_orchestration_files(
     bp_data.as_object_mut().unwrap().insert("vm_name".to_string(), json!(vm_name));
 
     let bp_content = handlebars.render("orchestration_android_bp", &bp_data)?;
-    write_bytes_to_file(&bp_content, &config_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &config_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let service_bundles = data["service_bundles"].as_array().unwrap();
 
@@ -468,7 +553,12 @@ fn generate_orchestration_files(
         map.insert("vm_name".to_string(), json!(vm_name));
 
         let content = handlebars.render("service_bundle_orchestration_config", &template_data)?;
-        write_bytes_to_file(&content, &config_dir.join(file_name))?;
+        write_bytes_to_file(
+            &content,
+            &config_dir.join(file_name),
+            android_bp_format,
+            textproto_format,
+        )?;
     }
 
     let vm_config_file_name = format!("vm_{}_orch_config.textproto", vm_name);
@@ -476,7 +566,12 @@ fn generate_orchestration_files(
     vm_template_data.as_object_mut().unwrap().insert("vm_name".to_string(), json!(vm_name));
 
     let vm_config_content = handlebars.render("vm_orchestration_config", &vm_template_data)?;
-    write_bytes_to_file(&vm_config_content, &config_dir.join(vm_config_file_name))?;
+    write_bytes_to_file(
+        &vm_config_content,
+        &config_dir.join(vm_config_file_name),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     Ok(())
 }

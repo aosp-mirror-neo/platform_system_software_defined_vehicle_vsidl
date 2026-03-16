@@ -78,7 +78,11 @@ def process_directory(catalog_path, dependencies=None, output_dir=VSIDLC_OUTPUT_
     print(f"Processing catalog: {catalog_path}")
     os.makedirs(output_dir, exist_ok=True)
 
-    cmd = ["vsidlc", "--catalog-path", catalog_path, "--output-path", output_dir, "--rust-formatter", "pretty-please", "--purge", "--target-api", "latest"]
+    cmd = [
+        "vsidlc", "--catalog-path", catalog_path, "--output-path", output_dir,
+        "--rust-formatter", "pretty-please", "--android-bp-formatter", "none",
+        "--textproto-formatter", "none", "--purge", "--target-api", "latest"
+    ]
 
     if dependencies:
         for dep in dependencies:

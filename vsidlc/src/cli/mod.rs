@@ -13,11 +13,29 @@
 // limitations under the License.
 //! Define VSIDLC command line parameters
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 
 use formatter::Format;
 use vsidlc_cli::VsidlcCommonCli;
+
+/// Enum to control Android.bp formatting
+#[derive(ValueEnum, Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub enum AndroidBpFormat {
+    /// Format with bpfmt.
+    Bpfmt,
+    /// Do not format.
+    None,
+}
+
+/// Enum to control .textproto formatting
+#[derive(ValueEnum, Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub enum TextprotoFormat {
+    /// Format with clang-format.
+    ClangFormat,
+    /// Do not format.
+    None,
+}
 
 ///Client args for the VSIDL parser.
 #[derive(Parser, Clone)]
@@ -52,6 +70,14 @@ pub struct Cli {
     /// - none does not requires any additional settings and will not apply any formatting to the output
     #[arg(long, value_enum, default_value_t = Format::RustFmt)]
     pub(crate) rust_formatter: Format,
+
+    /// Optional. Defines what tool is used to format generated Android.bp files.
+    #[arg(long, value_enum, default_value_t = AndroidBpFormat::Bpfmt)]
+    pub(crate) android_bp_formatter: AndroidBpFormat,
+
+    /// Optional. Defines what tool is used to format generated .textproto files.
+    #[arg(long, value_enum, default_value_t = TextprotoFormat::ClangFormat)]
+    pub(crate) textproto_formatter: TextprotoFormat,
 
     /// Explain a given error code
     #[arg(long, help = "Explain a given error code")]
@@ -132,6 +158,10 @@ mod test {
             "dep1,dep2",
             "--rust-formatter",
             "pretty-please",
+            "--android-bp-formatter",
+            "none",
+            "--textproto-formatter",
+            "none",
             "--genrule",
             "--apex",
             "--services",
@@ -152,6 +182,8 @@ mod test {
         assert_eq!(cli.ignore, vec!["E100".to_string(), "E101".to_string()]);
         assert_eq!(cli.dependency_catalog_path, vec![PathBuf::from("dep1"), PathBuf::from("dep2")]);
         assert_eq!(cli.rust_formatter, Format::PrettyPlease);
+        assert_eq!(cli.android_bp_formatter, AndroidBpFormat::None);
+        assert_eq!(cli.textproto_formatter, TextprotoFormat::None);
         assert!(cli.genrule);
         assert!(cli.apex);
         assert!(cli.services);
