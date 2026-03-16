@@ -21,10 +21,11 @@ use crate::Catalog;
 use heck::ToKebabCase;
 use protobuf::descriptor::{
     DescriptorProto as ProtoDescriptor, FileDescriptorProto as ProtoFileDescriptor,
+    ServiceDescriptorProto as ProtoServiceDescriptor,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
+use vsidl_v1::syntax::service_bundle::{Client, Publisher, Server, Subscriber};
 use vsidl_v1::syntax::VsidlEntry;
 
 #[derive(Default)]
@@ -33,6 +34,7 @@ pub struct ConvertPdk29ToSOA {
     vsidl_package: String,
     message_fqn_is_multipub: HashMap<String, bool>,
     message_fqn_to_message_count: HashMap<String, i64>,
+    service_fqns: HashSet<String>,
     catalog_vsidl_files: Vec<(PathBuf, VsidlEntry)>,
 }
 
@@ -69,6 +71,15 @@ impl VsidlVisitorMut for ConvertPdk29ToSOA {
             }
         }
         self.message_fqn_is_multipub.insert(fqn, is_multipub);
+    }
+
+    fn start_visit_proto_service_descriptor(&mut self, node: &mut ProtoServiceDescriptor) {
+        let fqn = if self.package_name.is_empty() {
+            node.name().to_string()
+        } else {
+            format!("{}.{}", self.package_name, node.name())
+        };
+        self.service_fqns.insert(fqn);
     }
 
     fn start_visit_vsidl_entry(&mut self, node: &mut VsidlEntry) {
@@ -144,6 +155,28 @@ impl VsidlVisitorMut for ConvertPdk29ToSOA {
                     node.topic.push(topic);
                 }
             }
+        }
+    }
+
+    fn start_visit_server(&mut self, node: &mut Server) {
+        if node.channel.is_empty() && node.channel_span.is_none() {
+            if !node.service_unit_name.is_empty() {
+                node.channel = node.service_unit_name.clone();
+            } else {
+                let maybe_fqn = format!("{}.{}", self.vsidl_package, node.service);
+                let service_fqn =
+                    if self.service_fqns.contains(&maybe_fqn) { &maybe_fqn } else { &node.service };
+                node.channel = service_fqn.to_kebab_case();
+            }
+        }
+    }
+
+    fn start_visit_client(&mut self, node: &mut Client) {
+        if node.channel.is_empty() && node.channel_span.is_none() {
+            let maybe_fqn = format!("{}.{}", self.vsidl_package, node.service);
+            let service_fqn =
+                if self.service_fqns.contains(&maybe_fqn) { &maybe_fqn } else { &node.service };
+            node.channel = service_fqn.to_kebab_case();
         }
     }
 
@@ -323,5 +356,97 @@ mod test {
         // THEN topic field is implicitly created and suffixed with "unique"
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["sdv-test-speed-unique"]);
+    }
+
+    #[test]
+    fn test_should_set_channel_for_server() {
+        // GIVEN A catalog with a server without channel
+        let mut catalog = Catalog::new();
+        let mut vsidl_entry = VsidlEntry::new();
+        vsidl_entry.package = "sdv.test".to_string();
+        let mut bundle = vsidl_v1::syntax::ServiceBundle::new();
+        let mut server = Server::new();
+        server.service = "TireStatus".to_string();
+        bundle.server.push(server);
+        vsidl_entry.service_bundle.push(bundle);
+        catalog.dependencies_vsidl_files.push(vsidl_entry);
+
+        // ALSO GIVEN the service exists in protobuf descriptors
+        let mut file_desc = ProtoFileDescriptor::new();
+        file_desc.set_package("sdv.test".to_string());
+        let mut service_desc = ProtoServiceDescriptor::new();
+        service_desc.set_name("TireStatus".to_string());
+        file_desc.service.push(service_desc);
+
+        let metadata = crate::catalog::ProtoBuildTargetMetadata {
+            folder: PathBuf::from("."),
+            target_name: Some("test_target".to_string()),
+            crate_name: Some("test_crate".to_string()),
+        };
+        catalog.proto_descriptors.push((metadata, file_desc));
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN channel is set to kebab-case FQN
+        let server = &catalog.dependencies_vsidl_files[0].service_bundle[0].server[0];
+        assert_eq!(server.channel, "sdv-test-tire-status");
+    }
+
+    #[test]
+    fn test_should_set_channel_for_server_with_service_unit_name() {
+        // GIVEN A catalog with a server having service_unit_name but no channel
+        let mut catalog = Catalog::new();
+        let mut vsidl_entry = VsidlEntry::new();
+        vsidl_entry.package = "sdv.test".to_string();
+        let mut bundle = vsidl_v1::syntax::ServiceBundle::new();
+        let mut server = Server::new();
+        server.service = "TireStatus".to_string();
+        server.service_unit_name = "custom-server".to_string();
+        bundle.server.push(server);
+        vsidl_entry.service_bundle.push(bundle);
+        catalog.dependencies_vsidl_files.push(vsidl_entry);
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN channel is set to service_unit_name
+        let server = &catalog.dependencies_vsidl_files[0].service_bundle[0].server[0];
+        assert_eq!(server.channel, "custom-server");
+    }
+
+    #[test]
+    fn test_should_set_channel_for_client() {
+        // GIVEN A catalog with a client without channel
+        let mut catalog = Catalog::new();
+        let mut vsidl_entry = VsidlEntry::new();
+        vsidl_entry.package = "sdv.test".to_string();
+        let mut bundle = vsidl_v1::syntax::ServiceBundle::new();
+        let mut client = Client::new();
+        client.service = "sdv.other.TireStatus".to_string();
+        bundle.client.push(client);
+        vsidl_entry.service_bundle.push(bundle);
+        catalog.dependencies_vsidl_files.push(vsidl_entry);
+
+        // ALSO GIVEN the service exists in protobuf descriptors
+        let mut file_desc = ProtoFileDescriptor::new();
+        file_desc.set_package("sdv.other".to_string());
+        let mut service_desc = ProtoServiceDescriptor::new();
+        service_desc.set_name("TireStatus".to_string());
+        file_desc.service.push(service_desc);
+
+        let metadata = crate::catalog::ProtoBuildTargetMetadata {
+            folder: PathBuf::from("."),
+            target_name: Some("test_target".to_string()),
+            crate_name: Some("test_crate".to_string()),
+        };
+        catalog.proto_descriptors.push((metadata, file_desc));
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN channel is set to kebab-case FQN (without prepending package because it's already FQN)
+        let client = &catalog.dependencies_vsidl_files[0].service_bundle[0].client[0];
+        assert_eq!(client.channel, "sdv-other-tire-status");
     }
 }
