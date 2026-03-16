@@ -14,6 +14,7 @@
 //! Generates services Rust code for service bundles.
 
 use crate::rust::android_bp;
+use crate::rust::generator::SERVICES_DIR;
 use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use crate::rust::service_bundle::{extract_proto_typename_from_unit_type, ServiceBundleContext};
@@ -126,7 +127,8 @@ impl GeneratorStepExecution for GenerateServices {
                 proto_imports: proto_imports_set.into_iter().collect(),
             };
 
-            let service_dir = output_path.join("services").join(&data.context.service_bundle_name);
+            let service_dir =
+                output_path.join(SERVICES_DIR).join(&data.context.service_bundle_name);
             fs::create_dir_all(service_dir.join("src"))?;
 
             let bp_content = handlebars.render("services_android_bp", &data)?;

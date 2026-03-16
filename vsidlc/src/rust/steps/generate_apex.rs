@@ -14,6 +14,7 @@
 //! Generates apex files for a VSIDL project.
 
 use crate::cli::{AndroidBpFormat, TextprotoFormat};
+use crate::rust::generator::{APEX_DIR, CONFIGS_DIR};
 use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use crate::util::write_bytes_to_file;
@@ -369,7 +370,7 @@ fn generate_apex_files(
     android_bp_format: AndroidBpFormat,
     textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
-    let apex_dir = output_path.join("apex");
+    let apex_dir = output_path.join(APEX_DIR);
     fs::create_dir_all(&apex_dir)?;
 
     let package_name = data["package_name"].as_str().unwrap();
@@ -431,7 +432,7 @@ fn generate_config_files(
     android_bp_format: AndroidBpFormat,
     textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
-    let config_dir = output_path.join("configs/acls");
+    let config_dir = output_path.join(CONFIGS_DIR).join("acls");
     fs::create_dir_all(&config_dir)?;
 
     let bp_content = handlebars.render("acls_android_bp", data)?;
@@ -524,7 +525,7 @@ fn generate_orchestration_files(
     android_bp_format: AndroidBpFormat,
     textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
-    let config_dir = output_path.join("configs/orchestration");
+    let config_dir = output_path.join(CONFIGS_DIR).join("orchestration");
     fs::create_dir_all(&config_dir)?;
 
     let package_name = data["package_name"].as_str().unwrap();

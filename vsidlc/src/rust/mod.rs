@@ -22,7 +22,9 @@ mod rpc_service;
 mod service_bundle;
 mod steps;
 pub use generator::generate_middleware;
+pub use generator::APEX_DIR;
+pub use generator::CONFIGS_DIR;
+pub use generator::GENERATED_RS_SOURCES_DIR;
+pub use generator::SERVICES_DIR;
 
 mod diagnostics;
-
-pub use generator::GENERATED_RS_SOURCES_DIR;
