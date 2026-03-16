@@ -95,6 +95,8 @@ impl VsidlVisitorMut for ConvertPdk29ToSOA {
             let (message_name, is_multipub) =
                 if let Some(&is_multi) = self.message_fqn_is_multipub.get(&fqn) {
                     (&fqn, is_multi)
+                } else if let Some(&is_multi) = self.message_fqn_is_multipub.get(&node.message) {
+                    (&node.message, is_multi)
                 } else {
                     (&node.message, false)
                 };
@@ -125,6 +127,8 @@ impl VsidlVisitorMut for ConvertPdk29ToSOA {
             let (message_name, is_multipub) =
                 if let Some(&is_multi) = self.message_fqn_is_multipub.get(&fqn) {
                     (&fqn, is_multi)
+                } else if let Some(&is_multi) = self.message_fqn_is_multipub.get(&node.message) {
+                    (&node.message, is_multi)
                 } else {
                     (&node.message, false)
                 };
@@ -298,5 +302,26 @@ mod test {
         // THEN topic field is implicitly created and prefixed with FQN
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["sdv-test-pressure-one", "sdv-test-pressure-two"]);
+    }
+
+    #[test]
+    fn test_should_convert_to_unique_topic_if_fqn_message_is_multipub() {
+        // GIVEN A catalog with a publisher using FQN and a MULTI_PUB message
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
+
+        // PRE-CONDITION: message "sdv.test.Speed" is MULTI_PUB in messages.proto
+        let publisher = &mut catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
+        publisher.message = "sdv.test.Speed".to_string();
+        publisher.channel = vec!["ONE".to_string(), "TWO".to_string()];
+        publisher.topic.clear();
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN topic field is implicitly created and suffixed with "unique"
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
+        assert_eq!(publisher.topic, vec!["sdv-test-speed-unique"]);
     }
 }
