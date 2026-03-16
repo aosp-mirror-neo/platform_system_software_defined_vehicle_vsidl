@@ -79,7 +79,10 @@ impl ServiceBundle for {{service_bundle_name}}ServiceBundle {
                         {{/if}}
                     ).await {
                         Ok(service) => service,
-                        Err(e) => panic!("{e}"),
+                        Err(e) => {
+                            error!("Failed to create service bundle: {e}");
+                            return;
+                        }
                     };
                 debug!("Calling sdv_main...");
                 let res = tokio::select! {
@@ -120,7 +123,7 @@ async fn wait_for_available(
 async fn wait_for_publisher_to_be_available<T>(
     mw_service_bundle: &mut sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}},
     variant: &sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::subscriber::Channel<T>,
-)
+) -> bool
 where
     T: protobuf::Message
         + Debug
@@ -128,13 +131,16 @@ where
         + sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::UnitType,
 {
     debug!("Waiting for publisher {variant:#?}");
-    wait_for_available(
-        mw_service_bundle
-            .create_registration_event_stream(variant, &SubscribeOptions::default())
-            .await
-            .expect("unable to generate a registration event"),
-    )
-    .await;
+    if let Ok(event_stream) = mw_service_bundle
+        .create_registration_event_stream(variant, &SubscribeOptions::default())
+        .await
+    {
+        wait_for_available(event_stream).await;
+        true
+    } else {
+        error!("unable to generate a registration event for {variant:#?}");
+        false
+    }
 }
 {{/if}}
 
@@ -145,23 +151,31 @@ async fn sdv_main(mut service_bundle: sdv_mw_rs_{{snake_case @root.package_name}
 
     {{#each publications}}
     {{#each this.1}}
-    let publisher = service_bundle.take_publisher(sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::publisher::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{this.channel_name}}).expect("Failed to take publisher {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
-    futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_publisher(publisher));
+    if let Some(publisher) = service_bundle.take_publisher(sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::publisher::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{this.channel_name}}) {
+        futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_publisher(publisher));
+    } else {
+        error!("Failed to take publisher {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
+    }
     {{/each}}
     {{/each}}
 
     {{#each subscriptions}}
     {{#each this.1}}
     let variant = sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::subscriber::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{this.channel_name}};
-    wait_for_publisher_to_be_available(&mut service_bundle, variant).await;
-    let observer = service_bundle.create_observer(variant, &sdv::mw::SubscribeOptions::default()).await.expect("Failed to create observer {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
-    futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_observer(observer));
+    if wait_for_publisher_to_be_available(&mut service_bundle, variant).await {
+        if let Ok(observer) = service_bundle.create_observer(variant, &sdv::mw::SubscribeOptions::default()).await {
+            futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_observer(observer));
+        } else {
+            error!("Failed to create observer {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
+        }
+    }
     {{/each}}
     {{/each}}
 
     {{#each rpc_clients}}
-    let client = create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(&mut service_bundle).await;
-    futures_join_set.spawn(handle_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_client(client));
+    if let Some(client) = create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(&mut service_bundle).await {
+        futures_join_set.spawn(handle_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_client(client));
+    }
     {{/each}}
 
     while let Some(e) = futures_join_set.join_next().await {
@@ -180,7 +194,9 @@ async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case 
         // TODO: Modify the message content here.
         let message = {{../this.0.unit_type.proto_type_name}}::default();
         info!("Publishing on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
-        publisher.publish(&message).unwrap();
+        if let Err(e) = publisher.publish(&message) {
+            error!("Failed to publish on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}: {e:?}");
+        }
     }
 }
 {{/each}}
@@ -191,14 +207,17 @@ async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case 
 async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_observer(mut observer: Pin<Box<dyn Stream<Item = SdvResult<Vec<{{../this.0.unit_type.proto_type_name}}>>> + Send>>) {
     while let Some(message) = observer.next().await {
         // TODO: Implement your logic to handle received messages here.
-        info!("Received message on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}: {:?}", message);
+        match message {
+            Ok(msg) => info!("Received message on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}: {:?}", msg),
+            Err(e) => error!("Error receiving message on {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}: {e:?}"),
+        }
     }
 }
 {{/each}}
 {{/each}}
 
 {{#each rpc_clients}}
-async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(service_bundle: &mut sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../service_bundle_name}}::{{../service_bundle_name}}) -> {{this.unit_type.crate_name}}::Client {
+async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(service_bundle: &mut sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../service_bundle_name}}::{{../service_bundle_name}}) -> Option<{{this.unit_type.crate_name}}::Client> {
     let sleep_duration = Duration::from_secs(1);
     let mut retries = 30;
     loop {
@@ -220,11 +239,12 @@ async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{e
             sdv::mw::ClientOptions::default(),
         ).await;
         if let Ok(client) = client {
-            return client;
+            return Some(client);
         }
         retries -= 1;
         if retries < 0 {
-            panic!("Failed to create client");
+            error!("Failed to create client");
+            return None;
         }
         sleep(sleep_duration).await;
     }
@@ -239,9 +259,11 @@ async fn handle_{{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{snak
         // TODO: Modify the request content here.
         let request = {{this.request.message_name}}::default();
         info!("Sending request on {{../../service_bundle_name}}/{{../this.unit_type.proto_type_name}}");
-        let response = client.{{this.name}}(&request).await.unwrap();
         // TODO: Implement your logic to handle the response here.
-        info!("Received response on {{../../service_bundle_name}}/{{../this.unit_type.proto_type_name}}: {:?}", response);
+        match client.{{this.name}}(&request).await {
+            Ok(response) => info!("Received response on {{../../service_bundle_name}}/{{../this.unit_type.proto_type_name}}: {:?}", response),
+            Err(e) => error!("Failed to send request on {{../../service_bundle_name}}/{{../this.unit_type.proto_type_name}}: {e:?}"),
+        }
         {{/with}}
         {{/if}}
     }
