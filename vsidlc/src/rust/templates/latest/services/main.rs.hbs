@@ -136,7 +136,11 @@ async fn sdv_main(
         match sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}}::builder()
             .set_comms(comms.clone())
             {{#each rpc_servers}}
+            {{#if channel}}
+            .set_server_{{snake_case channel}}(Arc::new({{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl::new()))
+            {{else}}
             .set_server_{{snake_case user_defined_name}}(Arc::new({{#if has_user_defined_name}}{{camel_case user_defined_name}}{{else}}{{unit_type.proto_type_name}}{{/if}}RpcImpl::new()))
+            {{/if}}
             {{/each}}
             .build()
             .await {
