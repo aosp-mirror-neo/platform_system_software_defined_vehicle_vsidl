@@ -48,7 +48,7 @@ pub use diagnostics_types::*;
 pub use fs_utils::*;
 pub use name_utils::*;
 pub use types::*;
-pub use visitors::convert_channel_to_topic::ConvertChannelToTopic;
+pub use visitors::convert_pdk29_to_soa::ConvertPdk29ToSOA;
 pub use visitors::detect_input_version::DetectInputVersion;
 pub use visitors::hide_channel_syntax::HideChannelSyntax;
 pub use visitors::hide_pdk29_syntax::HidePdk29Syntax;

@@ -21,7 +21,7 @@ use anyhow::anyhow;
 use std::path::PathBuf;
 
 use vsidl_v1_parser::{
-    AndroidBpDanglingFiles, Catalog, ConvertChannelToTopic, FindingId, HideChannelSyntax,
+    AndroidBpDanglingFiles, Catalog, ConvertPdk29ToSOA, FindingId, HideChannelSyntax,
     HidePdk29Syntax, SymbolTable, SymbolTableState, TargetApi,
 };
 
@@ -128,11 +128,11 @@ impl VsidlcCommonCli {
     fn apply_target_api_visitors(&self, catalog: &mut Catalog) {
         match self.target_api.as_str() {
             "pdk29" => {
-                ConvertChannelToTopic::traverse(catalog);
+                ConvertPdk29ToSOA::traverse(catalog);
                 HideChannelSyntax::traverse(catalog);
             }
             "latest" => {
-                ConvertChannelToTopic::traverse(catalog);
+                ConvertPdk29ToSOA::traverse(catalog);
                 HidePdk29Syntax::traverse(catalog);
             }
             _ => {}

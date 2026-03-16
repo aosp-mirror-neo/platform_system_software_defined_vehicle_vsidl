@@ -15,7 +15,7 @@
  */
 //! This crate provides visitors for traversing the VSIDL catalog
 
-pub mod convert_channel_to_topic;
+pub mod convert_pdk29_to_soa;
 pub mod detect_input_version;
 pub mod hide_channel_syntax;
 pub mod hide_pdk29_syntax;

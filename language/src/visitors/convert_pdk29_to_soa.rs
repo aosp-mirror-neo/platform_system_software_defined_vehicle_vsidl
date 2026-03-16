@@ -28,7 +28,7 @@ use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
 use vsidl_v1::syntax::VsidlEntry;
 
 #[derive(Default)]
-pub struct ConvertChannelToTopic {
+pub struct ConvertPdk29ToSOA {
     package_name: String,
     vsidl_package: String,
     message_fqn_is_multipub: HashMap<String, bool>,
@@ -36,9 +36,9 @@ pub struct ConvertChannelToTopic {
     catalog_vsidl_files: Vec<(PathBuf, VsidlEntry)>,
 }
 
-impl_traverse_catalog_mut!(ConvertChannelToTopic);
+impl_traverse_catalog_mut!(ConvertPdk29ToSOA);
 
-impl VsidlVisitorMut for ConvertChannelToTopic {
+impl VsidlVisitorMut for ConvertPdk29ToSOA {
     fn start_visit_catalog(&mut self, catalog: &mut Catalog) {
         // Temporarily remove main catalog files from Catalog so that the AST Trafo
         // only runs on dependencies
@@ -163,7 +163,7 @@ mod test {
         catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN capacity field is set to 8 (from Pressure message in messages.proto)
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
@@ -184,7 +184,7 @@ mod test {
         publisher.topic.clear();
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and suffixed with "unique"
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
@@ -205,7 +205,7 @@ mod test {
         subscriber.topic.clear();
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and suffixed with "unique"
         let subscriber = &catalog.dependencies_vsidl_files[0].service_bundle[1].subscriber[0];
@@ -226,7 +226,7 @@ mod test {
         assert_eq!(publisher.message, "Pressure");
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and prefixed with message name
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
@@ -247,7 +247,7 @@ mod test {
         assert_eq!(subscriber.message, "TirePressure");
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and prefixed with message name
         let subscriber = &catalog.dependencies_vsidl_files[0].service_bundle[1].subscriber[0];
@@ -265,7 +265,7 @@ mod test {
         assert_eq!(publisher.topic, vec!["test"]);
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic remains "test"
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
@@ -293,7 +293,7 @@ mod test {
         catalog.proto_descriptors.push((metadata, file_desc));
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and prefixed with FQN
         let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
