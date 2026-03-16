@@ -190,7 +190,7 @@ impl GoldenUserDefinedNames {
 /// builder for GoldenUserDefinedNames
 pub struct GoldenUserDefinedNamesBuilder {
     comms: Option<std::sync::Arc<dyn sdv::mw::Communicate>>,
-    server_my_status: Option<
+    server_sdv_golden_rpc_tire_status: Option<
         std::sync::Arc<dyn sdv_golden_rpc_tire_status_rpc::Interface>,
     >,
 }
@@ -203,15 +203,15 @@ impl GoldenUserDefinedNamesBuilder {
         self.comms = Some(comms);
         self
     }
-    /// Sets the server implementation for the `my_status` service.
+    /// Sets the server implementation for the `sdv_golden_rpc_tire_status` service.
     ///
     /// # Arguments
     /// * `server` - An `Arc` containing the implementation of the `Interface` trait.
-    pub fn set_server_my_status(
+    pub fn set_server_sdv_golden_rpc_tire_status(
         mut self,
         server: std::sync::Arc<dyn sdv_golden_rpc_tire_status_rpc::Interface>,
     ) -> Self {
-        self.server_my_status = Some(server);
+        self.server_sdv_golden_rpc_tire_status = Some(server);
         self
     }
     /// Creates an instance of `GoldenUserDefinedNames`.
@@ -231,7 +231,7 @@ impl GoldenUserDefinedNamesBuilder {
             _comms: comms.clone(),
             servers: std::vec::Vec::new(),
         };
-        if let Some(server) = self.server_my_status {
+        if let Some(server) = self.server_sdv_golden_rpc_tire_status {
             service
                 .servers
                 .push(

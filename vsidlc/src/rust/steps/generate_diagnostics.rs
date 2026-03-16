@@ -50,7 +50,7 @@ impl GeneratorStepExecution for GenerateDiagnostics {
 
                 if service_bundle.diagnostics_info.is_some() {
                     let mut rust_formatter =
-                        formatter::get_rust_formatter(state.cli.rust_formatter.clone());
+                        formatter::get_rust_formatter(state.cli.rust_formatter);
                     let service_name_snake_case = service_bundle.name.to_snake_case();
                     let mut output_dir = PathBuf::from(root_dir);
                     output_dir.extend(service_bundle.package(symbol_table).split('.'));
@@ -61,6 +61,8 @@ impl GeneratorStepExecution for GenerateDiagnostics {
                         &diagnostics::render_symbol((*service_bundle).clone(), handlebars),
                         &output_dir.join("diagnostics.rs"),
                         rust_formatter.as_mut(),
+                        state.cli.android_bp_formatter,
+                        state.cli.textproto_formatter,
                     )?;
                 }
                 Ok(())

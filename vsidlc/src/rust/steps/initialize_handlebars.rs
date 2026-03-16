@@ -324,6 +324,12 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
         "service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel",
         include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel.hbs")
     ),
+    (
+        "permissions_android_bp",
+        include_str!("../templates/latest/configs/permissions/Android.bp.hbs")),
+    (
+        "service_bundle_permissions",
+        include_str!("../templates/latest/configs/permissions/service_bundle_permissions.textproto.hbs")),
 ];
 
 const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[

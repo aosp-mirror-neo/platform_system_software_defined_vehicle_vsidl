@@ -21,7 +21,7 @@ use std::cmp::max;
 use std::fmt;
 use std::io::Write;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::fs_utils::{offset_to_line_col, print_spans};
 
 /// Represents a single finding (warning, error, or fatal error) encountered during

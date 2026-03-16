@@ -48,7 +48,7 @@ impl GeneratorStepExecution for GenerateServices {
         let handlebars = state.handlebars.as_ref().unwrap();
 
         // Setup rustfmt before generating anything that would stay unformatted if environment variables are incorrect
-        let mut rust_formatter = formatter::get_rust_formatter(format.clone());
+        let mut rust_formatter = formatter::get_rust_formatter(*format);
 
         for service_bundle in symbol_table
             .get_all_service_bundle_symbols()
@@ -129,13 +129,20 @@ impl GeneratorStepExecution for GenerateServices {
             fs::create_dir_all(service_dir.join("src"))?;
 
             let bp_content = handlebars.render("services_android_bp", &data)?;
-            write_bytes_to_file(&bp_content, &service_dir.join("Android.bp"))?;
+            write_bytes_to_file(
+                &bp_content,
+                &service_dir.join("Android.bp"),
+                state.cli.android_bp_formatter,
+                state.cli.textproto_formatter,
+            )?;
 
             let main_rs_content = handlebars.render("services_main_rs", &data)?;
             write_rust_file(
                 &main_rs_content,
                 &service_dir.join("src/main.rs"),
                 rust_formatter.as_mut(),
+                state.cli.android_bp_formatter,
+                state.cli.textproto_formatter,
             )?;
         }
 

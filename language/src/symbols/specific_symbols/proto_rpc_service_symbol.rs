@@ -18,7 +18,7 @@ use crate::{
     implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
 };
 use protobuf::descriptor::{MethodDescriptorProto, ServiceDescriptorProto};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::ProtoMetadata;
 
 use super::{rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol};

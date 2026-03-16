@@ -13,6 +13,7 @@
 // limitations under the License.
 //! Generates apex files for a VSIDL project.
 
+use crate::cli::{AndroidBpFormat, TextprotoFormat};
 use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use crate::util::write_bytes_to_file;
@@ -52,6 +53,42 @@ struct AclData {
     rpc_service_units: Vec<AclServiceUnit>,
 }
 
+#[derive(Serialize, Default)]
+struct PermissionPublisher {
+    message: String,
+    topics: Vec<String>,
+    allow_all_topics: bool,
+}
+
+#[derive(Serialize, Default)]
+struct PermissionSubscriber {
+    message: String,
+    topics: Vec<String>,
+    allow_all_topics: bool,
+}
+
+#[derive(Serialize, Default)]
+struct PermissionServer {
+    service: String,
+    channels: Vec<String>,
+    allow_all_channels: bool,
+}
+
+#[derive(Serialize, Default)]
+struct PermissionClient {
+    service: String,
+    channels: Vec<String>,
+    allow_all_channels: bool,
+}
+
+#[derive(Serialize, Default)]
+struct PermissionBundleData {
+    publishers: Vec<PermissionPublisher>,
+    subscribers: Vec<PermissionSubscriber>,
+    servers: Vec<PermissionServer>,
+    clients: Vec<PermissionClient>,
+}
+
 pub struct GenerateApex;
 
 impl GeneratorStepExecution for GenerateApex {
@@ -79,12 +116,16 @@ impl GeneratorStepExecution for GenerateApex {
         let service_bundle_names: Vec<String> =
             service_bundles_symbols.iter().map(|s| s.name().to_string()).collect();
 
-        let service_bundles_data: Vec<_> = service_bundle_names
+        let service_bundles_data: Vec<_> = service_bundles_symbols
             .iter()
-            .map(|name| {
-                let short_name = name.strip_prefix("ServiceBundle").unwrap_or(name).to_snake_case();
+            .map(|s| {
+                let name = s.name();
+                let full_name = s.full_name(symbol_table);
+                let short_name =
+                    name.strip_prefix("ServiceBundle").unwrap_or(&name).to_snake_case();
                 json!({
                     "name": name,
+                    "full_name": full_name,
                     "short_name": short_name,
                     "snake_case_name": name.to_snake_case(),
                 })
@@ -92,8 +133,12 @@ impl GeneratorStepExecution for GenerateApex {
             .collect();
 
         let acl_data = generate_acl_data(symbol_table);
+        let permissions_data = generate_permissions_data(symbol_table);
         let base_package_name =
             package_name.rsplit_once('.').map(|(p, _)| p).unwrap_or(&package_name);
+
+        let use_permissions =
+            !state.cli.use_acls && state.cli.target_api.to_lowercase() == "latest";
 
         let data = json!({
             "year": crate::rust::generator::get_current_year(),
@@ -102,11 +147,42 @@ impl GeneratorStepExecution for GenerateApex {
             "service_bundle_names": service_bundle_names,
             "service_bundles": service_bundles_data,
             "acls": acl_data,
+            "permissions": permissions_data,
+            "use_permissions": use_permissions,
+            "use_acls": !use_permissions,
         });
 
-        generate_apex_files(output_path, handlebars, &data)?;
-        generate_config_files(output_path, handlebars, &data)?;
-        generate_orchestration_files(output_path, handlebars, &data)?;
+        generate_apex_files(
+            output_path,
+            handlebars,
+            &data,
+            state.cli.android_bp_formatter,
+            state.cli.textproto_formatter,
+        )?;
+        if use_permissions {
+            generate_permissions_files(
+                output_path,
+                handlebars,
+                &data,
+                state.cli.android_bp_formatter,
+                state.cli.textproto_formatter,
+            )?;
+        } else {
+            generate_config_files(
+                output_path,
+                handlebars,
+                &data,
+                state.cli.android_bp_formatter,
+                state.cli.textproto_formatter,
+            )?;
+        }
+        generate_orchestration_files(
+            output_path,
+            handlebars,
+            &data,
+            state.cli.android_bp_formatter,
+            state.cli.textproto_formatter,
+        )?;
         Ok(())
     }
 }
@@ -219,11 +295,79 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
     }
 }
 
+fn generate_permissions_data(symbol_table: &SymbolTable) -> BTreeMap<String, PermissionBundleData> {
+    let mut permissions_map: BTreeMap<String, PermissionBundleData> = BTreeMap::new();
+
+    // Publishers
+    for publisher in symbol_table.get_all_publisher_symbols() {
+        let bundle_fqn = publisher.owning_service_bundle(symbol_table).full_name(symbol_table);
+        let bundle_perms = permissions_map.entry(bundle_fqn).or_default();
+
+        let message = publisher.message(symbol_table).full_name(symbol_table);
+        let topics = publisher.topics(symbol_table);
+
+        bundle_perms.publishers.push(PermissionPublisher {
+            message,
+            topics,
+            allow_all_topics: false,
+        });
+    }
+
+    // Subscribers
+    for subscriber in symbol_table.get_all_subscriber_symbols() {
+        let bundle_fqn = subscriber.owning_service_bundle(symbol_table).full_name(symbol_table);
+        let bundle_perms = permissions_map.entry(bundle_fqn).or_default();
+
+        let message = subscriber.message(symbol_table).full_name(symbol_table);
+        let topics = subscriber.topics(symbol_table);
+
+        bundle_perms.subscribers.push(PermissionSubscriber {
+            message,
+            topics,
+            allow_all_topics: false,
+        });
+    }
+
+    // Servers
+    for server in symbol_table.get_all_rpc_server_symbols() {
+        let bundle_fqn = server.owning_service_bundle(symbol_table).full_name(symbol_table);
+        let bundle_perms = permissions_map.entry(bundle_fqn).or_default();
+
+        let service = server.service(symbol_table).full_name(symbol_table);
+        let channel = RpcServerSymbol::channel(server, symbol_table).name().to_string();
+
+        bundle_perms.servers.push(PermissionServer {
+            service,
+            channels: vec![channel],
+            allow_all_channels: false,
+        });
+    }
+
+    // Clients
+    for client in symbol_table.get_all_rpc_client_symbols() {
+        let bundle_fqn = client.owning_service_bundle(symbol_table).full_name(symbol_table);
+        let bundle_perms = permissions_map.entry(bundle_fqn).or_default();
+
+        let service = client.service(symbol_table).full_name(symbol_table);
+        let channel = client.channel(symbol_table).name().to_string();
+
+        bundle_perms.clients.push(PermissionClient {
+            service,
+            channels: vec![channel],
+            allow_all_channels: false,
+        });
+    }
+
+    permissions_map
+}
+
 /// Generates the files in the `apex` directory.
 fn generate_apex_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let apex_dir = output_path.join("apex");
     fs::create_dir_all(&apex_dir)?;
@@ -237,21 +381,43 @@ fn generate_apex_files(
     }
 
     let bp_content = handlebars.render("apex_android_bp", data)?;
-    write_bytes_to_file(&bp_content, &apex_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &apex_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let manifest_content = handlebars.render("apex_manifest_json", data)?;
-    write_bytes_to_file(&manifest_content, &apex_dir.join("apex_manifest.json"))?;
+    write_bytes_to_file(
+        &manifest_content,
+        &apex_dir.join("apex_manifest.json"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let file_contexts_content = handlebars.render("file_contexts", data)?;
-    write_bytes_to_file(&file_contexts_content, &apex_dir.join("file_contexts"))?;
+    write_bytes_to_file(
+        &file_contexts_content,
+        &apex_dir.join("file_contexts"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let linker_config_content = handlebars.render("linker_config_json", data)?;
-    write_bytes_to_file(&linker_config_content, &apex_dir.join("linker.config.json"))?;
+    write_bytes_to_file(
+        &linker_config_content,
+        &apex_dir.join("linker.config.json"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let sdv_manifest_content = handlebars.render("sdv_service_bundles_manifest", data)?;
     write_bytes_to_file(
         &sdv_manifest_content,
         &apex_dir.join("sdv_service_bundles_manifest.textproto"),
+        android_bp_format,
+        textproto_format,
     )?;
 
     Ok(())
@@ -262,16 +428,90 @@ fn generate_config_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let config_dir = output_path.join("configs/acls");
     fs::create_dir_all(&config_dir)?;
 
     let bp_content = handlebars.render("acls_android_bp", data)?;
-    write_bytes_to_file(&bp_content, &config_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &config_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let acl_file_name = format!("{}_acls.textproto", data["package_name"].as_str().unwrap());
     let acl_content = handlebars.render("service_bundles_acls", data)?;
-    write_bytes_to_file(&acl_content, &config_dir.join(acl_file_name))?;
+    write_bytes_to_file(
+        &acl_content,
+        &config_dir.join(acl_file_name),
+        android_bp_format,
+        textproto_format,
+    )?;
+
+    Ok(())
+}
+
+/// Generates the files in the `configs/permissions` directory.
+fn generate_permissions_files(
+    output_path: &Path,
+    handlebars: &Handlebars,
+    data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
+) -> anyhow::Result<()> {
+    let config_dir = output_path.join("configs/permissions");
+    fs::create_dir_all(&config_dir)?;
+
+    let bp_content = handlebars.render("permissions_android_bp", data)?;
+    write_bytes_to_file(
+        &bp_content,
+        &config_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
+
+    let service_bundles = data["service_bundles"].as_array().unwrap();
+    let permissions_data = data["permissions"].as_object().unwrap();
+
+    for service_bundle_data in service_bundles {
+        let service_bundle_full_name = service_bundle_data["full_name"].as_str().unwrap();
+        let file_name = format!("{}.permissions.textproto", service_bundle_full_name);
+
+        if let Some(bundle_perms) = permissions_data.get(service_bundle_full_name) {
+            let mut template_data = bundle_perms.clone();
+            template_data
+                .as_object_mut()
+                .unwrap()
+                .insert("year".to_string(), json!(crate::rust::generator::get_current_year()));
+
+            let content = handlebars.render("service_bundle_permissions", &template_data)?;
+            write_bytes_to_file(
+                &content,
+                &config_dir.join(file_name),
+                android_bp_format,
+                textproto_format,
+            )?;
+        } else {
+            // Write an empty permissions file if no permissions are defined for this bundle
+            let empty_perms = json!({
+                "year": crate::rust::generator::get_current_year(),
+                "publishers": [],
+                "subscribers": [],
+                "servers": [],
+                "clients": [],
+            });
+            let content = handlebars.render("service_bundle_permissions", &empty_perms)?;
+            write_bytes_to_file(
+                &content,
+                &config_dir.join(file_name),
+                android_bp_format,
+                textproto_format,
+            )?;
+        }
+    }
 
     Ok(())
 }
@@ -281,6 +521,8 @@ fn generate_orchestration_files(
     output_path: &Path,
     handlebars: &Handlebars,
     data: &serde_json::Value,
+    android_bp_format: AndroidBpFormat,
+    textproto_format: TextprotoFormat,
 ) -> anyhow::Result<()> {
     let config_dir = output_path.join("configs/orchestration");
     fs::create_dir_all(&config_dir)?;
@@ -291,7 +533,12 @@ fn generate_orchestration_files(
     bp_data.as_object_mut().unwrap().insert("vm_name".to_string(), json!(vm_name));
 
     let bp_content = handlebars.render("orchestration_android_bp", &bp_data)?;
-    write_bytes_to_file(&bp_content, &config_dir.join("Android.bp"))?;
+    write_bytes_to_file(
+        &bp_content,
+        &config_dir.join("Android.bp"),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     let service_bundles = data["service_bundles"].as_array().unwrap();
 
@@ -306,7 +553,12 @@ fn generate_orchestration_files(
         map.insert("vm_name".to_string(), json!(vm_name));
 
         let content = handlebars.render("service_bundle_orchestration_config", &template_data)?;
-        write_bytes_to_file(&content, &config_dir.join(file_name))?;
+        write_bytes_to_file(
+            &content,
+            &config_dir.join(file_name),
+            android_bp_format,
+            textproto_format,
+        )?;
     }
 
     let vm_config_file_name = format!("vm_{}_orch_config.textproto", vm_name);
@@ -314,7 +566,12 @@ fn generate_orchestration_files(
     vm_template_data.as_object_mut().unwrap().insert("vm_name".to_string(), json!(vm_name));
 
     let vm_config_content = handlebars.render("vm_orchestration_config", &vm_template_data)?;
-    write_bytes_to_file(&vm_config_content, &config_dir.join(vm_config_file_name))?;
+    write_bytes_to_file(
+        &vm_config_content,
+        &config_dir.join(vm_config_file_name),
+        android_bp_format,
+        textproto_format,
+    )?;
 
     Ok(())
 }

@@ -360,10 +360,6 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::Linked,
-            Box::new(RpcClientChannelRequiresServerChannel::default()),
-        )
-        .add_context_condition(
-            SymbolTableState::Linked,
             Box::new(ServiceUnitNameTooLong::default()),
         )
         .add_context_condition(
@@ -382,6 +378,14 @@ impl ContextConditionChecker {
             SymbolTableState::Linked,
             Box::new(UniqueUserDefinedServiceUnitNamesPerType::default()),
         );
+
+        // Warnings - only add if print_warnings is true
+        if self.print_warnings {
+            self.add_context_condition(
+                SymbolTableState::Linked,
+                Box::new(RpcClientChannelRequiresServerChannel::default()),
+            );
+        }
     }
 
     /// Enables CoCos for PDK29.

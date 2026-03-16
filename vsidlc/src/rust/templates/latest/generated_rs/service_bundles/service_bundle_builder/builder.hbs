@@ -19,7 +19,11 @@
 pub struct {{../service_bundle_name}}Builder {
     comms: Option<std::sync::Arc<dyn sdv::mw::Communicate>>,
     {{#each rpc_servers}}
+    {{#if this.channel}}
+    server_{{snake_case this.channel}}: Option<std::sync::Arc<dyn {{this.unit_type.crate_name}}::Interface>>,
+    {{else}}
     server_{{snake_case this.user_defined_name}}: Option<std::sync::Arc<dyn {{this.unit_type.crate_name}}::Interface>>,
+    {{/if}}
     {{/each}} {{! rpc_servers}}
 }
 

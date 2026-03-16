@@ -17,25 +17,36 @@
 
 use crate::impl_traverse_catalog_mut;
 use crate::visitors::visitor_mut::{AstNodeMut, VsidlVisitorMut};
+use crate::Catalog;
 use heck::ToKebabCase;
 use protobuf::descriptor::{
     DescriptorProto as ProtoDescriptor, FileDescriptorProto as ProtoFileDescriptor,
+    ServiceDescriptorProto as ProtoServiceDescriptor,
 };
-use std::collections::HashMap;
-use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
+use vsidl_v1::syntax::service_bundle::{Client, Publisher, Server, Subscriber};
 use vsidl_v1::syntax::VsidlEntry;
 
 #[derive(Default)]
-pub struct ConvertChannelToTopic {
+pub struct ConvertPdk29ToSOA {
     package_name: String,
     vsidl_package: String,
     message_fqn_is_multipub: HashMap<String, bool>,
     message_fqn_to_message_count: HashMap<String, i64>,
+    service_fqns: HashSet<String>,
+    catalog_vsidl_files: Vec<(PathBuf, VsidlEntry)>,
 }
 
-impl_traverse_catalog_mut!(ConvertChannelToTopic);
+impl_traverse_catalog_mut!(ConvertPdk29ToSOA);
 
-impl VsidlVisitorMut for ConvertChannelToTopic {
+impl VsidlVisitorMut for ConvertPdk29ToSOA {
+    fn start_visit_catalog(&mut self, catalog: &mut Catalog) {
+        // Temporarily remove main catalog files from Catalog so that the AST Trafo
+        // only runs on dependencies
+        self.catalog_vsidl_files = std::mem::take(&mut catalog.catalog_vsidl_files);
+    }
+
     fn start_visit_file_descriptor_proto(&mut self, node: &mut ProtoFileDescriptor) {
         self.package_name = node.package().to_string();
     }
@@ -62,6 +73,15 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
         self.message_fqn_is_multipub.insert(fqn, is_multipub);
     }
 
+    fn start_visit_proto_service_descriptor(&mut self, node: &mut ProtoServiceDescriptor) {
+        let fqn = if self.package_name.is_empty() {
+            node.name().to_string()
+        } else {
+            format!("{}.{}", self.package_name, node.name())
+        };
+        self.service_fqns.insert(fqn);
+    }
+
     fn start_visit_vsidl_entry(&mut self, node: &mut VsidlEntry) {
         self.vsidl_package = node.package.clone();
     }
@@ -81,11 +101,13 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
         }
 
         // no user-defined topic but user-defined channel (i.e. variant/instance) means that pre-SOA syntax is used
-        if node.topic.is_empty() && node.topic_span.is_empty() && !node.channel.is_empty() {
+        if node.topic.is_empty() && node.topic_span.is_empty() {
             let fqn = format!("{}.{}", self.vsidl_package, node.message);
             let (message_name, is_multipub) =
                 if let Some(&is_multi) = self.message_fqn_is_multipub.get(&fqn) {
                     (&fqn, is_multi)
+                } else if let Some(&is_multi) = self.message_fqn_is_multipub.get(&node.message) {
+                    (&node.message, is_multi)
                 } else {
                     (&node.message, false)
                 };
@@ -99,7 +121,7 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
                 // LINT.ThenChange(software_defined_vehicle/middleware/transport/rust/interface/src/types.rs:set_multipub_topic)
             } else if !node.service_unit_name.is_empty() {
                 node.topic.push(node.service_unit_name.clone());
-            } else {
+            } else if !node.channel.is_empty() {
                 // If not custom service_unit_name, use the generated service unit name
                 for channel in &node.channel {
                     let topic = format!("{}-{}", message_name, channel).to_kebab_case();
@@ -111,11 +133,13 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
 
     fn start_visit_subscriber(&mut self, node: &mut Subscriber) {
         // no user-defined topic but user-defined channel (i.e. variant/instance) means that pre-SOA syntax is used
-        if node.topic.is_empty() && node.topic_span.is_empty() && !node.channel.is_empty() {
+        if node.topic.is_empty() && node.topic_span.is_empty() {
             let fqn = format!("{}.{}", self.vsidl_package, node.message);
             let (message_name, is_multipub) =
                 if let Some(&is_multi) = self.message_fqn_is_multipub.get(&fqn) {
                     (&fqn, is_multi)
+                } else if let Some(&is_multi) = self.message_fqn_is_multipub.get(&node.message) {
+                    (&node.message, is_multi)
                 } else {
                     (&node.message, false)
                 };
@@ -125,13 +149,39 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
                 // This is needed because user can define custom service_unit_names.
                 let topic = format!("{}-{}", message_name, "unique").to_kebab_case();
                 node.topic.push(topic);
-            } else {
+            } else if !node.channel.is_empty() {
                 for channel in &node.channel {
                     let topic = format!("{}-{}", message_name, channel).to_kebab_case();
                     node.topic.push(topic);
                 }
             }
         }
+    }
+
+    fn start_visit_server(&mut self, node: &mut Server) {
+        if node.channel.is_empty() && node.channel_span.is_none() {
+            if !node.service_unit_name.is_empty() {
+                node.channel = node.service_unit_name.clone();
+            } else {
+                let maybe_fqn = format!("{}.{}", self.vsidl_package, node.service);
+                let service_fqn =
+                    if self.service_fqns.contains(&maybe_fqn) { &maybe_fqn } else { &node.service };
+                node.channel = service_fqn.to_kebab_case();
+            }
+        }
+    }
+
+    fn start_visit_client(&mut self, node: &mut Client) {
+        if node.channel.is_empty() && node.channel_span.is_none() {
+            let maybe_fqn = format!("{}.{}", self.vsidl_package, node.service);
+            let service_fqn =
+                if self.service_fqns.contains(&maybe_fqn) { &maybe_fqn } else { &node.service };
+            node.channel = service_fqn.to_kebab_case();
+        }
+    }
+
+    fn end_visit_catalog(&mut self, catalog: &mut Catalog) {
+        catalog.catalog_vsidl_files = std::mem::take(&mut self.catalog_vsidl_files);
     }
 }
 
@@ -147,13 +197,13 @@ mod test {
         // GIVEN A catalog with a publisher having 0 capacity and NO capacity_span
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN capacity field is set to 8 (from Pressure message in messages.proto)
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.capacity, 8);
     }
 
@@ -162,19 +212,19 @@ mod test {
         // GIVEN A catalog with a publisher using channel and a MULTI_PUB message
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
 
         // PRE-CONDITION: message "Speed" is MULTI_PUB in messages.proto
-        let publisher = &mut catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &mut catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         publisher.message = "Speed".to_string();
         publisher.channel = vec!["ONE".to_string(), "TWO".to_string()];
         publisher.topic.clear();
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and suffixed with "unique"
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["sdv-test-speed-unique"]);
     }
 
@@ -183,19 +233,19 @@ mod test {
         // GIVEN A catalog with a subscriber using channel and a MULTI_PUB message
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_EXPLICIT_CHANNEL_LISTING.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_EXPLICIT_CHANNEL_LISTING.1.clone());
 
         // PRE-CONDITION: message "Speed" is MULTI_PUB in messages.proto
-        let subscriber = &mut catalog.catalog_vsidl_files[0].1.service_bundle[1].subscriber[0];
+        let subscriber = &mut catalog.dependencies_vsidl_files[0].service_bundle[1].subscriber[0];
         subscriber.message = "Speed".to_string();
         subscriber.channel = vec!["ONE".to_string(), "TWO".to_string()];
         subscriber.topic.clear();
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and suffixed with "unique"
-        let subscriber = &catalog.catalog_vsidl_files[0].1.service_bundle[1].subscriber[0];
+        let subscriber = &catalog.dependencies_vsidl_files[0].service_bundle[1].subscriber[0];
         assert_eq!(subscriber.topic, vec!["sdv-test-speed-unique"]);
     }
 
@@ -204,19 +254,19 @@ mod test {
         // GIVEN A catalog with a publisher using channel but NO topic
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
 
         // PRE-CONDITION: channel has "ONE" and "TWO", topic is empty
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.channel, vec!["ONE", "TWO"]);
         assert!(publisher.topic.is_empty());
         assert_eq!(publisher.message, "Pressure");
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and prefixed with message name
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["sdv-test-pressure-one", "sdv-test-pressure-two"]);
     }
 
@@ -225,19 +275,19 @@ mod test {
         // GIVEN A catalog with a subscriber using channel but NO topic
         let mut catalog = Catalog::new();
         catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_EXPLICIT_CHANNEL_LISTING.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_EXPLICIT_CHANNEL_LISTING.1.clone());
 
         // PRE-CONDITION: subscriber has channel "FRONT_LEFT" and "FRONT_RIGHT", topic is empty
-        let subscriber = &catalog.catalog_vsidl_files[0].1.service_bundle[1].subscriber[0];
+        let subscriber = &catalog.dependencies_vsidl_files[0].service_bundle[1].subscriber[0];
         assert_eq!(subscriber.channel, vec!["FRONT_LEFT", "FRONT_RIGHT"]);
         assert!(subscriber.topic.is_empty());
         assert_eq!(subscriber.message, "TirePressure");
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and prefixed with message name
-        let subscriber = &catalog.catalog_vsidl_files[0].1.service_bundle[1].subscriber[0];
+        let subscriber = &catalog.dependencies_vsidl_files[0].service_bundle[1].subscriber[0];
         assert_eq!(subscriber.topic, vec!["tire-pressure-front-left", "tire-pressure-front-right"]);
     }
 
@@ -245,17 +295,17 @@ mod test {
     fn test_should_not_convert_if_topic_already_exists() {
         // GIVEN A catalog with a publisher that ALREADY has a topic
         let mut catalog = Catalog::new();
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_TIRE_PRESSURE_PUBLISHER.1.clone());
 
         // PRE-CONDITION: topic is "test"
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["test"]);
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic remains "test"
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["test"]);
     }
 
@@ -263,7 +313,7 @@ mod test {
     fn test_should_use_fqn_if_present_in_map() {
         // GIVEN A catalog with a publisher and a proto message in the map
         let mut catalog = Catalog::new();
-        catalog.catalog_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.clone());
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
 
         let mut file_desc = ProtoFileDescriptor::new();
         file_desc.set_package("sdv.test".to_string());
@@ -280,10 +330,123 @@ mod test {
         catalog.proto_descriptors.push((metadata, file_desc));
 
         // WHEN executing the visitor
-        ConvertChannelToTopic::traverse(&mut catalog);
+        ConvertPdk29ToSOA::traverse(&mut catalog);
 
         // THEN topic field is implicitly created and prefixed with FQN
-        let publisher = &catalog.catalog_vsidl_files[0].1.service_bundle[0].publisher[0];
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
         assert_eq!(publisher.topic, vec!["sdv-test-pressure-one", "sdv-test-pressure-two"]);
+    }
+
+    #[test]
+    fn test_should_convert_to_unique_topic_if_fqn_message_is_multipub() {
+        // GIVEN A catalog with a publisher using FQN and a MULTI_PUB message
+        let mut catalog = Catalog::new();
+        catalog.proto_descriptors.extend([test_data::DESCRIPTOR_MESSAGE_PROTO.clone()]);
+        catalog.dependencies_vsidl_files.push(test_data::VSIDL_PUBLISHER_WITHOUT_CHANNEL.1.clone());
+
+        // PRE-CONDITION: message "sdv.test.Speed" is MULTI_PUB in messages.proto
+        let publisher = &mut catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
+        publisher.message = "sdv.test.Speed".to_string();
+        publisher.channel = vec!["ONE".to_string(), "TWO".to_string()];
+        publisher.topic.clear();
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN topic field is implicitly created and suffixed with "unique"
+        let publisher = &catalog.dependencies_vsidl_files[0].service_bundle[0].publisher[0];
+        assert_eq!(publisher.topic, vec!["sdv-test-speed-unique"]);
+    }
+
+    #[test]
+    fn test_should_set_channel_for_server() {
+        // GIVEN A catalog with a server without channel
+        let mut catalog = Catalog::new();
+        let mut vsidl_entry = VsidlEntry::new();
+        vsidl_entry.package = "sdv.test".to_string();
+        let mut bundle = vsidl_v1::syntax::ServiceBundle::new();
+        let mut server = Server::new();
+        server.service = "TireStatus".to_string();
+        bundle.server.push(server);
+        vsidl_entry.service_bundle.push(bundle);
+        catalog.dependencies_vsidl_files.push(vsidl_entry);
+
+        // ALSO GIVEN the service exists in protobuf descriptors
+        let mut file_desc = ProtoFileDescriptor::new();
+        file_desc.set_package("sdv.test".to_string());
+        let mut service_desc = ProtoServiceDescriptor::new();
+        service_desc.set_name("TireStatus".to_string());
+        file_desc.service.push(service_desc);
+
+        let metadata = crate::catalog::ProtoBuildTargetMetadata {
+            folder: PathBuf::from("."),
+            target_name: Some("test_target".to_string()),
+            crate_name: Some("test_crate".to_string()),
+        };
+        catalog.proto_descriptors.push((metadata, file_desc));
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN channel is set to kebab-case FQN
+        let server = &catalog.dependencies_vsidl_files[0].service_bundle[0].server[0];
+        assert_eq!(server.channel, "sdv-test-tire-status");
+    }
+
+    #[test]
+    fn test_should_set_channel_for_server_with_service_unit_name() {
+        // GIVEN A catalog with a server having service_unit_name but no channel
+        let mut catalog = Catalog::new();
+        let mut vsidl_entry = VsidlEntry::new();
+        vsidl_entry.package = "sdv.test".to_string();
+        let mut bundle = vsidl_v1::syntax::ServiceBundle::new();
+        let mut server = Server::new();
+        server.service = "TireStatus".to_string();
+        server.service_unit_name = "custom-server".to_string();
+        bundle.server.push(server);
+        vsidl_entry.service_bundle.push(bundle);
+        catalog.dependencies_vsidl_files.push(vsidl_entry);
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN channel is set to service_unit_name
+        let server = &catalog.dependencies_vsidl_files[0].service_bundle[0].server[0];
+        assert_eq!(server.channel, "custom-server");
+    }
+
+    #[test]
+    fn test_should_set_channel_for_client() {
+        // GIVEN A catalog with a client without channel
+        let mut catalog = Catalog::new();
+        let mut vsidl_entry = VsidlEntry::new();
+        vsidl_entry.package = "sdv.test".to_string();
+        let mut bundle = vsidl_v1::syntax::ServiceBundle::new();
+        let mut client = Client::new();
+        client.service = "sdv.other.TireStatus".to_string();
+        bundle.client.push(client);
+        vsidl_entry.service_bundle.push(bundle);
+        catalog.dependencies_vsidl_files.push(vsidl_entry);
+
+        // ALSO GIVEN the service exists in protobuf descriptors
+        let mut file_desc = ProtoFileDescriptor::new();
+        file_desc.set_package("sdv.other".to_string());
+        let mut service_desc = ProtoServiceDescriptor::new();
+        service_desc.set_name("TireStatus".to_string());
+        file_desc.service.push(service_desc);
+
+        let metadata = crate::catalog::ProtoBuildTargetMetadata {
+            folder: PathBuf::from("."),
+            target_name: Some("test_target".to_string()),
+            crate_name: Some("test_crate".to_string()),
+        };
+        catalog.proto_descriptors.push((metadata, file_desc));
+
+        // WHEN executing the visitor
+        ConvertPdk29ToSOA::traverse(&mut catalog);
+
+        // THEN channel is set to kebab-case FQN (without prepending package because it's already FQN)
+        let client = &catalog.dependencies_vsidl_files[0].service_bundle[0].client[0];
+        assert_eq!(client.channel, "sdv-other-tire-status");
     }
 }

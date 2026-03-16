@@ -26,7 +26,7 @@ use super::{
     },
     symbol_table::SymbolTable,
 };
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 
 /// A unique identifier for a symbol within a [SymbolTable].
 ///

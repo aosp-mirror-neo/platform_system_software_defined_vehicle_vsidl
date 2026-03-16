@@ -15,7 +15,7 @@
  */
 
 use super::{impl_context_condition, FindingCollector, FindingId};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
 #[derive(Debug, Default)]

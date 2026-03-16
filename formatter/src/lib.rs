@@ -23,7 +23,7 @@ mod pretty;
 mod rustfmt;
 
 /// Enum to control the formatting
-#[derive(ValueEnum, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(ValueEnum, Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum Format {
     /// Format rust.
     RustFmt,

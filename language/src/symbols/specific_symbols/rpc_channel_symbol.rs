@@ -15,7 +15,7 @@
  */
 
 use crate::{implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 
 use super::{rpc_client_symbol::RpcClientSymbol, rpc_server_symbol::RpcServerSymbol};
 

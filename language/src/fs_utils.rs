@@ -22,7 +22,7 @@ use std::io::{self, prelude::*, BufReader};
 use std::path::Path;
 use std::path::PathBuf;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 
 /// Finds files within a specified directory that match a given glob pattern.
 ///

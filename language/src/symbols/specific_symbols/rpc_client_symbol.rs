@@ -17,8 +17,8 @@
 use crate::{
     implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
 };
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::Client;
-use vsidl_v1::syntax::Span;
 
 use super::{
     proto_rpc_service_symbol::ProtoRpcServiceSymbol, rpc_channel_symbol::RpcChannelSymbol,

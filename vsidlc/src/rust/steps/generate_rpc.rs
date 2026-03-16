@@ -59,8 +59,7 @@ impl GeneratorStepExecution for GenerateRpc {
                     );
                 }
 
-                let mut rust_formatter =
-                    formatter::get_rust_formatter(state.cli.rust_formatter.clone());
+                let mut rust_formatter = formatter::get_rust_formatter(state.cli.rust_formatter);
 
                 let mut rpc_output_dir = root_dir.clone();
                 rpc_output_dir.extend(proto_rpc_service.package(symbol_table).split('.'));
@@ -72,6 +71,8 @@ impl GeneratorStepExecution for GenerateRpc {
                         &rpc_service::render(proto_rpc_service, symbol_table, handlebars),
                         &rpc_output_dir.join("lib.rs"),
                         rust_formatter.as_mut(),
+                        state.cli.android_bp_formatter,
+                        state.cli.textproto_formatter,
                     )?;
                 }
 
@@ -84,6 +85,8 @@ impl GeneratorStepExecution for GenerateRpc {
                         main_genrule_name.clone(),
                     ),
                     &rpc_output_dir.join("Android.bp"),
+                    state.cli.android_bp_formatter,
+                    state.cli.textproto_formatter,
                 )?;
 
                 Ok(())

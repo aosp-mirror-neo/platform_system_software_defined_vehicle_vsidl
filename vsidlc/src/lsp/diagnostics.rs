@@ -25,7 +25,7 @@ use lsp_types::{PublishDiagnosticsParams, Url};
 use pest::error::Error as PestError;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_parser::converter::convert_to_vsidl_entry;
 use vsidl_v1_parser::file_provider::FileProvider;
 use vsidl_v1_parser::pest_parser::{format_pest_error, Rule};

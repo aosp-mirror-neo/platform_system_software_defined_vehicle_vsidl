@@ -19,7 +19,7 @@ use anyhow::bail;
 use std::collections::HashSet;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::DiskFileProvider;
 
 /// Collects findings (warnings, errors, fatal errors) encountered during context condition checks.

@@ -18,7 +18,7 @@ use crate::impl_context_condition_symtab;
 use crate::{FindingCollector, FindingId};
 use heck::ToKebabCase;
 use std::collections::{HashMap, HashSet};
-use vsidl_v1::syntax::Span;
+use vsidl_v1::span::Span;
 use vsidl_v1_common::constants::UNIQUE_CHANNEL;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::specific_symbols::proto_publication_symbol::ProtoPublicationSymbol;

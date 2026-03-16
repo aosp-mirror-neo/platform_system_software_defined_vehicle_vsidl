@@ -39,8 +39,15 @@ apex {
         "{{package_name}}.manifest",
         // Linker configuration to enable loading library from apex.
         "{{package_name}}.linker-config",
+        {{#if use_permissions}}
+        // Permissions policy files.
+        {{#each service_bundles}}
+        "{{this.full_name}}.permissions.config",
+        {{/each}}
+        {{else}}
         // ACLs policy file.
         "{{package_name}}.acls.config",
+        {{/if}}
         // Orchestration configuration.
         {{#each service_bundles}}
         "{{../base_package_name}}.{{this.short_name}}.orch.config",
@@ -48,8 +55,7 @@ apex {
     ],
     // Name of the apex_key module that provides the private key to sign the APEX bundle.
     key: "{{package_name}}.apex_key",
-    // TODO(b/333868045): make it updatable when all SDV dependencies are ready.
-    updatable: false,
+    updatable: true,
     product_specific: true,
 }
 
