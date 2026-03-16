@@ -351,8 +351,8 @@ fn add_schemas_from_service_bundle(
 ) {
     for publisher in &service_bundle.publishers(symbol_table) {
         let (message_name, proto_file_name) = if target_api == "latest" {
-            // TODO - b/487329791 implement vsidl_rc_generator latest logic
-            panic!("not implemented - b/487329791");
+            let message = publisher.message(symbol_table);
+            (message.full_name(symbol_table), message.proto_metadata.filename.clone())
         } else {
             let publication = publisher.publication(symbol_table);
             (publication.full_name(symbol_table), publication.proto_metadata.filename.clone())
@@ -368,8 +368,8 @@ fn add_schemas_from_service_bundle(
     }
     for subscriber in &service_bundle.subscribers(symbol_table) {
         let (message_name, proto_file_name) = if target_api == "latest" {
-            // TODO - b/487329791 implement vsidl_rc_generator latest logic
-            panic!("not implemented - b/487329791");
+            let message = subscriber.message(symbol_table);
+            (message.full_name(symbol_table), message.proto_metadata.filename.clone())
         } else {
             let publication = subscriber.publication(symbol_table);
             (publication.full_name(symbol_table), publication.proto_metadata.filename.clone())
@@ -614,8 +614,11 @@ fn add_unit_types_from_service_bundle(
     }
     for subscriber in &service_bundle.subscribers(symbol_table) {
         let any_publisher = if target_api == "latest" {
-            // TODO - b/487329791 implement vsidl_rc_generator latest logic
-            panic!("not implemented - b/487329791");
+            subscriber
+                .topic_symbols(symbol_table)
+                .iter()
+                .find_map(|topic_symbol| topic_symbol.publishers(symbol_table).first().cloned())
+                .expect("subscriber has a publisher in valid catalogs")
         } else {
             subscriber
                 .publication(symbol_table)
@@ -666,8 +669,18 @@ fn add_unit_type_from_publication_definition(
     target_api: &str,
 ) {
     if target_api == "latest" {
-        // TODO - b/487329791 implement vsidl_rc_generator latest logic
-        panic!("not implemented - b/487329791");
+        let message = publisher.message(symbol_table);
+        let unit_type = UnitType::from((message, symbol_table));
+        let message_name = format!("{}.{}", &message.package(symbol_table), &unit_type.typename);
+        if let std::collections::hash_map::Entry::Vacant(entry) = unit_type_cache.entry(unit_type) {
+            insert_topic_metadata_from_message(
+                message_name,
+                publisher,
+                symbol_table,
+                message,
+                entry,
+            );
+        }
     } else {
         let publication = publisher.publication(symbol_table);
         let unit_type = UnitType::from((publication, symbol_table));
@@ -690,6 +703,41 @@ fn insert_topic_metadata(
     topic_metadata.message_count = publication.message_count;
     topic_metadata.field_size_constraint = publication
         .message_size
+        .size_constraints
+        .iter()
+        .map(|(k, v)| {
+            let mut size_constraint = FieldSizeConstraint::new();
+            let repeated_max_count = v.repeated_max_count.unwrap_or(0);
+            let variable_type_max_size = v.variable_type_max_size.unwrap_or(0);
+            size_constraint.repeated_max_count = repeated_max_count as u32;
+            size_constraint.variable_type_max_size = variable_type_max_size as u32;
+            (k.clone(), size_constraint)
+        })
+        .collect::<HashMap<String, FieldSizeConstraint>>();
+    let unit_type_archetype = Archetype_metadata::TopicMetadata(topic_metadata);
+    entry.insert(unit_type_archetype);
+}
+
+fn insert_topic_metadata_from_message(
+    message_name: String,
+    publisher: &PublisherSymbol,
+    symbol_table: &SymbolTable,
+    message: &ProtoMessageSymbol,
+    entry: VacantEntry<UnitType, Archetype_metadata>,
+) {
+    let message_size = message.max_size.clone().unwrap();
+    let max_message_count = publisher
+        .message(symbol_table)
+        .publishers(symbol_table)
+        .into_iter()
+        .map(|publisher| publisher.capacity)
+        .max()
+        .expect("Expect publisher to be defined");
+    let mut topic_metadata = TopicMetadata::new();
+    topic_metadata.message_name = message_name;
+    topic_metadata.message_size = message_size.size as u32;
+    topic_metadata.message_count = max_message_count;
+    topic_metadata.field_size_constraint = message_size
         .size_constraints
         .iter()
         .map(|(k, v)| {
@@ -1240,6 +1288,157 @@ mod test {
             .collect();
         bundles.sort_by_key(|sb| sb.file_path.clone());
         (bundles, symbol_table)
+    }
+
+    fn build_test_vsidlc_soa() -> VsidlcCommonCli {
+        VsidlcCommonCli {
+            catalog_path: Path::new("src/tests/soa/catalog/").to_path_buf(),
+            dependency_catalog_path: [].to_vec(),
+            target_api: "latest".to_string(),
+            ..Default::default()
+        }
+    }
+
+    fn build_catalog_soa() -> Catalog {
+        let test_cli = build_test_vsidlc_soa();
+        test_cli
+            .create_catalog(Some(Path::new("./").to_path_buf()))
+            .expect("Unable to create catalog")
+    }
+
+    fn form_bundles_soa(catalog: &Catalog) -> (Vec<ServiceBundleSymbol>, SymbolTable) {
+        let test_cli = build_test_vsidlc_soa();
+        let symbol_table = test_cli
+            .create_symbol_table_from_catalog(catalog)
+            .map_err(|e| {
+                eprintln!("Printing error before panic: {:#}", e);
+                e // return the error back to the chain so expect() sees it
+            })
+            .expect("Input files could not be compiled");
+        let mut bundles: Vec<ServiceBundleSymbol> = symbol_table
+            .get_all_service_bundle_symbols()
+            .iter()
+            .filter(|bundle| bundle.source == ServiceBundleSource::CATALOG)
+            .cloned()
+            .cloned()
+            .collect();
+        bundles.sort_by_key(|sb| sb.file_path.clone());
+        (bundles, symbol_table)
+    }
+
+    fn generate_and_read_vsidl_config_soa(
+        catalog: &Catalog,
+        symbol_table: &SymbolTable,
+        bundles: &Vec<ServiceBundleSymbol>,
+    ) -> anyhow::Result<VsidlRuntimeConfig> {
+        let dir = tempdir().expect("Failed to create temp dir for test");
+        generate_runtime_config(catalog, symbol_table, bundles, dir.path(), None, None, "latest")
+            .expect("generate_runtime_config failed");
+        let config_path = dir.path().join("vsidl-config.binpb");
+        read_proto_from_file(&config_path)
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_succeeds() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN/THEN
+        assert!(generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles).is_ok());
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_generates_expected_unit_type_mappings() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN
+        let vsidl_config = generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles)
+            .expect("Failed to generate VSIDL runtime config");
+
+        // THEN
+        assert_eq!(vsidl_config.unit_type_mapping.len(), 2);
+        println!("{:?}", vsidl_config.unit_type_mapping);
+        assert_that!(
+            vsidl_config.unit_type_mapping,
+            contains_each![
+                eq(&UnitTypeDescriptorMapping {
+                    package_name: "sdv.tests.soa.transmission".to_string(),
+                    service_bundle_name: "".to_string(), // deprecated
+                    type_name: "TirePressure".to_string(),
+                    archetype_metadata: Some(Archetype_metadata::TopicMetadata(TopicMetadata {
+                        message_name: "sdv.tests.soa.transmission.TirePressure".to_string(),
+                        message_size: 6,
+                        message_count: 124,
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                }),
+                eq(&UnitTypeDescriptorMapping {
+                    package_name: "sdv.tests.soa.transmission".to_string(),
+                    service_bundle_name: "".to_string(),
+                    type_name: "TireTemperature".to_string(),
+                    archetype_metadata: Some(Archetype_metadata::TopicMetadata(TopicMetadata {
+                        message_name: "sdv.tests.soa.transmission.TireTemperature".to_string(),
+                        message_size: 6,
+                        message_count: 4,
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_generates_expected_message_descriptor_mappings() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN
+        let vsidl_config = generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles)
+            .expect("Failed to generate VSIDL runtime config");
+
+        // THEN
+        assert_eq!(vsidl_config.descriptor_mapping.len(), 2);
+        assert_that!(
+            vsidl_config.descriptor_mapping,
+            contains_each![
+                eq(&MessageDescriptorMapping {
+                    message_name: "sdv.tests.soa.transmission.TirePressure".to_string(),
+                    file_name: "tire.proto".to_string(),
+                    ..Default::default()
+                }),
+                eq(&MessageDescriptorMapping {
+                    message_name: "sdv.tests.soa.transmission.TireTemperature".to_string(),
+                    file_name: "tire.proto".to_string(),
+                    ..Default::default()
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_generates_expected_file_descriptor_protos() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN
+        let vsidl_config = generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles)
+            .expect("Failed to generate VSIDL runtime config");
+
+        // THEN
+        assert_eq!(vsidl_config.file_descriptor_proto.len(), 1);
+        let descriptor_names = vsidl_config
+            .file_descriptor_proto
+            .iter()
+            .map(|fd_proto| fd_proto.name.clone().unwrap())
+            .collect::<Vec<String>>();
+        assert_that!(descriptor_names, contains_each![eq(&TIRE_PROTO_NAME.to_string()),]);
     }
 
     #[test]
