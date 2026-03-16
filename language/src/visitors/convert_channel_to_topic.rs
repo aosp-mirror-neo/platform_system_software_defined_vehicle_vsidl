@@ -81,7 +81,7 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
         }
 
         // no user-defined topic but user-defined channel (i.e. variant/instance) means that pre-SOA syntax is used
-        if node.topic.is_empty() && node.topic_span.is_empty() && !node.channel.is_empty() {
+        if node.topic.is_empty() && node.topic_span.is_empty() {
             let fqn = format!("{}.{}", self.vsidl_package, node.message);
             let (message_name, is_multipub) =
                 if let Some(&is_multi) = self.message_fqn_is_multipub.get(&fqn) {
@@ -99,7 +99,7 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
                 // LINT.ThenChange(software_defined_vehicle/middleware/transport/rust/interface/src/types.rs:set_multipub_topic)
             } else if !node.service_unit_name.is_empty() {
                 node.topic.push(node.service_unit_name.clone());
-            } else {
+            } else if !node.channel.is_empty() {
                 // If not custom service_unit_name, use the generated service unit name
                 for channel in &node.channel {
                     let topic = format!("{}-{}", message_name, channel).to_kebab_case();
@@ -111,7 +111,7 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
 
     fn start_visit_subscriber(&mut self, node: &mut Subscriber) {
         // no user-defined topic but user-defined channel (i.e. variant/instance) means that pre-SOA syntax is used
-        if node.topic.is_empty() && node.topic_span.is_empty() && !node.channel.is_empty() {
+        if node.topic.is_empty() && node.topic_span.is_empty() {
             let fqn = format!("{}.{}", self.vsidl_package, node.message);
             let (message_name, is_multipub) =
                 if let Some(&is_multi) = self.message_fqn_is_multipub.get(&fqn) {
@@ -125,7 +125,7 @@ impl VsidlVisitorMut for ConvertChannelToTopic {
                 // This is needed because user can define custom service_unit_names.
                 let topic = format!("{}-{}", message_name, "unique").to_kebab_case();
                 node.topic.push(topic);
-            } else {
+            } else if !node.channel.is_empty() {
                 for channel in &node.channel {
                     let topic = format!("{}-{}", message_name, channel).to_kebab_case();
                     node.topic.push(topic);
