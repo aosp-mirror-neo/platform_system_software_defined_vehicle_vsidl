@@ -41,7 +41,7 @@ impl SymbolTableChecker for RpcClientChannelRequiresServerChannel {
             .any(|server| server.service(symbol_table).id() == requested_service.id());
 
         if !has_server_on_channel {
-            self.finding_collector.error(
+            self.finding_collector.warn(
                 FindingId::RpcClientChannelRequiresServerChannel,
                 format!(
                     "RPC client '{}' uses channel '{}' for service '{}', but no server for this service is defined on this channel",
@@ -100,10 +100,10 @@ mod tests {
         check.check_symbol_table(linker.symbol_table());
 
         // THEN Should have found an error
-        assert!(check.is_err());
-        assert!(check.any_finding_contains(FindingSeverity::Error, "uses channel 'channel-a'"));
+        assert!(check.is_ok());
+        assert!(check.any_finding_contains(FindingSeverity::Warn, "uses channel 'channel-a'"));
         assert!(check.any_finding_contains(
-            FindingSeverity::Error,
+            FindingSeverity::Warn,
             "no server for this service is defined on this channel"
         ));
     }
