@@ -14,7 +14,7 @@
 
 use crate::{AndroidBpFileGroups, Cli};
 use handlebars::Handlebars;
-use vsidl_v1_parser::SymbolTable;
+use vsidl_v1_parser::{FindingCollector, SymbolTable};
 
 /// Contains the shared state that is passed between generator steps.
 pub struct GeneratorToolState {
@@ -28,10 +28,19 @@ pub struct GeneratorToolState {
     pub handlebars: Option<Handlebars<'static>>,
     /// The name of the main genrule, if applicable.
     pub main_genrule_name: Option<String>,
+    /// Collects findings (warnings, errors) during the generation process.
+    pub finding_collector: FindingCollector,
 }
 
 impl GeneratorToolState {
     pub fn new(symbol_table: SymbolTable, cli: Cli, filegroups: AndroidBpFileGroups) -> Self {
-        Self { symbol_table, cli, filegroups, handlebars: None, main_genrule_name: None }
+        Self {
+            symbol_table,
+            cli,
+            filegroups,
+            handlebars: None,
+            main_genrule_name: None,
+            finding_collector: FindingCollector::default(),
+        }
     }
 }

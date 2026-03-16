@@ -53,6 +53,8 @@ pub fn generate_middleware(
         chain.execute(&mut generator_state)?;
     }
 
+    generator_state.finding_collector.print_findings();
+
     Ok(())
 }
 
