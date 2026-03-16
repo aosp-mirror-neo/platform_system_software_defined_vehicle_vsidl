@@ -86,7 +86,7 @@ impl ServiceBundle for {{service_bundle_name}}ServiceBundle {
 }
 
 {{#if subscriptions}}
-/// Waits until a publisher for the given `channel` becomes available.
+/// Waits until a publisher for the given `descriptor` becomes available.
 ///
 /// This function creates a registration event stream and waits for the first
 /// `Availability::Available` event, indicating that a publisher is ready.
@@ -95,13 +95,13 @@ impl ServiceBundle for {{service_bundle_name}}ServiceBundle {
 ///
 /// # Arguments
 /// * `comms` - A reference to the `Communicate` trait object for middleware communication.
-/// * `channel` - The subscription channel to wait for.
-pub async fn wait_for_publisher_to_be_available<C: clientlib::subscriber::Channel>(
+/// * `descriptor` - The subscription descriptor to wait for.
+pub async fn wait_for_publisher_to_be_available<Proto: protobuf::Message + Debug>(
     comms: &dyn Communicate,
-    channel: &C,
+    descriptor: &clientlib::SubscriberDescriptor<Proto>,
 ) -> SdvResult<()> {
-    debug!("Waiting for publisher {channel:#?}");
-    let mut event_stream = clientlib::create_registration_event_stream(comms, channel)
+    debug!("Waiting for publisher {descriptor:#?}");
+    let mut event_stream = clientlib::create_registration_event_stream(comms, descriptor)
         .await
         .map_err(|e| {
             error!("unable to generate a registration event: {e:?}");
@@ -157,7 +157,7 @@ async fn sdv_main(
 
     {{#each publications}}
     {{#each this.1}}
-    if let Ok(publisher) = clientlib::create_publisher(comms.as_ref(), sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::publisher::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{upper_snake_case this.channel_name}}).await {
+    if let Ok(publisher) = clientlib::create_publisher(comms.as_ref(), sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::PublisherDescriptors::<{{../this.0.unit_type.proto_type_name}}>::{{upper_snake_case this.channel_name}}).await {
         futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_publisher(publisher));
     } else {
         error!("Failed to create publisher {{../this.0.unit_type.proto_type_name}}#{{this.channel_name}}");
@@ -167,7 +167,7 @@ async fn sdv_main(
 
     {{#each subscriptions}}
     {{#each this.1}}
-    let variant = sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::subscriber::Channel::<{{../this.0.unit_type.proto_type_name}}>::{{upper_snake_case this.channel_name}};
+    let variant = sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../../service_bundle_name}}::SubscriberDescriptors::<{{../this.0.unit_type.proto_type_name}}>::{{upper_snake_case this.channel_name}};
     if wait_for_publisher_to_be_available(comms.as_ref(), variant).await.is_ok() {
         if let Ok(observer) = clientlib::create_observer(comms.as_ref(), variant, &sdv::mw::SubscribeOptions::default()).await {
             futures_join_set.spawn(handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case this.channel_name}}_observer(observer));
@@ -230,12 +230,12 @@ async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case 
 
 {{#each rpc_clients}}
 async fn create_{{snake_case unit_type.proto_type_name}}_{{snake_case this.channel}}_rpc_client_with_retry(comms: &dyn sdv::mw::Communicate) -> Option<{{this.unit_type.crate_name}}::Client> {
-    use sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../service_bundle_name}}::client;
+    let descriptor = sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../service_bundle_name}}::ClientDescriptors::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.channel}};
 
     info!("Waiting for {{this.channel}} to be available...");
     let Ok(mut event_stream) = clientlib::create_server_registration_event_stream(
         comms,
-        client::Descriptor::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.channel}},
+        descriptor,
     )
     .await
     else {
@@ -253,7 +253,7 @@ async fn create_{{snake_case unit_type.proto_type_name}}_{{snake_case this.chann
     info!("Creating client for {{this.channel}}");
     match clientlib::create_rpc_client(
         comms,
-        client::Descriptor::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.channel}},
+        descriptor,
         sdv::mw::ClientOptions::default(),
     )
     .await {

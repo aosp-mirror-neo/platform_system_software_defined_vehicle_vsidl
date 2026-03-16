@@ -13,26 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-/// Provides access to subscriptions available to the service bundle
-pub mod subscriber {
 
-/// Lists channels per protobuf message of every subscription available to the service bundle
-///
-/// This struct acts as an opaque handle to a specific subscription channel.
-/// It should be passed to middleware functions (e.g., `create_subscriber`)
-/// but its internal details are not part of the public API for service bundle authors.
-#[derive(Debug)]
-pub struct Channel<Proto: ::protobuf::Message> {
-    _proto: std::marker::PhantomData<Proto>,
-    /// Unique name of a channel
-    pub name: &'static str,
-}
-
-{{> service_bundles/subscriber/impl_identity/impl}}
+/// Namespace for subscription descriptors available to the service bundle.
+pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
 
 {{#each subscriptions}}
-    {{> service_bundles/subscriber/impl_to_type_name/impl}}
-
     {{> service_bundles/subscriber/impl_channel/impl}}
 {{/each}}
-}

@@ -13,30 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-/// Provides access to publications available to the service bundle
-pub mod publisher {
 
-/// Lists channels per protobuf message of every publication available to the service bundle
-///
-/// This struct acts as an opaque handle to a specific publication channel.
-/// Its internal details are not part of the public API for service bundle authors.
-#[derive(Debug)]
-pub struct Channel<Proto: ::protobuf::Message> {
-    _proto: std::marker::PhantomData<Proto>,
-    /// Unique name of a channel
-    pub name: &'static str,
-    service_unit: &'static str,
-    capacity: u32,
-}
-
-{{> service_bundles/publisher/impl_identity/impl}}
+/// Namespace for publication descriptors available to the service bundle.
+pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 
 {{#each publications}}
-{{> service_bundles/publisher/impl_metadata/impl register_reflection_metadata=../register_reflection_metadata}}
-
-{{> service_bundles/publisher/impl_to_type_name/impl}}
-
-{{> service_bundles/publisher/impl_channel/impl}}
-
+{{> service_bundles/publisher/impl_channel/impl register_reflection_metadata=../register_reflection_metadata}}
 {{/each}}
-}

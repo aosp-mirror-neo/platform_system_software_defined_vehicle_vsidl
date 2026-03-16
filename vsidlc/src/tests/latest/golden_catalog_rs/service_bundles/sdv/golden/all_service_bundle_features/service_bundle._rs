@@ -16,37 +16,13 @@
 //! WARNING: Changes will be overwritten when the file is regenerated.
 pub mod diagnostics;
 use crate::diagnostics::Diagnostics;
-/// Provides access to publications available to the service bundle
-pub mod publisher {
-    /// Lists channels per protobuf message of every publication available to the service bundle
-    ///
-    /// This struct acts as an opaque handle to a specific publication channel.
-    /// Its internal details are not part of the public API for service bundle authors.
-    #[derive(Debug)]
-    pub struct Channel<Proto: ::protobuf::Message> {
-        _proto: std::marker::PhantomData<Proto>,
-        /// Unique name of a channel
-        pub name: &'static str,
-        service_unit: &'static str,
-        capacity: u32,
-    }
-    impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::publisher::Identity
-    for Channel<Proto> {
-        type ProtoMessage = Proto;
-        fn get_name(&self) -> &str {
-            self.name
-        }
-        fn get_service_unit_name(&self) -> &str {
-            self.service_unit
-        }
-        fn get_capacity(&self) -> u32 {
-            self.capacity
-        }
-    }
-    impl sdv::mw::clientlib::channel::publisher::Metadata
-    for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        const MESSAGE_SIZE: u32 = 6;
-        const IS_MESSAGE_METADATA_REQUIRED: bool = true;
+/// Namespace for publication descriptors available to the service bundle.
+pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
+impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
+    /// Publication channel 'pressure-one' of 'sdv.golden.Pressure'
+    pub const PRESSURE_ONE: &sdv::mw::clientlib::PublisherDescriptor<
+        sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
+    > = {
         fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
             sdv_proto_reflection_rs::message_metadata::MessageMetadata {
                 file_descriptors: vec![
@@ -58,116 +34,63 @@ pub mod publisher {
                 ..Default::default()
             }
         }
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden")
-                .type_name("Pressure")
-                .build()
+        &sdv::mw::clientlib::PublisherDescriptor::new("pressure-one")
+            .with_message("sdv.golden.Pressure")
+            .with_service_unit_name("sdv-golden-pressure-pressure-one")
+            .with_capacity(8)
+            .with_max_message_size(6)
+            .with_message_metadata_required(true)
+            .with_message_metadata(get_message_metadata)
+    };
+    /// Publication channel 'pressure-two' of 'sdv.golden.Pressure'
+    pub const PRESSURE_TWO: &sdv::mw::clientlib::PublisherDescriptor<
+        sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
+    > = {
+        fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+            sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+                file_descriptors: vec![
+                    sdv_vsidlc_goldens_catalog::all_ast_node_types::file_descriptor()
+                    .proto().clone(), vsidl_v1_stdlib::annotations::file_descriptor()
+                    .proto().clone(),
+                ],
+                message_full_name: String::from(".sdv.golden.Pressure"),
+                ..Default::default()
+            }
         }
-    }
-    impl Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        /// Publication channel 'pressure-one' of 'sdv.golden.Pressure'
-        pub const PRESSURE_ONE: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "pressure-one",
-            service_unit: "sdv-golden-pressure-pressure-one",
-            capacity: 8,
-        };
-        /// Publication channel 'pressure-two' of 'sdv.golden.Pressure'
-        pub const PRESSURE_TWO: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "pressure-two",
-            service_unit: "sdv-golden-pressure-pressure-two",
-            capacity: 8,
-        };
-        /// List of all publication channels of 'sdv.golden.Pressure' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::PRESSURE_ONE,
-            Self::PRESSURE_TWO,
-        ];
-    }
+        &sdv::mw::clientlib::PublisherDescriptor::new("pressure-two")
+            .with_message("sdv.golden.Pressure")
+            .with_service_unit_name("sdv-golden-pressure-pressure-two")
+            .with_capacity(8)
+            .with_max_message_size(6)
+            .with_message_metadata_required(true)
+            .with_message_metadata(get_message_metadata)
+    };
+    /// List of all publication channels of 'sdv.golden.Pressure' available to the service bundle
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
+        sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
+    >] = &[Self::PRESSURE_ONE, Self::PRESSURE_TWO];
 }
-/// Provides access to subscriptions available to the service bundle
-pub mod subscriber {
-    /// Lists channels per protobuf message of every subscription available to the service bundle
-    ///
-    /// This struct acts as an opaque handle to a specific subscription channel.
-    /// It should be passed to middleware functions (e.g., `create_subscriber`)
-    /// but its internal details are not part of the public API for service bundle authors.
-    #[derive(Debug)]
-    pub struct Channel<Proto: ::protobuf::Message> {
-        _proto: std::marker::PhantomData<Proto>,
-        /// Unique name of a channel
-        pub name: &'static str,
-    }
-    impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::subscriber::Identity
-    for Channel<Proto> {
-        type ProtoMessage = Proto;
-        fn get_name(&self) -> &str {
-            self.name
-        }
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden")
-                .bundle_name("")
-                .type_name("Pressure")
-                .build()
-        }
-    }
-    impl Channel<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-        /// Enables access to subscription channel 'pressure-two' of 'sdv.golden.Pressure'
-        pub const PRESSURE_TWO: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "pressure-two",
-        };
-        /// List of all subscription channels of 'sdv.golden.Pressure' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::PRESSURE_TWO];
-    }
+/// Namespace for subscription descriptors available to the service bundle.
+pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
+impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
+    /// Enables access to subscription channel 'pressure-two' of 'sdv.golden.Pressure'
+    pub const PRESSURE_TWO: &sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
+    > = &sdv::mw::clientlib::SubscriberDescriptor::new("pressure-two")
+        .with_message("sdv.golden.Pressure");
+    /// List of all subscription channels of 'sdv.golden.Pressure' available to the service bundle
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
+    >] = &[Self::PRESSURE_TWO];
 }
-/// Provides access to RPC clients available to the service bundle
-pub mod client {
-    /// A strongly-typed handle identifying a specific RPC client channel.
-    ///
-    /// This struct carries the channel information required to connect to the service
-    /// and enforces type safety by associating the channel with its specific `ClientType`.
-    /// It is intended for use with middleware functions like `create_rpc_client`.
-    #[derive(Debug)]
-    pub struct Descriptor<T> {
-        channel: &'static str,
-        _phantom: std::marker::PhantomData<T>,
-    }
-    impl<T> sdv::mw::clientlib::rpc_descriptor::client::Descriptor for Descriptor<T>
-    where
-        Descriptor<T>: sdv::mw::clientlib::ToTypeName,
-        T: std::fmt::Debug + sdv::mw::RpcClient,
-    {
-        type ClientType = T;
-        fn get_channel(&self) -> &str {
-            self.channel
-        }
-    }
-    impl Descriptor<sdv_golden_dummy_rpc_rpc::Client> {
-        /// dummy-rpc channel
-        pub const DUMMY_RPC: &Self = &Self {
-            channel: "dummy-rpc",
-            _phantom: std::marker::PhantomData,
-        };
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Descriptor<sdv_golden_dummy_rpc_rpc::Client> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden")
-                .type_name("DummyRpc")
-                .build()
-        }
-    }
+/// Namespace for RPC client descriptors available to the service bundle.
+pub struct ClientDescriptors<T>(std::marker::PhantomData<T>);
+impl ClientDescriptors<sdv_golden_dummy_rpc_rpc::Client> {
+    /// dummy-rpc channel
+    pub const DUMMY_RPC: &sdv::mw::clientlib::ClientDescriptor<
+        sdv_golden_dummy_rpc_rpc::Client,
+    > = &sdv::mw::clientlib::ClientDescriptor::new("dummy-rpc")
+        .with_service("sdv.golden.DummyRpc");
 }
 /// Service bundle
 pub struct AllServiceBundleFeatures {

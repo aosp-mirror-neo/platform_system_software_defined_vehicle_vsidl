@@ -16,123 +16,58 @@
 //! WARNING: Changes will be overwritten when the file is regenerated.
 pub mod diagnostics;
 use crate::diagnostics::Diagnostics;
-/// Provides access to subscriptions available to the service bundle
-pub mod subscriber {
-    /// Lists channels per protobuf message of every subscription available to the service bundle
-    ///
-    /// This struct acts as an opaque handle to a specific subscription channel.
-    /// It should be passed to middleware functions (e.g., `create_subscriber`)
-    /// but its internal details are not part of the public API for service bundle authors.
-    #[derive(Debug)]
-    pub struct Channel<Proto: ::protobuf::Message> {
-        _proto: std::marker::PhantomData<Proto>,
-        /// Unique name of a channel
-        pub name: &'static str,
-    }
-    impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::subscriber::Identity
-    for Channel<Proto> {
-        type ProtoMessage = Proto;
-        fn get_name(&self) -> &str {
-            self.name
-        }
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden")
-                .bundle_name("")
-                .type_name("TIREPressure")
-                .build()
-        }
-    }
-    impl Channel<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-        /// Enables access to subscription channel 'tire-pressure-front-left' of 'sdv.golden.TIREPressure'
-        pub const TIRE_PRESSURE_FRONT_LEFT: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "tire-pressure-front-left",
-        };
-        /// Enables access to subscription channel 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
-        pub const TIRE_PRESSURE_FRONT_RIGHT: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "tire-pressure-front-right",
-        };
-        /// Enables access to subscription channel 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
-        pub const TIRE_PRESSURE_REAR_LEFT: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "tire-pressure-rear-left",
-        };
-        /// Enables access to subscription channel 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
-        pub const TIRE_PRESSURE_REAR_RIGHT: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "tire-pressure-rear-right",
-        };
-        /// List of all subscription channels of 'sdv.golden.TIREPressure' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::TIRE_PRESSURE_FRONT_LEFT,
-            Self::TIRE_PRESSURE_FRONT_RIGHT,
-            Self::TIRE_PRESSURE_REAR_LEFT,
-            Self::TIRE_PRESSURE_REAR_RIGHT,
-        ];
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden")
-                .bundle_name("")
-                .type_name("VehicleSpeed")
-                .build()
-        }
-    }
-    impl Channel<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-        /// Enables access to subscription channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
-        pub const VEHICLE_SPEED: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "vehicle-speed",
-        };
-        /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[Self::VEHICLE_SPEED];
-    }
+/// Namespace for subscription descriptors available to the service bundle.
+pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
+impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
+    /// Enables access to subscription channel 'tire-pressure-front-left' of 'sdv.golden.TIREPressure'
+    pub const TIRE_PRESSURE_FRONT_LEFT: &sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TIREPressure,
+    > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-front-left")
+        .with_message("sdv.golden.TIREPressure");
+    /// Enables access to subscription channel 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
+    pub const TIRE_PRESSURE_FRONT_RIGHT: &sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TIREPressure,
+    > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-front-right")
+        .with_message("sdv.golden.TIREPressure");
+    /// Enables access to subscription channel 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
+    pub const TIRE_PRESSURE_REAR_LEFT: &sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TIREPressure,
+    > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-rear-left")
+        .with_message("sdv.golden.TIREPressure");
+    /// Enables access to subscription channel 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
+    pub const TIRE_PRESSURE_REAR_RIGHT: &sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TIREPressure,
+    > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-rear-right")
+        .with_message("sdv.golden.TIREPressure");
+    /// List of all subscription channels of 'sdv.golden.TIREPressure' available to the service bundle
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TIREPressure,
+    >] = &[
+        Self::TIRE_PRESSURE_FRONT_LEFT,
+        Self::TIRE_PRESSURE_FRONT_RIGHT,
+        Self::TIRE_PRESSURE_REAR_LEFT,
+        Self::TIRE_PRESSURE_REAR_RIGHT,
+    ];
 }
-/// Provides access to RPC clients available to the service bundle
-pub mod client {
-    /// A strongly-typed handle identifying a specific RPC client channel.
-    ///
-    /// This struct carries the channel information required to connect to the service
-    /// and enforces type safety by associating the channel with its specific `ClientType`.
-    /// It is intended for use with middleware functions like `create_rpc_client`.
-    #[derive(Debug)]
-    pub struct Descriptor<T> {
-        channel: &'static str,
-        _phantom: std::marker::PhantomData<T>,
-    }
-    impl<T> sdv::mw::clientlib::rpc_descriptor::client::Descriptor for Descriptor<T>
-    where
-        Descriptor<T>: sdv::mw::clientlib::ToTypeName,
-        T: std::fmt::Debug + sdv::mw::RpcClient,
-    {
-        type ClientType = T;
-        fn get_channel(&self) -> &str {
-            self.channel
-        }
-    }
-    impl Descriptor<sdv_golden_rpc_tire_status_rpc::Client> {
-        /// sdv-golden-rpc-tire-status channel
-        pub const SDV_GOLDEN_RPC_TIRE_STATUS: &Self = &Self {
-            channel: "sdv-golden-rpc-tire-status",
-            _phantom: std::marker::PhantomData,
-        };
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Descriptor<sdv_golden_rpc_tire_status_rpc::Client> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden.rpc")
-                .type_name("TireStatus")
-                .build()
-        }
-    }
+impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
+    /// Enables access to subscription channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
+    pub const VEHICLE_SPEED: &sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
+    > = &sdv::mw::clientlib::SubscriberDescriptor::new("vehicle-speed")
+        .with_message("sdv.golden.VehicleSpeed");
+    /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
+    >] = &[Self::VEHICLE_SPEED];
+}
+/// Namespace for RPC client descriptors available to the service bundle.
+pub struct ClientDescriptors<T>(std::marker::PhantomData<T>);
+impl ClientDescriptors<sdv_golden_rpc_tire_status_rpc::Client> {
+    /// sdv-golden-rpc-tire-status channel
+    pub const SDV_GOLDEN_RPC_TIRE_STATUS: &sdv::mw::clientlib::ClientDescriptor<
+        sdv_golden_rpc_tire_status_rpc::Client,
+    > = &sdv::mw::clientlib::ClientDescriptor::new("sdv-golden-rpc-tire-status")
+        .with_service("sdv.golden.rpc.TireStatus");
 }
 /// Service bundle
 pub struct GoldenTireAlert {
