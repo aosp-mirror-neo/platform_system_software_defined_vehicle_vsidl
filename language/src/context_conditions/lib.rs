@@ -94,6 +94,10 @@ pub use service_bundle_fqn_duplicate::ServiceBundleFqnDuplicate;
 mod proto_descriptor_name_too_long;
 pub use proto_descriptor_name_too_long::ProtoDescriptorNameTooLong;
 
+// Checks that Proto package names are not longer than buffer size
+mod proto_package_name_too_long;
+pub use proto_package_name_too_long::ProtoPackageNameTooLong;
+
 /// Checks that the fully-qualified names of each Protobuf message / RPC service is unique
 mod proto_fqn_duplicate;
 pub use proto_fqn_duplicate::ProtoFqnDuplicate;

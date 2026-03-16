@@ -98,6 +98,8 @@ macro_rules! finding_ids {
             E20F: (0x20F, TopicNameTooLong),
             /// Proto descriptor names must not exceed 127 characters.
             E210: (0x210, ProtoDescriptorNameTooLong),
+            /// Proto package names must not exceed 127 characters.
+            E211: (0x211, ProtoPackageNameTooLong),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),
