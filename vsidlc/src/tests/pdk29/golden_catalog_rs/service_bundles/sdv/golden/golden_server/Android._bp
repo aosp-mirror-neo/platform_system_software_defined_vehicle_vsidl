@@ -32,6 +32,7 @@ rust_library {
         "liblog_rust",
         "libsdv_rs",
         "libfutures",
+        "libsdv_vsidlc_goldens_catalog",
         "libsdv_golden_rpc_tire_status_rpc_rs",
     ],
     apex_available: [
