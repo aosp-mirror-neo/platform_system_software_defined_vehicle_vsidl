@@ -45,24 +45,41 @@ pub(crate) fn write_bytes_to_file(
             let temp_path = temp_file.path();
             fs::write(temp_path, content)?;
 
+            let is_git = Command::new("git")
+                .arg("-C")
+                .arg(dir)
+                .arg("rev-parse")
+                .arg("--is-inside-work-tree")
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false);
+
             let status = if extension == "textproto" {
-                Command::new(format!("{}/tools/repohooks/tools/clang-format.py", top))
-                    .arg("--fix")
-                    .arg("--clang-format")
-                    .arg(format!(
-                        "{}/prebuilts/clang/host/linux-x86/clang-stable/bin/clang-format",
-                        top
-                    ))
-                    .arg("--git-clang-format")
-                    .arg(format!(
-                        "{}/prebuilts/clang/host/linux-x86/clang-stable/bin/git-clang-format",
-                        top
-                    ))
-                    .arg("--style")
-                    .arg("file")
-                    .arg("--working-tree")
-                    .arg(temp_path)
-                    .status()
+                let clang_format_path =
+                    format!("{}/prebuilts/clang/host/linux-x86/clang-stable/bin/clang-format", top);
+                if is_git {
+                    Command::new(format!("{}/tools/repohooks/tools/clang-format.py", top))
+                        .arg("--fix")
+                        .arg("--clang-format")
+                        .arg(clang_format_path)
+                        .arg("--git-clang-format")
+                        .arg(format!(
+                            "{}/prebuilts/clang/host/linux-x86/clang-stable/bin/git-clang-format",
+                            top
+                        ))
+                        .arg("--style")
+                        .arg("file")
+                        .arg("--working-tree")
+                        .arg(temp_path)
+                        .status()
+                } else {
+                    Command::new(clang_format_path)
+                        .arg("-i")
+                        .arg("--style")
+                        .arg("file")
+                        .arg(temp_path)
+                        .status()
+                }
             } else {
                 Command::new(format!("{}/out/host/linux-x86/bin/bpfmt", top))
                     .arg("-w")
