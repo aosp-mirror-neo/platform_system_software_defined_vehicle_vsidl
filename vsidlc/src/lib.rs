@@ -57,6 +57,12 @@ fn generate(
     cli: Cli,
     filegroups: AndroidBpFileGroups,
 ) -> anyhow::Result<()> {
+    purge_output_directories(vsidlc_common_cli, &cli)?;
+
+    crate::rust::generate_middleware(symbol_table, &cli, filegroups)
+}
+
+fn purge_output_directories(vsidlc_common_cli: &VsidlcCommonCli, cli: &Cli) -> anyhow::Result<()> {
     let mut generated_sources_path = vsidlc_common_cli.output_path.clone();
     generated_sources_path.push(crate::rust::GENERATED_RS_SOURCES_DIR);
     if generated_sources_path.exists() && vsidlc_common_cli.purge && generated_sources_path.is_dir()
@@ -65,7 +71,24 @@ fn generate(
         fs::remove_dir_all(generated_sources_path.clone())?;
     }
 
-    crate::rust::generate_middleware(symbol_table, &cli, filegroups)
+    if vsidlc_common_cli.purge && cli.apex {
+        let apex_path = vsidlc_common_cli.output_path.join(crate::rust::APEX_DIR);
+        if apex_path.exists() && apex_path.is_dir() {
+            fs::remove_dir_all(apex_path)?;
+        }
+        let configs_path = vsidlc_common_cli.output_path.join(crate::rust::CONFIGS_DIR);
+        if configs_path.exists() && configs_path.is_dir() {
+            fs::remove_dir_all(configs_path)?;
+        }
+    }
+
+    if vsidlc_common_cli.purge && cli.services {
+        let services_path = vsidlc_common_cli.output_path.join(crate::rust::SERVICES_DIR);
+        if services_path.exists() && services_path.is_dir() {
+            fs::remove_dir_all(services_path)?;
+        }
+    }
+    Ok(())
 }
 
 /// Explains a given error code by printing its documentation.
@@ -232,6 +255,7 @@ pub fn execute(cli: Cli) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::Parser;
 
     #[test]
     fn test_explain_known_error_code() {
@@ -259,5 +283,94 @@ mod tests {
             result.unwrap_err().to_string(),
             "Unknown error code: UNKNOWN_ERROR_CODE. Please provide a valid error code, e.g. E102."
         );
+    }
+
+    #[test]
+    fn test_purge_output_directories() -> anyhow::Result<()> {
+        use crate::rust::{APEX_DIR, CONFIGS_DIR, GENERATED_RS_SOURCES_DIR, SERVICES_DIR};
+        use std::fs;
+        use tempfile::TempDir;
+
+        // GIVEN an output directory with some files
+        let temp_dir = TempDir::new()?;
+        let output_path = temp_dir.path().to_path_buf();
+
+        let gen_rs_path = output_path.join(GENERATED_RS_SOURCES_DIR);
+        let apex_path = output_path.join(APEX_DIR);
+        let configs_path = output_path.join(CONFIGS_DIR);
+        let services_path = output_path.join(SERVICES_DIR);
+
+        fs::create_dir_all(&gen_rs_path)?;
+        fs::create_dir_all(&apex_path)?;
+        fs::create_dir_all(&configs_path)?;
+        fs::create_dir_all(&services_path)?;
+
+        fs::write(gen_rs_path.join("file.rs"), "content")?;
+        fs::write(apex_path.join("file.apex"), "content")?;
+        fs::write(configs_path.join("file.textproto"), "content")?;
+        fs::write(services_path.join("file.rs"), "content")?;
+
+        let vsidlc_common_cli =
+            VsidlcCommonCli { output_path: output_path.clone(), purge: true, ..Default::default() };
+
+        let cli = Cli {
+            purge: true,
+            apex: true,
+            services: true,
+            ..Cli::parse_from(["vsidlc", "--catalog-path", ".", "--output-path", "."])
+        };
+
+        // WHEN purging
+        purge_output_directories(&vsidlc_common_cli, &cli)?;
+
+        // THEN directories are removed
+        assert!(!gen_rs_path.exists());
+        assert!(!apex_path.exists());
+        assert!(!configs_path.exists());
+        assert!(!services_path.exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_purge_output_directories_no_flags() -> anyhow::Result<()> {
+        use crate::rust::{APEX_DIR, CONFIGS_DIR, GENERATED_RS_SOURCES_DIR, SERVICES_DIR};
+        use std::fs;
+        use tempfile::TempDir;
+
+        // GIVEN an output directory with some files
+        let temp_dir = TempDir::new()?;
+        let output_path = temp_dir.path().to_path_buf();
+
+        let gen_rs_path = output_path.join(GENERATED_RS_SOURCES_DIR);
+        let apex_path = output_path.join(APEX_DIR);
+        let configs_path = output_path.join(CONFIGS_DIR);
+        let services_path = output_path.join(SERVICES_DIR);
+
+        fs::create_dir_all(&gen_rs_path)?;
+        fs::create_dir_all(&apex_path)?;
+        fs::create_dir_all(&configs_path)?;
+        fs::create_dir_all(&services_path)?;
+
+        let vsidlc_common_cli =
+            VsidlcCommonCli { output_path: output_path.clone(), purge: true, ..Default::default() };
+
+        let cli = Cli {
+            purge: true,
+            apex: false,
+            services: false,
+            ..Cli::parse_from(["vsidlc", "--catalog-path", ".", "--output-path", "."])
+        };
+
+        // WHEN purging
+        purge_output_directories(&vsidlc_common_cli, &cli)?;
+
+        // THEN only gen_rs is removed
+        assert!(!gen_rs_path.exists());
+        assert!(apex_path.exists());
+        assert!(configs_path.exists());
+        assert!(services_path.exists());
+
+        Ok(())
     }
 }
