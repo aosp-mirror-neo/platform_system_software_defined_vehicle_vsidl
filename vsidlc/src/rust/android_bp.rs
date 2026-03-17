@@ -224,11 +224,19 @@ impl Context {
 
         for rpc_server_symbol in &service_bundle.servers(symbol_table) {
             let rpc_service = rpc_server_symbol.service(symbol_table);
+
+            for proto_dependency in &rpc_service.proto_dependencies {
+                dependencies.insert(proto_dependency.rust_build_target_name.clone().unwrap());
+            }
             dependencies.insert(get_rpc_target_name(rpc_service, symbol_table));
         }
 
         for rpc_client_symbol in &service_bundle.clients(symbol_table) {
             let rpc_service = rpc_client_symbol.service(symbol_table);
+
+            for proto_dependency in &rpc_service.proto_dependencies {
+                dependencies.insert(proto_dependency.rust_build_target_name.clone().unwrap());
+            }
             dependencies.insert(get_rpc_target_name(rpc_service, symbol_table));
         }
 
