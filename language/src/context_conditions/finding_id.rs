@@ -267,7 +267,7 @@ macro_rules! define_error_enum {
             type Error = ();
 
             fn try_from(code: &str) -> Result<Self, Self::Error> {
-                match code {
+                match code.to_uppercase().as_str() {
                     $(stringify!($code) => Ok(FindingId::$name),)*
                     "E000" => Ok(FindingId::Unknown),
                     _ => Err(()),
@@ -308,7 +308,7 @@ macro_rules! define_error_enum {
         /// * `fmt::Result` indicating success or failure of formatting.
         impl std::fmt::Display for FindingId {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "E{:03x}", *self as u32)
+                write!(f, "E{:03X}", *self as u32)
             }
         }
     };
@@ -321,7 +321,7 @@ macro_rules! define_get_explanation_doc {
     ($($(#[$doc:meta])* $code:ident: ($value:literal, $name:ident)),*) => {
         /// Returns the markdown documentation for a given finding ID code.
         pub fn get_explanation_doc(code: &str) -> Option<&'static str> {
-            match code {
+            match code.to_uppercase().as_str() {
                 $(
                     stringify!($code) => Some(include_str!(concat!("docs/", stringify!($code), ".md"))),
                 )*
@@ -343,7 +343,15 @@ mod tests {
             FindingId::try_from("E100").unwrap(),
             FindingId::MultipleRpcServersForSameInterface
         );
+        assert_eq!(
+            FindingId::try_from("e100").unwrap(),
+            FindingId::MultipleRpcServersForSameInterface
+        );
         assert_eq!(FindingId::try_from("E000").unwrap(), FindingId::Unknown);
+        assert_eq!(FindingId::try_from("e000").unwrap(), FindingId::Unknown);
+        assert_eq!(FindingId::try_from("E10A").unwrap(), FindingId::PublicationUnused);
+        assert_eq!(FindingId::try_from("e10a").unwrap(), FindingId::PublicationUnused);
+        assert_eq!(FindingId::try_from("e10d").unwrap(), FindingId::ExistingMainRsDetected);
         assert!(FindingId::try_from("E999").is_err()); // Non-existent code
         assert!(FindingId::try_from("100").is_err()); // Missing 'E' prefix
         assert!(FindingId::try_from("E10G").is_err()); // Invalid hex
@@ -365,12 +373,16 @@ mod tests {
     fn test_display() {
         assert_eq!(FindingId::MultipleRpcServersForSameInterface.to_string(), "E100");
         assert_eq!(FindingId::Unknown.to_string(), "E000");
+        assert_eq!(FindingId::ExistingMainRsDetected.to_string(), "E10D");
     }
 
     #[test]
     fn test_get_explanation_doc_known_error_code() {
         let doc = get_explanation_doc("E101");
         assert!(doc.is_some());
+        let doc_lower = get_explanation_doc("e101");
+        assert!(doc_lower.is_some());
+        assert_eq!(doc, doc_lower);
         assert!(doc.unwrap().contains("E101 is deprecated."));
     }
 

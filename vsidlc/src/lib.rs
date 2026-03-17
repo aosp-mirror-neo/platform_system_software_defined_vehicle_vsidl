@@ -243,6 +243,15 @@ mod tests {
 
         // THEN explanation succeeds
         assert!(result.is_ok());
+
+        // GIVEN a lowercase valid error code
+        let error_code_lower = "e102";
+
+        // WHEN explaining it
+        let result_lower = explain(error_code_lower);
+
+        // THEN explanation succeeds
+        assert!(result_lower.is_ok());
     }
 
     #[test]
