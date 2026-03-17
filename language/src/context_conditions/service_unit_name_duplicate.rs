@@ -149,28 +149,28 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
         let service_bundle_name =
             rpc_server.owning_service_bundle(symbol_table).full_name(symbol_table);
 
-        // 1. Check service unit name
-        let service_unit_name = if rpc_server.service_unit_name.is_empty() {
-            // Validate generated name
-            format!("{}.{}", rpc_server.package(symbol_table), rpc_server.service)
-                .replace('.', "-")
-                .to_kebab_case()
-        } else {
-            // Validate user-defined name
-            rpc_server.service_unit_name.clone()
-        };
-        self.check(
-            service_unit_name.clone(),
-            service_bundle_name.clone(),
-            !IS_PUBLISHER,
-            rpc_server.span.clone().into_option(),
-        );
-
-        // 2. Check channel name (it's also stored as service_unit_name in SD)
-        if !rpc_server.channel.is_empty() && rpc_server.channel != service_unit_name {
+        // 1. Check channel name (it's also stored as service_unit_name in SD)
+        if !rpc_server.channel.is_empty() {
             self.check(
                 rpc_server.channel.clone(),
                 service_bundle_name,
+                !IS_PUBLISHER,
+                rpc_server.span.clone().into_option(),
+            );
+        } else {
+            // 2. Check service unit name
+            let service_unit_name = if rpc_server.service_unit_name.is_empty() {
+                // Validate generated name
+                format!("{}.{}", rpc_server.package(symbol_table), rpc_server.service)
+                    .replace('.', "-")
+                    .to_kebab_case()
+            } else {
+                // Validate user-defined name
+                rpc_server.service_unit_name.clone()
+            };
+            self.check(
+                service_unit_name.clone(),
+                service_bundle_name.clone(),
                 !IS_PUBLISHER,
                 rpc_server.span.clone().into_option(),
             );
@@ -558,6 +558,28 @@ mod tests {
         // When: Executing CoCo
         let mut check = ServiceUnitNameDuplicate::default();
         check.check_symbol_table(linker.symbol_table());
+
+        // Then: Should not find errors
+        assert!(check.is_ok());
+    }
+
+    #[test]
+    fn test_unique_rpc_channel_ok() {
+        // Given: A valid catalog
+        let mut catalog = Catalog::new();
+        catalog
+            .proto_descriptors
+            .extend([vsidl_v1_test_data::DESCRIPTOR_DUMMY_RPC_PROTO_NO_ANNOTATIONS.clone()]);
+        catalog.catalog_vsidl_files.push(vsidl_v1_test_data::VSIDL_RPC_UNIQUE_CHANNEL.clone());
+
+        let mut creator = SymbolTableCreator::new();
+        catalog.accept(&mut creator);
+        let mut linker = SymbolTableLinker::from(creator);
+        linker.execute();
+
+        // When: Executing CoCo
+        let mut check = ServiceUnitNameDuplicate::default();
+        check.check_linked_symbol_table(linker.symbol_table());
 
         // Then: Should not find errors
         assert!(check.is_ok());
