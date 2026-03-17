@@ -343,6 +343,10 @@ impl ContextConditionChecker {
             Box::new(SomeIpEventCapacity::default()),
         )
         .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(SomeIpEventTopicCapacityMandatory::default()),
+        )
+        .add_context_condition(
             SymbolTableState::CreatedNotLinked,
             Box::new(RpcChannelUniquePerService::default()),
         )
