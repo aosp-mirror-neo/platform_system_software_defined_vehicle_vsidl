@@ -84,6 +84,7 @@ impl RpcClientSymbol {
     /// * If the symbol table is not linked.
     pub fn channel<'a>(&self, symbol_table: &'a SymbolTable) -> &'a RpcChannelSymbol {
         symbol_table.panic_if_not_linked();
+        assert!(!symbol_table.uses_pdk29());
         symbol_table.get_rpc_channel_symbol(&self.channel.clone().unwrap()).unwrap()
     }
 

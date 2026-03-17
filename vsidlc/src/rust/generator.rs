@@ -30,6 +30,9 @@ use vsidl_v1_parser::SymbolTable;
 pub const GENERATED_RS_SOURCES_DIR: &str = "generated_rs/";
 pub const SERVICE_BUNDLES_DIR: &str = "service_bundles";
 pub const RPC_DIR: &str = "rpc";
+pub const APEX_DIR: &str = "apex";
+pub const CONFIGS_DIR: &str = "configs";
+pub const SERVICES_DIR: &str = "services";
 
 /// Generate rust middleware for each service bundle. Generated targets are written into respective folder inside `output_path`
 pub fn generate_middleware(
@@ -52,6 +55,8 @@ pub fn generate_middleware(
     {
         chain.execute(&mut generator_state)?;
     }
+
+    generator_state.finding_collector.print_findings();
 
     Ok(())
 }

@@ -64,6 +64,8 @@ macro_rules! finding_ids {
             E10B: (0x10B, AndroidBpDanglingFile),
             /// Catalog is empty or contains only empty .vsidl files
             E10C: (0x10C, EmptyCatalog),
+            /// Existing main.rs detected during service generation
+            E10D: (0x10D, ExistingMainRsDetected),
             // --- ERRORS ---
             // -- Naming Conventions --
             /// User-defined service unit names must be in kebap case. First character is not lowercase letter.
@@ -98,6 +100,8 @@ macro_rules! finding_ids {
             E20F: (0x20F, TopicNameTooLong),
             /// Proto descriptor names must not exceed 127 characters.
             E210: (0x210, ProtoDescriptorNameTooLong),
+            /// Proto package names must not exceed 127 characters.
+            E211: (0x211, ProtoPackageNameTooLong),
             // -- Uniqueness / Name Conflicts --
             /// Multiple publishers are defined for the same multipub type in the same service bundle.
             E300: (0x300, MultiplePublishersSameMultipubTopic),

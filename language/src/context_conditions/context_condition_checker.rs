@@ -521,6 +521,10 @@ impl Default for ContextConditionChecker {
             )
             .add_context_condition(
                 SymbolTableState::NotCreated,
+                Box::new(ProtoPackageNameTooLong::default()),
+            )
+            .add_context_condition(
+                SymbolTableState::NotCreated,
                 Box::new(UniqueUserDefinedServiceUnitNamesPerBundle::default()), // Checks within a single bundle AST node
             )
             .add_context_condition(
