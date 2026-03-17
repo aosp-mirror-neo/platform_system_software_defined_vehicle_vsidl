@@ -17,12 +17,13 @@ use crate::rust::android_bp;
 use crate::rust::generator_step::GeneratorStepExecution;
 use crate::rust::generator_tool_state::GeneratorToolState;
 use crate::rust::service_bundle::{extract_proto_typename_from_unit_type, ServiceBundleContext};
-use crate::util::{write_bytes_to_file, write_rust_file};
+use crate::util::write_bytes_to_file;
 use anyhow::{Ok, Result};
 use serde_derive::Serialize;
 use std::collections::BTreeSet;
 use std::fs;
 use vsidl_v1_parser::service_bundle_symbol::ServiceBundleSource;
+use vsidl_v1_parser::FindingId;
 
 #[derive(Serialize)]
 struct ServicesTemplateData {
@@ -137,13 +138,40 @@ impl GeneratorStepExecution for GenerateServices {
             )?;
 
             let main_rs_content = handlebars.render("services_main_rs", &data)?;
-            write_rust_file(
-                &main_rs_content,
-                &service_dir.join("src/main.rs"),
-                rust_formatter.as_mut(),
-                state.cli.android_bp_formatter,
-                state.cli.textproto_formatter,
-            )?;
+            let formatted_content = rust_formatter.format(&main_rs_content)?;
+
+            let main_rs_path = service_dir.join("src/main.rs");
+            if main_rs_path.exists() {
+                let existing_content = fs::read_to_string(&main_rs_path).unwrap_or_default();
+                if existing_content != formatted_content {
+                    let gen_path = service_dir.join("src/main.rs.new");
+                    state.finding_collector.warn(
+                        FindingId::ExistingMainRsDetected,
+                        format!(
+                            "Warning: {path} already exists. To prevent data loss, the new version was saved to: {gen_path}.\n    \
+                            ACTION REQUIRED:\n    \
+                            Review and merge the changes by running:\n    \
+                            diff -u -p --minimal --color {path} {gen_path}",
+                            path = main_rs_path.display(),
+                            gen_path = gen_path.display()
+                        ),
+                        vec![],
+                    );
+                    write_bytes_to_file(
+                        &formatted_content,
+                        &gen_path,
+                        state.cli.android_bp_formatter,
+                        state.cli.textproto_formatter,
+                    )?;
+                }
+            } else {
+                write_bytes_to_file(
+                    &formatted_content,
+                    &main_rs_path,
+                    state.cli.android_bp_formatter,
+                    state.cli.textproto_formatter,
+                )?;
+            }
         }
 
         Ok(())

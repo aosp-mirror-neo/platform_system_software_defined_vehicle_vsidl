@@ -64,6 +64,8 @@ macro_rules! finding_ids {
             E10B: (0x10B, AndroidBpDanglingFile),
             /// Catalog is empty or contains only empty .vsidl files
             E10C: (0x10C, EmptyCatalog),
+            /// Existing main.rs detected during service generation
+            E10D: (0x10D, ExistingMainRsDetected),
             // --- ERRORS ---
             // -- Naming Conventions --
             /// User-defined service unit names must be in kebap case. First character is not lowercase letter.
