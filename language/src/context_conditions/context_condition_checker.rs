@@ -331,6 +331,10 @@ impl ContextConditionChecker {
             Box::new(UserDefinedNamesOnlyOneTopic::default()), // Checks user_defined_name usage
         )
         .add_context_condition(
+            SymbolTableState::NotCreated,
+            Box::new(SomeIpParameterizationConflict::default()),
+        )
+        .add_context_condition(
             SymbolTableState::CreatedNotLinked,
             Box::new(RpcChannelUniquePerService::default()),
         )

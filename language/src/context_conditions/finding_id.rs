@@ -156,6 +156,8 @@ macro_rules! finding_ids {
             E40A: (0x40A, RpcClientChannelRequiresServerChannel),
             /// RPC channel must only be used by one service
             E40B: (0x40B, RpcChannelUniquePerService),
+            /// SOME/IP sdv_service_unit_parameterization cannot be set if literal topic or channel are used.
+            E40C: (0x40C, SomeIpParameterizationMixedWithLiteralNames),
             // -- Limitations --
             /// Publishers using user-defined names must specify a channel if the type has multiple channels
             E501: (0x501, NoUserDefinedNamesForMultiChannelPublishers),
