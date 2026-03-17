@@ -210,7 +210,13 @@ impl<F: FileProvider> SymbolTableCreator<F> {
     }
 
     fn enter_file_with_package(&mut self, package: String) {
-        let mut current_scope_id = self.global_scope.clone().expect("Global scope must be created");
+        let mut current_scope_id = match self.global_scope.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Global scope must be created before entering a file");
+                return;
+            }
+        };
 
         // Look up the scope of the package or create new scopes if no scopes exist for (parts of) the package
         for part in package.split('.') {
@@ -229,15 +235,18 @@ impl<F: FileProvider> SymbolTableCreator<F> {
 
     fn leave_current_scope_to_enclosing_scope(&mut self) {
         if let Some(current_scope_id) = &self.current_scope_id {
-            self.current_scope_id = Some(
-                self.symbol_table
-                    .get_scope(current_scope_id)
-                    .expect("Current scope should be present")
-                    .enclosing_scope
-                    .clone()
-                    .expect("Enclosing scope should be present")
-                    .clone(),
-            );
+            if let Some(scope) = self.symbol_table.get_scope(current_scope_id) {
+                if let Some(enclosing_scope) = &scope.enclosing_scope {
+                    self.current_scope_id = Some(enclosing_scope.clone());
+                } else {
+                    eprintln!(
+                        "Warning: Enclosing scope should be present for scope {:?}",
+                        current_scope_id
+                    );
+                }
+            } else {
+                eprintln!("Warning: Current scope {:?} should be present", current_scope_id);
+            }
         }
     }
 
@@ -312,28 +321,33 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.message_size_metadata = message_size::get_message_size_metadata(
             &catalog.proto_descriptors.iter().map(|(_, d)| d.clone()).collect(),
         )
-        .unwrap();
+        .unwrap_or_default();
 
         // Find all (transitive) dependencies of the Proto files
         let mut all_proto_files = HashMap::new();
         for (metadata, file_descriptor) in &catalog.proto_descriptors {
-            all_proto_files.insert(
-                file_descriptor.name.as_ref().expect("proto file has no file name").to_string(),
-                (metadata, file_descriptor),
-            );
+            if let Some(name) = &file_descriptor.name {
+                all_proto_files.insert(name.to_string(), (metadata, file_descriptor));
+            } else {
+                eprintln!("Warning: proto file has no file name");
+            }
         }
         self.proto_dependencies = HashMap::new();
         for (_, file_descriptor) in &catalog.proto_descriptors {
-            let filename =
-                file_descriptor.name.clone().expect("Proto file was expected to have a name");
-            self.proto_dependencies.insert(
-                filename.clone(),
-                get_proto_dependencies(filename.clone(), &all_proto_files),
-            );
+            if let Some(filename) = file_descriptor.name.clone() {
+                self.proto_dependencies.insert(
+                    filename.clone(),
+                    get_proto_dependencies(filename.clone(), &all_proto_files),
+                );
+            } else {
+                eprintln!("Warning: Proto file was expected to have a name");
+            }
         }
 
-        self.diagnostics_context =
-            Some(DiagnosticsContext::new(catalog).expect("Failed to create diagnostics context"));
+        match DiagnosticsContext::new(catalog) {
+            Ok(context) => self.diagnostics_context = Some(context),
+            Err(e) => eprintln!("Warning: Failed to create diagnostics context: {}", e),
+        }
     }
 
     fn start_visit_proto_file(&mut self, node: &ProtoFile) {
@@ -354,37 +368,41 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         let mut doc_comments: Vec<String> = vec![];
         if let Ok(proto_content) = self.file_provider.read_to_string(&proto_path) {
             if let Ok(mut parsed_file) = ProtoParser::parse(ProtoRule::proto, &proto_content) {
-                for item in parsed_file.next().unwrap().into_inner() {
-                    if item.as_rule() == ProtoRule::topLevelDef {
-                        let top_level_element = item.into_inner().next().unwrap();
-                        let name = top_level_element
-                            .clone()
-                            .into_inner()
-                            .next()
-                            .unwrap()
-                            .as_str()
-                            .to_string();
-                        let type_ = match top_level_element.as_rule() {
-                            ProtoRule::message => "message",
-                            ProtoRule::enum_ => "enum",
-                            ProtoRule::extend => "extend",
-                            ProtoRule::service => "service",
-                            _ => "",
-                        };
-                        let span = Span {
-                            file_path: proto_path.display().to_string(),
-                            start: top_level_element.as_span().start() as u32,
-                            end: top_level_element.as_span().end() as u32,
-                            ..Default::default()
-                        };
-                        self.current_proto_spans.insert((type_.to_string(), name.clone()), span);
-                        self.current_proto_doc_strings
-                            .insert((type_.to_string(), name), doc_comments.clone().join("\n"));
-                        doc_comments.clear();
-                    } else if item.as_rule() == ProtoRule::COMMENT {
-                        doc_comments.push(Self::extract_comment_text(item));
-                    } else {
-                        doc_comments.clear();
+                if let Some(root) = parsed_file.next() {
+                    for item in root.into_inner() {
+                        if item.as_rule() == ProtoRule::topLevelDef {
+                            if let Some(top_level_element) = item.into_inner().next() {
+                                if let Some(name_pair) =
+                                    top_level_element.clone().into_inner().next()
+                                {
+                                    let name = name_pair.as_str().to_string();
+                                    let type_ = match top_level_element.as_rule() {
+                                        ProtoRule::message => "message",
+                                        ProtoRule::enum_ => "enum",
+                                        ProtoRule::extend => "extend",
+                                        ProtoRule::service => "service",
+                                        _ => "",
+                                    };
+                                    let span = Span {
+                                        file_path: proto_path.display().to_string(),
+                                        start: top_level_element.as_span().start() as u32,
+                                        end: top_level_element.as_span().end() as u32,
+                                        ..Default::default()
+                                    };
+                                    self.current_proto_spans
+                                        .insert((type_.to_string(), name.clone()), span);
+                                    self.current_proto_doc_strings.insert(
+                                        (type_.to_string(), name),
+                                        doc_comments.clone().join("\n"),
+                                    );
+                                    doc_comments.clear();
+                                }
+                            }
+                        } else if item.as_rule() == ProtoRule::COMMENT {
+                            doc_comments.push(Self::extract_comment_text(item));
+                        } else {
+                            doc_comments.clear();
+                        }
                     }
                 }
             }
@@ -418,7 +436,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let message_name = node.name().to_string();
-        let current_scope_id = self.current_scope_id.clone().expect("Package scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Package scope must be set before visiting proto descriptor");
+                return;
+            }
+        };
 
         // Add scope for proto message (anonymous, i.e., without name, because proto messages place all their members in their package)
         let new_scope_id = self.symbol_table.create_scope(message_name.clone());
@@ -478,7 +502,15 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         // function.
         self.message_scope_id = self.current_scope_id.clone();
         self.leave_current_scope_to_enclosing_scope();
-        let current_scope_id = self.current_scope_id.clone().expect("Package scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!(
+                    "Warning: Package scope must be set before visiting proto single pub message"
+                );
+                return;
+            }
+        };
 
         // Add scope for proto message (anonymous, i.e., without name, because proto messages place all their members in their package)
         let new_scope_id = self.symbol_table.create_scope(message_name.clone());
@@ -539,7 +571,15 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         // function.
         self.message_scope_id = self.current_scope_id.clone();
         self.leave_current_scope_to_enclosing_scope();
-        let current_scope_id = self.current_scope_id.clone().expect("Package scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!(
+                    "Warning: Package scope must be set before visiting proto multi pub message"
+                );
+                return;
+            }
+        };
 
         // Add scope for proto message (anonymous, i.e., without name, because proto messages place all their members in their package)
         let new_scope_id = self.symbol_table.create_scope(message_name.clone());
@@ -590,7 +630,15 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let enum_name = node.name().to_string();
-        let current_scope_id = self.current_scope_id.clone().expect("Package scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!(
+                    "Warning: Package scope must be set before visiting proto enum descriptor"
+                );
+                return;
+            }
+        };
 
         // Add scope for proto enum (anonymous, i.e., without name, because proto enums place all their members in their package)
         let new_scope_id = self.symbol_table.create_scope(enum_name.clone());
@@ -625,7 +673,15 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let service_name = node.name().to_string();
-        let current_scope_id = self.current_scope_id.clone().expect("Package scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!(
+                    "Warning: Package scope must be set before visiting proto service descriptor"
+                );
+                return;
+            }
+        };
 
         // Add scope for proto service (anonymous, i.e., without name, because proto services place all their members in their package)
         let new_scope_id = self.symbol_table.create_scope(service_name.clone());
@@ -753,21 +809,29 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let bundle_name = &node.name;
-        let current_scope_id = self.current_scope_id.clone().expect("Package scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Package scope must be set before visiting service bundle");
+                return;
+            }
+        };
 
         // Diagnostics
         // Pass the cached context!
-        let diagnostics_info = match DiagnosticsInfo::from(
-            self.diagnostics_context.as_mut().expect("Diagnostics context must be initialized"),
-            &self.package,
-            node,
-        ) {
-            Ok(info) => info,
-            Err(e) => {
-                eprintln!(
-                    "Warning: Failed to extract diagnostics info for bundle '{}': {}",
-                    node.name, e
-                );
+        let diagnostics_info = match self.diagnostics_context.as_mut() {
+            Some(context) => match DiagnosticsInfo::from(context, &self.package, node) {
+                Ok(info) => info,
+                Err(e) => {
+                    eprintln!(
+                        "Warning: Failed to extract diagnostics info for bundle '{}': {}",
+                        node.name, e
+                    );
+                    None
+                }
+            },
+            None => {
+                eprintln!("Warning: Diagnostics context must be initialized");
                 None
             }
         };
@@ -806,8 +870,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let publisher_name = &node.message;
-        let current_scope_id =
-            self.current_scope_id.clone().expect("Service bundle scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Service bundle scope must be set before visiting publisher");
+                return;
+            }
+        };
 
         // Add symbol for publisher
         let symbol = PublisherSymbol {
@@ -842,15 +911,14 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.symbol_table.add_symbol_to_scope(&current_scope_id, &symbol_id);
 
         // Connect related symbols
-        if let Some(service_bundle_symbol) = self.symbol_table.get_service_bundle_symbol_mut(
-            &self
-                .current_service_bundle_symbol_id
-                .clone()
-                .expect("Service bundle symbol must be set"),
-        ) {
-            service_bundle_symbol.publishers.insert(symbol_id);
-        } else {
-            eprintln!("Could not add publisher symbol to service bundle symbol");
+        if let Some(service_bundle_symbol_id) = self.current_service_bundle_symbol_id.clone() {
+            if let Some(service_bundle_symbol) =
+                self.symbol_table.get_service_bundle_symbol_mut(&service_bundle_symbol_id)
+            {
+                service_bundle_symbol.publishers.insert(symbol_id);
+            } else {
+                eprintln!("Could not add publisher symbol to service bundle symbol");
+            }
         }
     }
 
@@ -859,8 +927,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let subscriber_name = &node.message;
-        let current_scope_id =
-            self.current_scope_id.clone().expect("Service bundle scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Service bundle scope must be set before visiting subscriber");
+                return;
+            }
+        };
 
         // Add symbol for subscriber
         let symbol = SubscriberSymbol {
@@ -895,15 +968,14 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.symbol_table.add_symbol_to_scope(&current_scope_id, &symbol_id);
 
         // Connect related symbols
-        if let Some(service_bundle_symbol) = self.symbol_table.get_service_bundle_symbol_mut(
-            &self
-                .current_service_bundle_symbol_id
-                .clone()
-                .expect("Service bundle symbol must be set"),
-        ) {
-            service_bundle_symbol.subscribers.insert(symbol_id);
-        } else {
-            eprintln!("Could not add subscriber symbol to service bundle symbol");
+        if let Some(service_bundle_symbol_id) = self.current_service_bundle_symbol_id.clone() {
+            if let Some(service_bundle_symbol) =
+                self.symbol_table.get_service_bundle_symbol_mut(&service_bundle_symbol_id)
+            {
+                service_bundle_symbol.subscribers.insert(symbol_id);
+            } else {
+                eprintln!("Could not add subscriber symbol to service bundle symbol");
+            }
         }
     }
 
@@ -912,8 +984,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let service_name = &node.service;
-        let current_scope_id =
-            self.current_scope_id.clone().expect("Service bundle scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Service bundle scope must be set before visiting server");
+                return;
+            }
+        };
 
         // Create RPC channel symbol if it doesn't exist
         let channel_name = node.channel.clone();
@@ -945,15 +1022,14 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.symbol_table.add_symbol_to_scope(&current_scope_id, &symbol_id);
 
         // Connect related symbols
-        if let Some(service_bundle_symbol) = self.symbol_table.get_service_bundle_symbol_mut(
-            &self
-                .current_service_bundle_symbol_id
-                .clone()
-                .expect("Service bundle symbol must be set"),
-        ) {
-            service_bundle_symbol.servers.insert(symbol_id);
-        } else {
-            eprintln!("Could not add RPC server symbol to service bundle symbol");
+        if let Some(service_bundle_symbol_id) = self.current_service_bundle_symbol_id.clone() {
+            if let Some(service_bundle_symbol) =
+                self.symbol_table.get_service_bundle_symbol_mut(&service_bundle_symbol_id)
+            {
+                service_bundle_symbol.servers.insert(symbol_id);
+            } else {
+                eprintln!("Could not add RPC server symbol to service bundle symbol");
+            }
         }
     }
 
@@ -962,8 +1038,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         let service_name = &node.service;
-        let current_scope_id =
-            self.current_scope_id.clone().expect("Service bundle scope must be set");
+        let current_scope_id = match self.current_scope_id.clone() {
+            Some(id) => id,
+            None => {
+                eprintln!("Warning: Service bundle scope must be set before visiting client");
+                return;
+            }
+        };
 
         // Create RPC channel symbol if it doesn't exist
         let channel_name = node.channel.clone();
@@ -995,15 +1076,14 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.symbol_table.add_symbol_to_scope(&current_scope_id, &symbol_id);
 
         // Connect related symbols
-        if let Some(service_bundle_symbol) = self.symbol_table.get_service_bundle_symbol_mut(
-            &self
-                .current_service_bundle_symbol_id
-                .clone()
-                .expect("Service bundle symbol must be set"),
-        ) {
-            service_bundle_symbol.clients.insert(symbol_id);
-        } else {
-            eprintln!("Could not add RPC client symbol to service bundle symbol");
+        if let Some(service_bundle_symbol_id) = self.current_service_bundle_symbol_id.clone() {
+            if let Some(service_bundle_symbol) =
+                self.symbol_table.get_service_bundle_symbol_mut(&service_bundle_symbol_id)
+            {
+                service_bundle_symbol.clients.insert(symbol_id);
+            } else {
+                eprintln!("Could not add RPC client symbol to service bundle symbol");
+            }
         }
     }
 
@@ -1020,13 +1100,15 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             return;
         }
         // after finishing the current vsidl entry, the scope goes back to global
-        self.current_scope_id = Some(
-            self.symbol_table
-                .get_scope(&self.global_scope().unwrap())
-                .expect("Global scope should be present")
-                .id
-                .clone(),
-        );
+        if let Some(global_scope_id) = self.global_scope() {
+            if let Some(scope) = self.symbol_table.get_scope(&global_scope_id) {
+                self.current_scope_id = Some(scope.id.clone());
+            } else {
+                eprintln!("Warning: Global scope should be present");
+            }
+        } else {
+            eprintln!("Warning: Global scope should be present");
+        }
     }
 
     fn end_visit_catalog_vsidl_file(

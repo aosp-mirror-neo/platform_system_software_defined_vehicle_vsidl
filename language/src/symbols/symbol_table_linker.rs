@@ -110,20 +110,22 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoRpcService(_)))
                 .collect();
 
-            links.insert((rpc_server_symbol.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                links.insert((rpc_server_symbol.id().clone(), resolved_symbol.id().clone()));
+            } else {
+                eprintln!("Warning: Unresolved RPC service reference '{}'", rpc_service_name);
+            }
         }
 
         // Create links
         for (vsidl_server, proto_service) in links {
-            let vsidl_server_symbol = self.symbol_table.get_symbol_mut(&vsidl_server);
-            if let SymbolKind::RpcServer(vsidl_rpc_server_symbol) =
-                &mut vsidl_server_symbol.unwrap()
+            if let Some(SymbolKind::RpcServer(vsidl_rpc_server_symbol)) =
+                self.symbol_table.get_symbol_mut(&vsidl_server)
             {
                 vsidl_rpc_server_symbol.provided_service = Some(proto_service.clone());
             }
-            let proto_service_symbol = self.symbol_table.get_symbol_mut(&proto_service);
-            if let SymbolKind::ProtoRpcService(proto_service_symbol) =
-                &mut proto_service_symbol.unwrap()
+            if let Some(SymbolKind::ProtoRpcService(proto_service_symbol)) =
+                self.symbol_table.get_symbol_mut(&proto_service)
             {
                 proto_service_symbol.servers.push(vsidl_server);
             }
@@ -160,20 +162,22 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoRpcService(_)))
                 .collect();
             // Cases where resolved_symbols does not have length 1 are catched by a context condition
-            links.insert((rpc_client_symbol.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                links.insert((rpc_client_symbol.id().clone(), resolved_symbol.id().clone()));
+            } else {
+                eprintln!("Warning: Unresolved RPC service reference '{}'", rpc_service_name);
+            }
         }
 
         // Create links
         for (vsidl_client, proto_service) in links {
-            let vsidl_client_symbol = self.symbol_table.get_symbol_mut(&vsidl_client);
-            if let SymbolKind::RpcClient(vsidl_rpc_client_symbol) =
-                &mut vsidl_client_symbol.unwrap()
+            if let Some(SymbolKind::RpcClient(vsidl_rpc_client_symbol)) =
+                self.symbol_table.get_symbol_mut(&vsidl_client)
             {
                 vsidl_rpc_client_symbol.requested_service = Some(proto_service.clone());
             }
-            let proto_service_symbol = self.symbol_table.get_symbol_mut(&proto_service);
-            if let SymbolKind::ProtoRpcService(proto_service_symbol) =
-                &mut proto_service_symbol.unwrap()
+            if let Some(SymbolKind::ProtoRpcService(proto_service_symbol)) =
+                self.symbol_table.get_symbol_mut(&proto_service)
             {
                 proto_service_symbol.clients.push(vsidl_client);
             }
@@ -199,9 +203,8 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::RpcChannel(_)))
                 .collect();
 
-            if !resolved_symbols.is_empty() {
-                server_links
-                    .insert((rpc_server_symbol.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                server_links.insert((rpc_server_symbol.id().clone(), resolved_symbol.id().clone()));
             }
         }
 
@@ -240,9 +243,8 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::RpcChannel(_)))
                 .collect();
 
-            if !resolved_symbols.is_empty() {
-                client_links
-                    .insert((rpc_client_symbol.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                client_links.insert((rpc_client_symbol.id().clone(), resolved_symbol.id().clone()));
             }
         }
 
@@ -292,20 +294,22 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoPublication(_)))
                 .collect();
 
-            links.insert((publisher.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                links.insert((publisher.id().clone(), resolved_symbol.id().clone()));
+            } else {
+                eprintln!("Warning: Unresolved publication reference '{}'", publication_type);
+            }
         }
 
         // Create links
         for (vsidl_publisher, proto_publication) in links {
-            let vsidl_publisher_symbol = self.symbol_table.get_symbol_mut(&vsidl_publisher);
-            if let SymbolKind::Publisher(vsidl_publisher_symbol) =
-                &mut vsidl_publisher_symbol.unwrap()
+            if let Some(SymbolKind::Publisher(vsidl_publisher_symbol)) =
+                self.symbol_table.get_symbol_mut(&vsidl_publisher)
             {
                 vsidl_publisher_symbol.publication = Some(proto_publication.clone());
             }
-            let proto_publication_symbol = self.symbol_table.get_symbol_mut(&proto_publication);
-            if let SymbolKind::ProtoPublication(proto_publication_symbol) =
-                &mut proto_publication_symbol.unwrap()
+            if let Some(SymbolKind::ProtoPublication(proto_publication_symbol)) =
+                self.symbol_table.get_symbol_mut(&proto_publication)
             {
                 proto_publication_symbol.publishers.push(vsidl_publisher);
             }
@@ -335,7 +339,9 @@ impl SymbolTableLinker {
             let mut channels_enum_name = proto_publication_symbol.channels_enum_name();
 
             let unique_enum_name = Some(UNIQUE_ENUM.to_string());
-            if channels_enum_name.is_none() || channels_enum_name.clone().unwrap().is_empty() {
+            if channels_enum_name.is_none()
+                || channels_enum_name.as_ref().map(|s| s.is_empty()).unwrap_or(true)
+            {
                 channels_enum_name = unique_enum_name;
             }
 
@@ -349,11 +355,11 @@ impl SymbolTableLinker {
                         .into_iter()
                         .filter(|symbol| matches!(symbol, SymbolKind::ProtoEnum(_)))
                         .collect();
-                    if !resolved_symbols.is_empty() {
+                    if let Some(resolved_symbol) = resolved_symbols.first() {
                         // In well-defined Proto files, there can only be one topics enum per publication
                         links.insert((
                             proto_publication_symbol.id().clone(),
-                            resolved_symbols[0].id().clone(),
+                            resolved_symbol.id().clone(),
                         ));
                     }
                 }
@@ -362,9 +368,8 @@ impl SymbolTableLinker {
 
         // Create links
         for (proto_publication, proto_enum) in links {
-            let proto_publication_symbol = self.symbol_table.get_symbol_mut(&proto_publication);
-            if let SymbolKind::ProtoPublication(proto_publication_symbol) =
-                &mut proto_publication_symbol.unwrap()
+            if let Some(SymbolKind::ProtoPublication(proto_publication_symbol)) =
+                self.symbol_table.get_symbol_mut(&proto_publication)
             {
                 proto_publication_symbol.channels_enum = Some(proto_enum.clone());
             }
@@ -401,8 +406,10 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoPublication(_)))
                 .collect();
 
-            if !resolved_symbols.is_empty() {
-                links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                links.insert((subscriber.id().clone(), resolved_symbol.id().clone()));
+            } else {
+                eprintln!("Warning: Unresolved publication reference '{}'", publication_type);
             }
         }
 
@@ -451,14 +458,17 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoMessage(_)))
                 .collect();
 
-            links.insert((publisher.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                links.insert((publisher.id().clone(), resolved_symbol.id().clone()));
+            } else {
+                eprintln!("Warning: Unresolved message reference '{}'", message_type);
+            }
         }
 
         // Create links
         for (vsidl_publisher, proto_message) in links {
-            let vsidl_publisher_symbol = self.symbol_table.get_symbol_mut(&vsidl_publisher);
-            if let SymbolKind::Publisher(vsidl_publisher_symbol) =
-                &mut vsidl_publisher_symbol.unwrap()
+            if let Some(SymbolKind::Publisher(vsidl_publisher_symbol)) =
+                self.symbol_table.get_symbol_mut(&vsidl_publisher)
             {
                 vsidl_publisher_symbol.message = Some(proto_message.clone());
             }
@@ -495,8 +505,10 @@ impl SymbolTableLinker {
                 .filter(|symbol| matches!(symbol, SymbolKind::ProtoMessage(_)))
                 .collect();
 
-            if !resolved_symbols.is_empty() {
-                links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+            if let Some(resolved_symbol) = resolved_symbols.first() {
+                links.insert((subscriber.id().clone(), resolved_symbol.id().clone()));
+            } else {
+                eprintln!("Warning: Unresolved message reference '{}'", message_type);
             }
         }
 
@@ -616,8 +628,8 @@ impl SymbolTableLinker {
                     .filter(|symbol| matches!(symbol, SymbolKind::Topic(_)))
                     .collect();
 
-                if !resolved_symbols.is_empty() {
-                    links.insert((subscriber.id().clone(), resolved_symbols[0].id().clone()));
+                if let Some(resolved_symbol) = resolved_symbols.first() {
+                    links.insert((subscriber.id().clone(), resolved_symbol.id().clone()));
                 }
             }
         }
