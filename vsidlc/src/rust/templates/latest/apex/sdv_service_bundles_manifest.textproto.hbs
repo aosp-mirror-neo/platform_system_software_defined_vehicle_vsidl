@@ -36,11 +36,7 @@ sdv_service_bundle_metadata {
   name: "{{this.name}}"
   version_number: 0
   version_name: "0.1 Alpha"
-  {{#if ../use_permissions}}
   authorization_policy_path: "etc/permissions/{{this.full_name}}.permissions"
-  {{else}}
-  authorization_policy_path: "etc/acls/{{../package_name}}.acl"
-  {{/if}}
   orchestration_config_path: "etc/orch/{{this.short_name}}.config"
   native_library_path: "lib64/libsdv_lm_{{this.snake_case_name}}.so"
 }
