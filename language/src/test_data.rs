@@ -510,6 +510,7 @@ vsidl_file!(
     "tests_vsidl_v1/vsidl",
     "proto_message_without_annotation.vsidl"
 );
+vsidl_file!(VSIDL_RPC_UNIQUE_CHANNEL, "tests_vsidl_v1/vsidl", "rpc_unique_channel.vsidl");
 
 /*
     PROTOBUF FILE DESCRIPTORS
