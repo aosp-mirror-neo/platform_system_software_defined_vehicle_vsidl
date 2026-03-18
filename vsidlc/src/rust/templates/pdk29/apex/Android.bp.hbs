@@ -42,6 +42,7 @@ apex {
         // ACLs policy file.
         "{{package_name}}.acls.config",
         // Orchestration configuration.
+        "{{snake_case package_name}}_orchestration_configurations",
         {{#each service_bundles}}
         "{{../base_package_name}}.{{this.short_name}}.orch.config",
         {{/each}}
