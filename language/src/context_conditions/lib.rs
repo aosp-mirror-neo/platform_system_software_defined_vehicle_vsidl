@@ -198,5 +198,17 @@ pub use rpc_channel_naming_convention::RpcChannelNamingConvention;
 mod rpc_channel_mandatory;
 pub use rpc_channel_mandatory::RpcChannelMandatory;
 
+mod someip_parameterization_conflict;
+pub use someip_parameterization_conflict::SomeIpParameterizationConflict;
+
+mod someip_mapping_type_conflict;
+pub use someip_mapping_type_conflict::SomeIpMappingTypeConflict;
+
+mod someip_event_capacity;
+pub use someip_event_capacity::SomeIpEventCapacity;
+
+mod someip_event_topic_capacity_mandatory;
+pub use someip_event_topic_capacity_mandatory::SomeIpEventTopicCapacityMandatory;
+
 mod rpc_channel_unique_per_service;
 pub use rpc_channel_unique_per_service::RpcChannelUniquePerService;

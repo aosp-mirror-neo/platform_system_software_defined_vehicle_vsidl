@@ -42,6 +42,7 @@ apex {
         // ACLs policy file.
         "{{package_name}}.acls.config",
         // Orchestration configuration.
+        "{{snake_case package_name}}_orchestration_configurations",
         {{#each service_bundles}}
         "{{../base_package_name}}.{{this.short_name}}.orch.config",
         {{/each}}
@@ -49,6 +50,7 @@ apex {
     // Name of the apex_key module that provides the private key to sign the APEX bundle.
     key: "{{package_name}}.apex_key",
     updatable: true,
+    min_sdk_version: "35",
     product_specific: true,
 }
 

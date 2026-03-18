@@ -179,7 +179,7 @@ async fn sdv_main(
     {{/each}}
 
     {{#each rpc_clients}}
-    if let Some(client) = create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(comms.as_ref()).await {
+    if let Some(client) = create_{{snake_case unit_type.proto_type_name}}_{{snake_case this.channel}}_rpc_client_with_retry(comms.as_ref()).await {
         futures_join_set.spawn(handle_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_client(client));
     }
     {{/each}}
@@ -229,37 +229,37 @@ async fn handle_{{snake_case ../this.0.unit_type.proto_type_name}}_{{snake_case 
 {{/each}}
 
 {{#each rpc_clients}}
-async fn create_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_rpc_client_with_retry(comms: &dyn sdv::mw::Communicate) -> Option<{{this.unit_type.crate_name}}::Client> {
+async fn create_{{snake_case unit_type.proto_type_name}}_{{snake_case this.channel}}_rpc_client_with_retry(comms: &dyn sdv::mw::Communicate) -> Option<{{this.unit_type.crate_name}}::Client> {
     use sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case ../service_bundle_name}}::client;
 
-    info!("Waiting for {{this.unit_type.proto_type_name}} to be available...");
+    info!("Waiting for {{this.channel}} to be available...");
     let Ok(mut event_stream) = clientlib::create_server_registration_event_stream(
         comms,
-        client::Descriptor::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.unit_type.proto_type_name}},
+        client::Descriptor::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.channel}},
     )
     .await
     else {
-        error!("Failed to create registration event stream for {{this.unit_type.proto_type_name}}");
+        error!("Failed to create registration event stream for {{this.channel}}");
         return None;
     };
 
     while let Some(event) = event_stream.next().await {
         if event == Availability::Available {
-            info!("{{this.unit_type.proto_type_name}} is available.");
+            info!("{{this.channel}} is available.");
             break;
         }
     }
 
-    info!("Creating client for {{this.unit_type.proto_type_name}}");
+    info!("Creating client for {{this.channel}}");
     match clientlib::create_rpc_client(
         comms,
-        client::Descriptor::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.unit_type.proto_type_name}},
+        client::Descriptor::<{{this.unit_type.crate_name}}::Client>::{{upper_snake_case this.channel}},
         sdv::mw::ClientOptions::default(),
     )
     .await {
         Ok(client) => Some(client),
         Err(e) => {
-            error!("Failed to create client for {{this.unit_type.proto_type_name}}: {e:?}");
+            error!("Failed to create client for {{this.channel}}: {e:?}");
             None
         }
     }
