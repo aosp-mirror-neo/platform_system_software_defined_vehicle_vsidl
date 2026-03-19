@@ -54,9 +54,4 @@ service_bundle {
         message: "TireTemperature"
         topic: "temperature-front-left"
     }
-
-    subscriber {
-        message: "TirePressure"
-        topic: "pressure-front-right"
-    }
 }
