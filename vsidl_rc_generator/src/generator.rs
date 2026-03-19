@@ -23,8 +23,10 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use protobuf::descriptor::FileDescriptorProto;
 use protobuf::Message;
+use vsidl_v1_parser::proto_message_symbol::ProtoMessageSymbol;
 use vsidl_v1_parser::proto_publication_symbol::ProtoPublicationSymbol;
 use vsidl_v1_parser::proto_rpc_service_symbol::ProtoRpcServiceSymbol;
+use vsidl_v1_parser::publisher_symbol::PublisherSymbol;
 use vsidl_v1_parser::service_bundle_symbol::ServiceBundleSymbol;
 
 use crate::android_bp;
@@ -57,6 +59,16 @@ struct UnitType {
     pub typename: String,
 }
 
+impl From<(&ProtoMessageSymbol, &SymbolTable)> for UnitType {
+    fn from((symbol, symbol_table): (&ProtoMessageSymbol, &SymbolTable)) -> UnitType {
+        UnitType {
+            package: symbol.package(symbol_table).clone(),
+            service_bundle: "".to_string(), // deprecated
+            typename: symbol.name().clone(),
+        }
+    }
+}
+
 impl From<(&ProtoPublicationSymbol, &SymbolTable)> for UnitType {
     fn from((symbol, symbol_table): (&ProtoPublicationSymbol, &SymbolTable)) -> UnitType {
         UnitType {
@@ -86,6 +98,7 @@ pub fn generate_runtime_config(
     output_path: &Path,
     service_bundle_name: Option<String>,
     package_name: Option<String>,
+    target_api: &str,
 ) -> anyhow::Result<()> {
     match (service_bundle_name.as_deref(), package_name.as_deref()) {
         (Some(bundle_name), Some(pkg_name)) => generate_for_package_and_bundle(
@@ -95,13 +108,16 @@ pub fn generate_runtime_config(
             output_path,
             bundle_name,
             pkg_name,
+            target_api,
         ),
 
         (None, Some(pkg_name)) => {
-            generate_for_package(catalog, symbol_table, bundles, output_path, pkg_name)
+            generate_for_package(catalog, symbol_table, bundles, output_path, pkg_name, target_api)
         }
 
-        (None, None) => generate_for_all_bundles(catalog, symbol_table, bundles, output_path),
+        (None, None) => {
+            generate_for_all_bundles(catalog, symbol_table, bundles, output_path, target_api)
+        }
 
         (Some(bundle_name), None) => generate_for_package_and_bundle(
             catalog,
@@ -110,6 +126,7 @@ pub fn generate_runtime_config(
             output_path,
             bundle_name,
             try_find_package_for_bundle_config(symbol_table, bundles, bundle_name)?.as_str(),
+            target_api,
         ),
     }
 }
@@ -145,6 +162,7 @@ fn generate_for_package_and_bundle(
     output_path: &Path,
     service_bundle_name: &str,
     package_name: &str,
+    target_api: &str,
 ) -> anyhow::Result<()> {
     let filtered_bundles = bundles
         .iter()
@@ -170,6 +188,7 @@ fn generate_for_package_and_bundle(
         symbol_table,
         &filtered_bundles,
         &output_path.join("vsidl-config.binpb"),
+        target_api,
     )?;
 
     generate_diagnostics_declaration_config_to_file(
@@ -187,6 +206,7 @@ fn generate_for_package(
     bundles: &[ServiceBundleSymbol],
     output_path: &Path,
     package_name: &str,
+    target_api: &str,
 ) -> anyhow::Result<()> {
     let filtered_bundles = bundles
         .iter()
@@ -203,6 +223,7 @@ fn generate_for_package(
         symbol_table,
         &filtered_bundles,
         &output_path.join("vsidl-config.binpb"),
+        target_api,
     )?;
 
     Ok(())
@@ -214,6 +235,7 @@ fn generate_for_all_bundles(
     symbol_table: &SymbolTable,
     bundles: &Vec<ServiceBundleSymbol>,
     output_path: &Path,
+    target_api: &str,
 ) -> anyhow::Result<()> {
     let print_path: &_ = &output_path.display();
     eprintln!("Generating runtime configuration to folder '{print_path}'");
@@ -223,6 +245,7 @@ fn generate_for_all_bundles(
         symbol_table,
         bundles,
         &output_path.join("vsidl-config.binpb"),
+        target_api,
     )?;
     generate_some_ip_mapping_to_file(catalog, &output_path.join("someip-config.binpb"))?;
 
@@ -248,8 +271,10 @@ fn generate_vsidl_runtime_config_to_file(
     symbol_table: &SymbolTable,
     bundles: &Vec<ServiceBundleSymbol>,
     file_path: &Path,
+    target_api: &str,
 ) -> anyhow::Result<()> {
-    let runtime_config_proto = generate_vsidl_runtime_config(catalog, symbol_table, bundles)?;
+    let runtime_config_proto =
+        generate_vsidl_runtime_config(catalog, symbol_table, bundles, target_api)?;
     write_proto_to_file(runtime_config_proto, file_path)
 }
 
@@ -257,6 +282,7 @@ fn generate_vsidl_runtime_config(
     catalog: &Catalog,
     symbol_table: &SymbolTable,
     bundles: &Vec<ServiceBundleSymbol>,
+    target_api: &str,
 ) -> anyhow::Result<VsidlRuntimeConfig> {
     let mut vsidl_runtime_config = VsidlRuntimeConfig::new();
     let mut unit_type_cache = HashMap::new();
@@ -265,6 +291,7 @@ fn generate_vsidl_runtime_config(
             service_bundle_symbol.clone(),
             symbol_table,
             &mut unit_type_cache,
+            target_api,
         );
     }
     for (unit_type, archetype_metadata) in &unit_type_cache {
@@ -296,6 +323,7 @@ fn generate_vsidl_runtime_config(
             &proto_filename_to_descriptor,
             &mut fd_protos_cache,
             &mut message_cache,
+            target_api,
         );
     }
 
@@ -319,20 +347,36 @@ fn add_schemas_from_service_bundle(
     proto_filename_to_descriptor: &HashMap<String, FileDescriptorProto>,
     fd_protos_cache: &mut HashMap<String, FileDescriptorProto>,
     message_cache: &mut HashMap<String, String>,
+    target_api: &str,
 ) {
     for publisher in &service_bundle.publishers(symbol_table) {
+        let (message_name, proto_file_name) = if target_api == "latest" {
+            let message = publisher.message(symbol_table);
+            (message.full_name(symbol_table), message.proto_metadata.filename.clone())
+        } else {
+            let publication = publisher.publication(symbol_table);
+            (publication.full_name(symbol_table), publication.proto_metadata.filename.clone())
+        };
+
         add_fd_protos_from_publication(
-            publisher.publication(symbol_table),
-            symbol_table,
+            message_name,
+            proto_file_name,
             proto_filename_to_descriptor,
             fd_protos_cache,
             message_cache,
         );
     }
     for subscriber in &service_bundle.subscribers(symbol_table) {
+        let (message_name, proto_file_name) = if target_api == "latest" {
+            let message = subscriber.message(symbol_table);
+            (message.full_name(symbol_table), message.proto_metadata.filename.clone())
+        } else {
+            let publication = subscriber.publication(symbol_table);
+            (publication.full_name(symbol_table), publication.proto_metadata.filename.clone())
+        };
         add_fd_protos_from_publication(
-            subscriber.publication(symbol_table),
-            symbol_table,
+            message_name,
+            proto_file_name,
             proto_filename_to_descriptor,
             fd_protos_cache,
             message_cache,
@@ -479,14 +523,12 @@ fn fill_file_descriptor_and_dependencies(
 }
 
 fn add_fd_protos_from_publication(
-    publication: &ProtoPublicationSymbol,
-    symbol_table: &SymbolTable,
+    message_name: String,
+    proto_file_name: String,
     proto_filename_to_descriptor: &HashMap<String, FileDescriptorProto>,
     fd_protos_cache: &mut HashMap<String, FileDescriptorProto>,
     message_cache: &mut HashMap<String, String>,
 ) {
-    let message_name = publication.full_name(symbol_table);
-    let proto_file_name = publication.proto_metadata.filename.clone();
     if WELLKNOWN_PROTOS_TO_DESCRIPTOR.get(&proto_file_name).is_none() {
         message_cache.insert(message_name, proto_file_name.clone());
     }
@@ -560,19 +602,37 @@ fn add_unit_types_from_service_bundle(
     service_bundle: ServiceBundleSymbol,
     symbol_table: &SymbolTable,
     unit_type_cache: &mut HashMap<UnitType, Archetype_metadata>,
+    target_api: &str,
 ) {
     for publisher in &service_bundle.publishers(symbol_table) {
         add_unit_type_from_publication_definition(
-            publisher.publication(symbol_table),
+            publisher,
             symbol_table,
             unit_type_cache,
+            target_api,
         );
     }
     for subscriber in &service_bundle.subscribers(symbol_table) {
+        let any_publisher = if target_api == "latest" {
+            subscriber
+                .topic_symbols(symbol_table)
+                .iter()
+                .find_map(|topic_symbol| topic_symbol.publishers(symbol_table).first().cloned())
+                .expect("subscriber has a publisher in valid catalogs")
+        } else {
+            subscriber
+                .publication(symbol_table)
+                .publishers(symbol_table)
+                .first()
+                .cloned()
+                .expect("subscriber has a publisher in valid catalogs")
+        };
+
         add_unit_type_from_publication_definition(
-            subscriber.publication(symbol_table),
+            any_publisher,
             symbol_table,
             unit_type_cache,
+            target_api,
         );
     }
     for server in &service_bundle.servers(symbol_table) {
@@ -603,15 +663,32 @@ fn add_unit_type_from_rpc_definition(
 }
 
 fn add_unit_type_from_publication_definition(
-    publication: &ProtoPublicationSymbol,
+    publisher: &PublisherSymbol,
     symbol_table: &SymbolTable,
     unit_type_cache: &mut HashMap<UnitType, Archetype_metadata>,
+    target_api: &str,
 ) {
-    let unit_type = UnitType::from((publication, symbol_table));
-
-    let message_name = format!("{}.{}", &publication.package(symbol_table), &unit_type.typename);
-    if let std::collections::hash_map::Entry::Vacant(entry) = unit_type_cache.entry(unit_type) {
-        insert_topic_metadata(message_name, publication, entry);
+    if target_api == "latest" {
+        let message = publisher.message(symbol_table);
+        let unit_type = UnitType::from((message, symbol_table));
+        let message_name = format!("{}.{}", &message.package(symbol_table), &unit_type.typename);
+        if let std::collections::hash_map::Entry::Vacant(entry) = unit_type_cache.entry(unit_type) {
+            insert_topic_metadata_from_message(
+                message_name,
+                publisher,
+                symbol_table,
+                message,
+                entry,
+            );
+        }
+    } else {
+        let publication = publisher.publication(symbol_table);
+        let unit_type = UnitType::from((publication, symbol_table));
+        let message_name =
+            format!("{}.{}", &publication.package(symbol_table), &unit_type.typename);
+        if let std::collections::hash_map::Entry::Vacant(entry) = unit_type_cache.entry(unit_type) {
+            insert_topic_metadata(message_name, publication, entry);
+        }
     }
 }
 
@@ -626,6 +703,41 @@ fn insert_topic_metadata(
     topic_metadata.message_count = publication.message_count;
     topic_metadata.field_size_constraint = publication
         .message_size
+        .size_constraints
+        .iter()
+        .map(|(k, v)| {
+            let mut size_constraint = FieldSizeConstraint::new();
+            let repeated_max_count = v.repeated_max_count.unwrap_or(0);
+            let variable_type_max_size = v.variable_type_max_size.unwrap_or(0);
+            size_constraint.repeated_max_count = repeated_max_count as u32;
+            size_constraint.variable_type_max_size = variable_type_max_size as u32;
+            (k.clone(), size_constraint)
+        })
+        .collect::<HashMap<String, FieldSizeConstraint>>();
+    let unit_type_archetype = Archetype_metadata::TopicMetadata(topic_metadata);
+    entry.insert(unit_type_archetype);
+}
+
+fn insert_topic_metadata_from_message(
+    message_name: String,
+    publisher: &PublisherSymbol,
+    symbol_table: &SymbolTable,
+    message: &ProtoMessageSymbol,
+    entry: VacantEntry<UnitType, Archetype_metadata>,
+) {
+    let message_size = message.max_size.clone().unwrap();
+    let max_message_count = publisher
+        .message(symbol_table)
+        .publishers(symbol_table)
+        .into_iter()
+        .map(|publisher| publisher.capacity)
+        .max()
+        .expect("Expect publisher to be defined");
+    let mut topic_metadata = TopicMetadata::new();
+    topic_metadata.message_name = message_name;
+    topic_metadata.message_size = message_size.size as u32;
+    topic_metadata.message_count = max_message_count;
+    topic_metadata.field_size_constraint = message_size
         .size_constraints
         .iter()
         .map(|(k, v)| {
@@ -687,6 +799,7 @@ pub fn generate_runtime_config_prebuilts(
     filegroup: &str,
     dependencies: &[&std::path::Path],
     documentation_lines: &Vec<String>,
+    target_api: &str,
 ) -> anyhow::Result<()> {
     let mut tt = TinyTemplate::new();
     tt.add_template("android_bp", include_str!("templates/android_bp.tpl"))?;
@@ -718,6 +831,7 @@ pub fn generate_runtime_config_prebuilts(
             dependencies,
             has_someip,
             documentation_lines,
+            target_api,
             &tt,
         )
         .as_bytes(),
@@ -801,6 +915,8 @@ mod test {
         DescriptorProto, FieldDescriptorProto, FileDescriptorProto,
     };
 
+    const LEGACY_API: &str = "pdk29";
+
     static TIRE_PACKAGE: &str = "sdv.transmission";
     static TIRE_BUNDLE: &str = "Manager";
     static TIRE_TYPE: &str = "TirePressure";
@@ -850,6 +966,7 @@ mod test {
             dir.path(),
             None, // Generate for all bundles
             None, // No package filter
+            LEGACY_API,
         )
         .expect("generate_runtime_config failed");
 
@@ -1149,7 +1266,7 @@ mod test {
     fn build_catalog() -> Catalog {
         let test_cli = build_test_vsidlc();
         test_cli
-            .create_catalog(Some(Path::new("./").to_path_buf()))
+            .create_catalog_using_pest(Some(Path::new("./").to_path_buf()))
             .expect("Unable to create catalog")
     }
 
@@ -1171,6 +1288,157 @@ mod test {
             .collect();
         bundles.sort_by_key(|sb| sb.file_path.clone());
         (bundles, symbol_table)
+    }
+
+    fn build_test_vsidlc_soa() -> VsidlcCommonCli {
+        VsidlcCommonCli {
+            catalog_path: Path::new("src/tests/soa/catalog/").to_path_buf(),
+            dependency_catalog_path: [].to_vec(),
+            target_api: "latest".to_string(),
+            ..Default::default()
+        }
+    }
+
+    fn build_catalog_soa() -> Catalog {
+        let test_cli = build_test_vsidlc_soa();
+        test_cli
+            .create_catalog(Some(Path::new("./").to_path_buf()))
+            .expect("Unable to create catalog")
+    }
+
+    fn form_bundles_soa(catalog: &Catalog) -> (Vec<ServiceBundleSymbol>, SymbolTable) {
+        let test_cli = build_test_vsidlc_soa();
+        let symbol_table = test_cli
+            .create_symbol_table_from_catalog(catalog)
+            .map_err(|e| {
+                eprintln!("Printing error before panic: {:#}", e);
+                e // return the error back to the chain so expect() sees it
+            })
+            .expect("Input files could not be compiled");
+        let mut bundles: Vec<ServiceBundleSymbol> = symbol_table
+            .get_all_service_bundle_symbols()
+            .iter()
+            .filter(|bundle| bundle.source == ServiceBundleSource::CATALOG)
+            .cloned()
+            .cloned()
+            .collect();
+        bundles.sort_by_key(|sb| sb.file_path.clone());
+        (bundles, symbol_table)
+    }
+
+    fn generate_and_read_vsidl_config_soa(
+        catalog: &Catalog,
+        symbol_table: &SymbolTable,
+        bundles: &Vec<ServiceBundleSymbol>,
+    ) -> anyhow::Result<VsidlRuntimeConfig> {
+        let dir = tempdir().expect("Failed to create temp dir for test");
+        generate_runtime_config(catalog, symbol_table, bundles, dir.path(), None, None, "latest")
+            .expect("generate_runtime_config failed");
+        let config_path = dir.path().join("vsidl-config.binpb");
+        read_proto_from_file(&config_path)
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_succeeds() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN/THEN
+        assert!(generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles).is_ok());
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_generates_expected_unit_type_mappings() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN
+        let vsidl_config = generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles)
+            .expect("Failed to generate VSIDL runtime config");
+
+        // THEN
+        assert_eq!(vsidl_config.unit_type_mapping.len(), 2);
+        println!("{:?}", vsidl_config.unit_type_mapping);
+        assert_that!(
+            vsidl_config.unit_type_mapping,
+            contains_each![
+                eq(&UnitTypeDescriptorMapping {
+                    package_name: "sdv.tests.soa.transmission".to_string(),
+                    service_bundle_name: "".to_string(), // deprecated
+                    type_name: "TirePressure".to_string(),
+                    archetype_metadata: Some(Archetype_metadata::TopicMetadata(TopicMetadata {
+                        message_name: "sdv.tests.soa.transmission.TirePressure".to_string(),
+                        message_size: 6,
+                        message_count: 124,
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                }),
+                eq(&UnitTypeDescriptorMapping {
+                    package_name: "sdv.tests.soa.transmission".to_string(),
+                    service_bundle_name: "".to_string(),
+                    type_name: "TireTemperature".to_string(),
+                    archetype_metadata: Some(Archetype_metadata::TopicMetadata(TopicMetadata {
+                        message_name: "sdv.tests.soa.transmission.TireTemperature".to_string(),
+                        message_size: 6,
+                        message_count: 4,
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_generates_expected_message_descriptor_mappings() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN
+        let vsidl_config = generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles)
+            .expect("Failed to generate VSIDL runtime config");
+
+        // THEN
+        assert_eq!(vsidl_config.descriptor_mapping.len(), 2);
+        assert_that!(
+            vsidl_config.descriptor_mapping,
+            contains_each![
+                eq(&MessageDescriptorMapping {
+                    message_name: "sdv.tests.soa.transmission.TirePressure".to_string(),
+                    file_name: "tire.proto".to_string(),
+                    ..Default::default()
+                }),
+                eq(&MessageDescriptorMapping {
+                    message_name: "sdv.tests.soa.transmission.TireTemperature".to_string(),
+                    file_name: "tire.proto".to_string(),
+                    ..Default::default()
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_generate_vsidl_runtime_config_soa_generates_expected_file_descriptor_protos() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+        let (bundles, symbol_table) = form_bundles_soa(&catalog);
+
+        // WHEN
+        let vsidl_config = generate_and_read_vsidl_config_soa(&catalog, &symbol_table, &bundles)
+            .expect("Failed to generate VSIDL runtime config");
+
+        // THEN
+        assert_eq!(vsidl_config.file_descriptor_proto.len(), 1);
+        let descriptor_names = vsidl_config
+            .file_descriptor_proto
+            .iter()
+            .map(|fd_proto| fd_proto.name.clone().unwrap())
+            .collect::<Vec<String>>();
+        assert_that!(descriptor_names, contains_each![eq(&TIRE_PROTO_NAME.to_string()),]);
     }
 
     #[test]
@@ -1334,8 +1602,15 @@ mod test {
         let (bundles, symbol_table) = form_bundles(&catalog);
 
         // WHEN
-        let result =
-            generate_runtime_config(&catalog, &symbol_table, &bundles, dir.path(), None, None);
+        let result = generate_runtime_config(
+            &catalog,
+            &symbol_table,
+            &bundles,
+            dir.path(),
+            None,
+            None,
+            LEGACY_API,
+        );
 
         // THEN
         assert!(result.is_ok());
@@ -1361,6 +1636,7 @@ mod test {
             dir.path(),
             Some(bundle_name.clone()),
             None,
+            LEGACY_API,
         );
 
         // THEN
@@ -1387,6 +1663,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             None,
+            LEGACY_API,
         );
 
         // THEN
@@ -1522,6 +1799,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -1659,6 +1937,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -1743,6 +2022,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -1850,6 +2130,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -1926,6 +2207,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -2027,6 +2309,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -2132,6 +2415,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             None,
+            LEGACY_API,
         );
 
         // THEN
@@ -2156,6 +2440,7 @@ mod test {
             dir.path(),
             Some(bundle_name.clone()),
             Some(package_name.clone()),
+            LEGACY_API,
         );
 
         // THEN
@@ -2181,6 +2466,7 @@ mod test {
             dir.path(),
             None,
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -2205,6 +2491,7 @@ mod test {
             dir.path(),
             None, // No specific bundle
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -2308,6 +2595,7 @@ mod test {
             dir.path(),
             None, // No specific bundle
             Some(package_name),
+            LEGACY_API,
         );
 
         // THEN
@@ -2380,6 +2668,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             None, // Package is None
+            LEGACY_API,
         );
 
         // THEN
@@ -2409,6 +2698,7 @@ mod test {
             dir.path(),
             Some(bundle_name),
             None, // Package is None
+            LEGACY_API,
         );
 
         // THEN

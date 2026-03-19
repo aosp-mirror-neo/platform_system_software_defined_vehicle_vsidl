@@ -1,4 +1,4 @@
-// Copyright (C) 2025 The Android Open Source Project
+// Copyright (C) 2026 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
-        " --package-name diagnostics",
+        " --package-name diagnostics" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -80,7 +81,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
-        " --package-name sdv.transmission",
+        " --package-name sdv.transmission" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -112,7 +114,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
-        " --package-name sdv.transmission2",
+        " --package-name sdv.transmission2" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -144,7 +147,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
-        " --package-name someip.rpc",
+        " --package-name someip.rpc" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -189,7 +193,8 @@ genrule {
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --package-name diagnostics" +
-        " --service-bundle-name DiagnosticsService",
+        " --service-bundle-name DiagnosticsService" +
+        " --target-api pdk29",
     out: [
         "diagnostics-config.binpb",
         "vsidl-config.binpb",
@@ -223,7 +228,8 @@ genrule {
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --package-name someip.rpc" +
-        " --service-bundle-name HelloService",
+        " --service-bundle-name HelloService" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -256,7 +262,8 @@ genrule {
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --package-name sdv.transmission2" +
-        " --service-bundle-name OtherManager",
+        " --service-bundle-name OtherManager" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -289,7 +296,8 @@ genrule {
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --package-name sdv.transmission2" +
-        " --service-bundle-name OtherMonitor",
+        " --service-bundle-name OtherMonitor" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -322,7 +330,8 @@ genrule {
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --package-name sdv.transmission" +
-        " --service-bundle-name Manager",
+        " --service-bundle-name Manager" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -355,7 +364,8 @@ genrule {
         " --output-path $(genDir) " +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
         " --package-name sdv.transmission" +
-        " --service-bundle-name Monitor",
+        " --service-bundle-name Monitor" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -397,7 +407,8 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/vsidl_rc_generator/src/tests/catalog" +
         " --dependency-catalog-path system/software_defined_vehicle/automotive_services/diagnostics/vsidl/v1" +
-        " --output-path $(genDir) ",
+        " --output-path $(genDir) " +
+        " --target-api pdk29",
     out: [
         "someip-config.binpb",
         "vsidl-config.binpb",

@@ -72,6 +72,11 @@ pub struct Cli {
     /// Ignore context condition findings with the given IDs
     #[arg(short, long)]
     ignore: Vec<String>,
+
+    /// Optional. Specifies the target API level for code generation.
+    /// Examples: "latest", "pdk29".
+    #[arg(long, default_value = "pdk29")]
+    pub target_api: String,
 }
 
 impl From<Cli> for VsidlcCommonCli {
@@ -81,6 +86,7 @@ impl From<Cli> for VsidlcCommonCli {
             output_path: cli.output_path,
             ignore: cli.ignore,
             dependency_catalog_path: cli.dependency_catalog_path,
+            target_api: cli.target_api,
             ..Default::default()
         }
     }
@@ -139,7 +145,7 @@ pub fn execute(cli: Cli) -> anyhow::Result<()> {
         cli.dependency_catalog_path.iter().map(PathBuf::as_path).collect();
 
     let vcli = VsidlcCommonCli::from(cli.clone());
-    let mut catalog = vcli.create_catalog(cli.vsidl_path.clone())?;
+    let mut catalog = vcli.create_catalog_using_pest(cli.vsidl_path.clone())?;
     RemoveNonGoogleOptions::traverse(&mut catalog);
     let catalog = catalog; // make catalog immutable
     let symbol_table = vcli.create_symbol_table_from_catalog(&catalog)?;
@@ -168,7 +174,6 @@ pub fn execute(cli: Cli) -> anyhow::Result<()> {
             "When running in RuntimeConfigPrebuilts mode, at filegroup must be specified"
         ));
     }
-
     match cli.variant {
         Variant::RuntimeConfig => crate::generator::generate_runtime_config(
             &catalog,
@@ -177,6 +182,7 @@ pub fn execute(cli: Cli) -> anyhow::Result<()> {
             output_path,
             service_bundle_name,
             package_name,
+            &cli.target_api,
         )?,
         Variant::RuntimeConfigPrebuilts => crate::generator::generate_runtime_config_prebuilts(
             cli.catalog_path.as_path(),
@@ -190,6 +196,7 @@ pub fn execute(cli: Cli) -> anyhow::Result<()> {
                 "This file was generated using the following command:".to_owned(),
                 get_cli_command_string(&cli),
             ],
+            &cli.target_api,
         )?,
     };
 
