@@ -16,6 +16,21 @@
 
 use crate::lsp::shadow_workspace::ShadowWorkspace;
 use protobuf::MessageField;
+use vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::{
+    publication_mapping::TopicMapping as SomeIpTopicMapping,
+    rpc_interface_mapping::RpcChannelMapping as SomeIpRpcChannelMapping,
+    PublicationMapping as SomeIpPublicationMapping,
+    RpcInterfaceMapping as SomeIpRpcInterfaceMapping,
+};
+use vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::{
+    event::GroupEventPart as SomeIpGroupEventPart, event::SimpleEvent as SomeIpSimpleEvent,
+    RpcInterface as SomeIpRpcInterface,
+};
+use vsidl_v1::someip::some_ip_mapping::{
+    sdv_type_mapping::ServiceOrientedMapping as SomeIpServiceOrientedMapping,
+    SdvTypeMapping as SomeIpSdvTypeMapping,
+};
+use vsidl_v1::someip::SomeIpMapping;
 use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::{Client, Publisher, Server, Subscriber};
 use vsidl_v1::syntax::{BuildConfiguration, ServiceBundle, VsidlEntry};
@@ -109,5 +124,83 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.span);
         self.update_message_field_span(&mut node.target_name_span);
         self.update_message_field_span(&mut node.skip_codegen_span);
+    }
+
+    fn start_visit_someip_mapping(&mut self, node: &mut SomeIpMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.someip_service_mapping_span);
+        self.update_message_field_span(&mut node.sdv_type_mapping_span);
+    }
+
+    fn start_visit_someip_sdv_type_mapping(&mut self, node: &mut SomeIpSdvTypeMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.unit_type_span);
+        self.update_message_field_span(&mut node.someip_service_id_span);
+        self.update_message_field_span(&mut node.version_major_span);
+        self.update_message_field_span(&mut node.version_minor_span);
+        self.update_message_field_span(&mut node.offered_interface_span);
+        self.update_message_field_span(&mut node.offered_topic_span);
+        self.update_spans(&mut node.service_unit_mapping_span);
+        self.update_message_field_span(&mut node.service_oriented_mapping_span);
+    }
+
+    fn start_visit_someip_service_oriented_mapping(
+        &mut self,
+        node: &mut SomeIpServiceOrientedMapping,
+    ) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.rpc_interface_mapping_span);
+        self.update_message_field_span(&mut node.publication_mapping_span);
+    }
+
+    fn start_visit_someip_rpc_interface_mapping(&mut self, node: &mut SomeIpRpcInterfaceMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.offered_interface_span);
+        self.update_spans(&mut node.rpc_channel_mapping_span);
+    }
+
+    fn start_visit_someip_rpc_channel_mapping(&mut self, node: &mut SomeIpRpcChannelMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.channel_span);
+        self.update_message_field_span(&mut node.instance_id_span);
+    }
+
+    fn start_visit_someip_publication_mapping(&mut self, node: &mut SomeIpPublicationMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.offered_topic_span);
+        self.update_spans(&mut node.topic_mapping_span);
+    }
+
+    fn start_visit_someip_topic_mapping(&mut self, node: &mut SomeIpTopicMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.topic_span);
+        self.update_message_field_span(&mut node.instance_id_span);
+        self.update_spans(&mut node.fire_and_forget_method_span);
+    }
+
+    fn start_visit_someip_rpc_interface(&mut self, node: &mut SomeIpRpcInterface) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.sdv_unit_type_span);
+        self.update_message_field_span(&mut node.service_unit_span);
+        self.update_spans(&mut node.method_span);
+        self.update_message_field_span(&mut node.channel_span);
+    }
+
+    fn start_visit_someip_simple_event(&mut self, node: &mut SomeIpSimpleEvent) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.sdv_unit_type_span);
+        self.update_message_field_span(&mut node.service_unit_span);
+        self.update_message_field_span(&mut node.type_definition_span);
+        self.update_message_field_span(&mut node.message_translation_mode_span);
+        self.update_message_field_span(&mut node.topic_span);
+        self.update_message_field_span(&mut node.capacity_span);
+    }
+
+    fn start_visit_someip_group_event_part(&mut self, node: &mut SomeIpGroupEventPart) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.sdv_unit_type_span);
+        self.update_message_field_span(&mut node.service_unit_span);
+        self.update_message_field_span(&mut node.topic_span);
+        self.update_message_field_span(&mut node.capacity_span);
     }
 }

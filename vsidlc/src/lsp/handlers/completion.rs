@@ -384,6 +384,13 @@ impl LanguageConfig {
                     false,
                 ),
                 ("method", true, &[], Some("RPC methods available on this service"), false),
+                (
+                    "channel",
+                    false,
+                    &[],
+                    Some("Unique identifier for the RPC communication path"),
+                    false,
+                ),
             ],
             Rule::some_ip_method | Rule::some_ip_sdv_method => vec![
                 ("procedure", false, &[], Some("SDV procedure name"), false),
@@ -432,6 +439,14 @@ impl LanguageConfig {
                     Some("Message translation mode (REFLECTION, INTERPRET_AS_BYTES)"),
                     false,
                 ),
+                ("topic", false, &[], Some("Many-to-Many Message Bus"), false),
+                (
+                    "capacity",
+                    false,
+                    &[],
+                    Some("Maximum number of messages the publication queue can hold"),
+                    false,
+                ),
             ],
             Rule::some_ip_group_event => vec![
                 ("type_definition", true, &[], Some("SOME/IP data format definition"), false),
@@ -447,6 +462,14 @@ impl LanguageConfig {
                     Some("Maps SOME/IP field names to SDV field names"),
                     false,
                 ),
+                ("topic", false, &[], Some("Many-to-Many Message Bus"), false),
+                (
+                    "capacity",
+                    false,
+                    &[],
+                    Some("Maximum number of messages the publication queue can hold"),
+                    false,
+                ),
             ],
             Rule::some_ip_sdv_type_mapping => vec![
                 ("unit_type", true, &[], Some("Unit type being mapped"), false),
@@ -456,6 +479,52 @@ impl LanguageConfig {
                 ("offered_interface", true, &[], Some("Mapping for SDV RPC Unit Type"), false),
                 ("offered_topic", true, &[], Some("Mapping for SDV Topic Unit Type"), false),
                 ("service_unit_mapping", true, &[], Some("Mappings for SDV service units"), false),
+                (
+                    "service_oriented_mapping",
+                    true,
+                    &[],
+                    Some("SOA Mappings for SDV service units"),
+                    false,
+                ),
+            ],
+            Rule::some_ip_service_oriented_mapping => vec![
+                ("rpc_interface_mapping", true, &[], Some("Mapping for SDV RPC Unit Type"), false),
+                ("publication_mapping", true, &[], Some("Mapping for SDV Topic Unit Type"), false),
+            ],
+            Rule::some_ip_rpc_interface_mapping => vec![
+                ("offered_interface", true, &[], Some("Mapping for offered RPC interfaces"), false),
+                (
+                    "rpc_channel_mapping",
+                    true,
+                    &["channel", "instance_id"],
+                    Some("Mapping for RPC channels"),
+                    false,
+                ),
+            ],
+            Rule::some_ip_rpc_channel_mapping => vec![
+                (
+                    "channel",
+                    false,
+                    &[],
+                    Some("Unique identifier for the RPC communication path"),
+                    false,
+                ),
+                ("instance_id", false, &[], Some("SOME/IP Instance ID"), false),
+            ],
+            Rule::some_ip_publication_mapping => vec![
+                ("offered_topic", true, &[], Some("Mapping for offered SOME/IP topics"), false),
+                (
+                    "topic_mapping",
+                    true,
+                    &["topic", "instance_id"],
+                    Some("Mapping for topics"),
+                    false,
+                ),
+            ],
+            Rule::some_ip_topic_mapping => vec![
+                ("topic", false, &[], Some("Many-to-Many Message Bus"), false),
+                ("instance_id", false, &[], Some("SOME/IP Instance ID"), false),
+                ("fire_and_forget_method", true, &[], Some("List of FireAndForget methods"), false),
             ],
             Rule::some_ip_sdv_offered_interface => {
                 vec![("method", true, &[], Some("RPC methods available on this service"), false)]
@@ -812,7 +881,13 @@ impl LanguageConfig {
             "interface" | "service" => SymbolCompletionType::ProtoRpcService,
             "topic" => SymbolCompletionType::Topic,
             "channel" | "instance" => {
-                if matches!(parent, Rule::server_body | Rule::client_body) {
+                if matches!(
+                    parent,
+                    Rule::server_body
+                        | Rule::client_body
+                        | Rule::some_ip_offered_interface
+                        | Rule::some_ip_rpc_channel_mapping
+                ) {
                     SymbolCompletionType::RpcChannel
                 } else {
                     SymbolCompletionType::PubSubChannel
@@ -849,6 +924,11 @@ impl LanguageConfig {
                     | Rule::server_body
                     | Rule::client_body
                     | Rule::vsidl_file
+                    | Rule::some_ip_offered_interface
+                    | Rule::some_ip_simple_event
+                    | Rule::some_ip_event_part
+                    | Rule::some_ip_rpc_channel_mapping
+                    | Rule::some_ip_topic_mapping
             ),
             _ => false,
         }
@@ -1119,7 +1199,18 @@ impl<'a> CompletionSession<'a> {
         // 1. Try AST
         for pair in hierarchy.iter().rev() {
             let rule = pair.as_rule();
-            if matches!(rule, Rule::publisher | Rule::subscriber | Rule::server | Rule::client) {
+            if matches!(
+                rule,
+                Rule::publisher
+                    | Rule::subscriber
+                    | Rule::server
+                    | Rule::client
+                    | Rule::some_ip_offered_interface
+                    | Rule::some_ip_simple_event
+                    | Rule::some_ip_event_part
+                    | Rule::some_ip_sdv_type_mapping
+            ) {
+                // Standard blocks
                 if let Some(type_pair) = pair.clone().into_inner().flatten().find(|p| {
                     matches!(
                         p.as_rule(),
@@ -1132,6 +1223,45 @@ impl<'a> CompletionSession<'a> {
                     return Some(
                         type_pair.into_inner().as_str().trim().trim_matches('"').to_string(),
                     );
+                }
+
+                // SOME/IP blocks: concatenate package_name and type_name from some_ip_unit_type_ref
+                if let Some(unit_ref) = pair
+                    .clone()
+                    .into_inner()
+                    .flatten()
+                    .find(|p| p.as_rule() == Rule::some_ip_unit_type_ref)
+                {
+                    let mut pkg = String::new();
+                    let mut type_name = String::new();
+                    for inner in unit_ref.into_inner() {
+                        match inner.as_rule() {
+                            Rule::some_ip_unit_type_ref_package_name => {
+                                pkg = inner
+                                    .into_inner()
+                                    .next()
+                                    .unwrap()
+                                    .as_str()
+                                    .trim_matches('"')
+                                    .to_string();
+                            }
+                            Rule::some_ip_unit_type_ref_type_name => {
+                                type_name = inner
+                                    .into_inner()
+                                    .next()
+                                    .unwrap()
+                                    .as_str()
+                                    .trim_matches('"')
+                                    .to_string();
+                            }
+                            _ => {}
+                        }
+                    }
+                    if !pkg.is_empty() && !type_name.is_empty() {
+                        return Some(format!("{}.{}", pkg, type_name));
+                    } else if !type_name.is_empty() {
+                        return Some(type_name);
+                    }
                 }
             }
         }
