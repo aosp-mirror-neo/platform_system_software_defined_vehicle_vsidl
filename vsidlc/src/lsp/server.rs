@@ -37,7 +37,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use vsidl_v1_parser::file_provider::{DiskFileProvider, FileProvider};
-use vsidl_v1_parser::{Catalog, SymbolTable};
+use vsidl_v1_parser::{Catalog, SymbolTable, TargetApi};
 
 /// Starts the VSIDL Language Server Protocol (LSP) server.
 ///
@@ -259,11 +259,11 @@ fn handle_completion(state: &ServerState, req: Request) -> Result<Option<serde_j
     let params: CompletionParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position.text_document.uri;
     let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
-    let (key, _) = resolve_context(&path, &state.cli);
+    let (key, cli_template) = resolve_context(&path, &state.cli);
 
     let mut contexts = state.lock_contexts();
     let context = contexts.entry(key).or_insert_with(|| CatalogContext {
-        cli: state.cli.clone(),
+        cli: cli_template,
         symbol_table: SymbolTable::default(),
         catalog: Catalog::new(),
         last_valid_symbol_table: None,
@@ -351,14 +351,21 @@ fn process_document_internal(
     let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
     let (context_key, cli_template) = resolve_context(&path, &state.cli);
 
-    let context = contexts.entry(context_key).or_insert_with(|| CatalogContext {
-        cli: cli_template,
-        symbol_table: SymbolTable::default(),
-        catalog: Catalog::new(),
-        last_valid_symbol_table: None,
-        active_findings: HashMap::new(),
-        shadow_workspace: None,
-        recovered_syntax_errors: HashMap::new(),
+    let context = contexts.entry(context_key).or_insert_with(|| {
+        let mut symbol_table = SymbolTable::default();
+        match cli_template.target_api.as_str() {
+            "latest" => symbol_table.set_target_api(TargetApi::Latest),
+            _ => symbol_table.set_target_api(TargetApi::Pdk29),
+        }
+        CatalogContext {
+            cli: cli_template,
+            symbol_table,
+            catalog: Catalog::new(),
+            last_valid_symbol_table: None,
+            active_findings: HashMap::new(),
+            shadow_workspace: None,
+            recovered_syntax_errors: HashMap::new(),
+        }
     });
 
     // Initialize shadow workspace if needed

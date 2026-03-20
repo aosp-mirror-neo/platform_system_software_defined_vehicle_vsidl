@@ -639,7 +639,7 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
     use vsidl_v1_parser::file_provider::DiskFileProvider;
-    use vsidl_v1_parser::Catalog;
+    use vsidl_v1_parser::{Catalog, SymbolTable};
 
     #[test]
     fn test_is_in_main_catalog() {
@@ -654,9 +654,15 @@ mod tests {
             disk_fallback: DiskFileProvider,
         };
 
+        let mut symbol_table = SymbolTable::default();
+        match cli.target_api.as_str() {
+            "latest" => symbol_table.set_target_api(vsidl_v1_parser::TargetApi::Latest),
+            _ => symbol_table.set_target_api(vsidl_v1_parser::TargetApi::Pdk29),
+        }
+
         let mut context = CatalogContext {
             cli: cli.clone(),
-            symbol_table: Default::default(),
+            symbol_table,
             catalog: Catalog::new(),
             last_valid_symbol_table: None,
             active_findings: HashMap::new(),

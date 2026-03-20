@@ -42,14 +42,21 @@ pub(crate) fn get_symbol_table_for_file<'a>(
         (PathBuf::default(), cli.clone())
     };
 
-    let context = contexts.entry(context_key).or_insert_with(|| CatalogContext {
-        cli: context_cli,
-        symbol_table: SymbolTable::default(),
-        catalog: Catalog::new(),
-        last_valid_symbol_table: None,
-        active_findings: HashMap::new(),
-        shadow_workspace: None,
-        recovered_syntax_errors: HashMap::new(),
+    let context = contexts.entry(context_key).or_insert_with(|| {
+        let mut symbol_table = SymbolTable::default();
+        match context_cli.target_api.as_str() {
+            "latest" => symbol_table.set_target_api(vsidl_v1_parser::TargetApi::Latest),
+            _ => symbol_table.set_target_api(vsidl_v1_parser::TargetApi::Pdk29),
+        }
+        CatalogContext {
+            cli: context_cli,
+            symbol_table,
+            catalog: Catalog::new(),
+            last_valid_symbol_table: None,
+            active_findings: HashMap::new(),
+            shadow_workspace: None,
+            recovered_syntax_errors: HashMap::new(),
+        }
     });
 
     context.last_valid_symbol_table.as_ref().unwrap_or(&context.symbol_table)
