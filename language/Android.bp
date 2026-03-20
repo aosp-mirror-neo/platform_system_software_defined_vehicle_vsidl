@@ -39,6 +39,7 @@ rust_defaults {
         "libsdv_comms_id_validator",
         "libtermcolor",
         "libpest",
+        "libsdv_proto_utils",
     ],
     proc_macros: [
         "libpest_derive",
@@ -305,22 +306,6 @@ rust_test_host {
         "libvsidl_v1_pest_parser",
         "libvsidl_v1_context_conditions",
     ],
-    defaults: [
-        "vsidl_v1_test_defaults@rust_defaults",
-    ],
-}
-
-rust_test_host {
-    name: "sdv_core_vsidl_unit_vsidl_catalog_size_computation_test",
-    srcs: [
-        "src/message_size.rs",
-    ],
-    test_suites: [
-        "sdv-host-unit-tests",
-    ],
-    test_options: {
-        unit_test: true,
-    },
     defaults: [
         "vsidl_v1_test_defaults@rust_defaults",
     ],

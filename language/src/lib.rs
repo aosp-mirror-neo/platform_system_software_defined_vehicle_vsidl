@@ -27,8 +27,6 @@ pub mod constants;
 pub mod diagnostics_types;
 /// Utilities for accessing the file system
 pub mod fs_utils;
-/// Calculation of message sizes
-pub mod message_size;
 /// Utilities for constructing names
 pub mod name_utils;
 /// Extracts all unit type form a catalog and dependencies
