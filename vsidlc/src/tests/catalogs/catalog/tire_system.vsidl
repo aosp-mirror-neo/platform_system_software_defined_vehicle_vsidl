@@ -70,24 +70,28 @@ service_bundle {
         event {
             id: "event"
             extended_data_message_name: "sdv.golden.TIREPressure"
+            topic: "event-topic"
         }
 
         event {
             id: "event2"
             extended_data_message_name: "sdv.golden.TIREPressure"
             service_unit_name: "second-event"
+            topic: "event2-topic"
         }
 
         event {
             id: "event.with.dot"
             extended_data_message_name: "sdv.golden.TIREPressure"
             fault_listener_mask: 0x3
+            topic: "event-with-dot-topic"
         }
 
         event {
             id: "EVENT.WITH.UPPERCASE"
             extended_data_message_name: "sdv.golden.TIREPressure"
             fault_listener_mask: 0x3
+            topic: "event-with-uppercase-topic"
         }
 
         routine {
