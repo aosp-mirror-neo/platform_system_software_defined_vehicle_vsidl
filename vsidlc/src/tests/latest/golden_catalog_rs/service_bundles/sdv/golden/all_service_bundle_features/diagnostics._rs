@@ -51,6 +51,7 @@ impl Diagnostics {
                         .publication_name(
                             "com-android-sdv-diagnostics-event-event-event1",
                         )
+                        .topic("event1-topic")
                         .data_size(11)
                         .register_reflection_metadata(true)
                         .build()?,

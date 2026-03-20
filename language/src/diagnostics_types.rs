@@ -185,6 +185,8 @@ pub struct EventInfo {
     ///
     /// Either user-defined or generated based on event id.
     pub publisher_unit_name: String,
+    /// Specific topic on which the event is being published.
+    pub topic: String,
 }
 
 impl EventInfo {
@@ -205,6 +207,7 @@ impl EventInfo {
                 .get_message_by_full_name(&event_proto.extended_data_message_name)?,
             fault_listener_mask: event_proto.fault_listener_mask,
             publisher_unit_name,
+            topic: event_proto.topic.clone(),
         })
     }
 }

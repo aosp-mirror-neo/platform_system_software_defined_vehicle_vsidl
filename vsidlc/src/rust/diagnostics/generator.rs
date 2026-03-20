@@ -18,6 +18,7 @@ use serde_derive::Serialize;
 use vsidl_v1_parser::{
     service_bundle_symbol::ServiceBundleSymbol, DataItemInfo, DiagnosticsInfo,
     DiagnosticsProtoMessage, EventInfo, InputOutputControlDataInfo, MethodInfo, RoutineInfo,
+    SymbolTable,
 };
 
 #[derive(Serialize)]
@@ -27,18 +28,20 @@ struct EventContext<'a> {
     publisher_field_name: String,
     payload_size: usize,
     service_unit_name: &'a String,
+    topic_name: Option<&'a String>,
     has_fault_listener: bool,
     fault_listener_handler_name: String,
 }
 
 impl<'a> EventContext<'a> {
-    pub(self) fn from(event_info: &'a EventInfo) -> Self {
+    pub(self) fn new(event_info: &'a EventInfo, symbol_table: &SymbolTable) -> Self {
         EventContext {
             id: &event_info.id,
             full_message_name: full_message_name(&event_info.extended_data_message),
             publisher_field_name: format!("{}_event_publisher", to_rust_safe(&event_info.id)),
             payload_size: event_info.extended_data_message.message_size.size,
             service_unit_name: &event_info.publisher_unit_name,
+            topic_name: if symbol_table.uses_pdk29() { None } else { Some(&event_info.topic) },
             has_fault_listener: event_info.fault_listener_mask != 0,
             fault_listener_handler_name: to_rust_safe_handler_name(&event_info.id),
         }
@@ -134,11 +137,15 @@ struct DiagnosticsContext<'a> {
 }
 
 impl<'a> DiagnosticsContext<'a> {
-    pub(self) fn from_symbol(service_bundle_symbol: &'a ServiceBundleSymbol) -> Self {
+    pub(self) fn from_symbol(
+        service_bundle_symbol: &'a ServiceBundleSymbol,
+        symbol_table: &SymbolTable,
+    ) -> Self {
         Self::from_internal(
             &service_bundle_symbol.name,
             service_bundle_symbol.diagnostics_info.as_ref(),
             service_bundle_symbol.register_reflection_metadata,
+            symbol_table,
         )
     }
 
@@ -146,10 +153,11 @@ impl<'a> DiagnosticsContext<'a> {
         service_bundle_name: &'a str,
         diagnostics_info: Option<&'a DiagnosticsInfo>,
         register_reflection_metadata: bool,
+        symbol_table: &SymbolTable,
     ) -> Self {
         let events: Vec<_> = diagnostics_info
             .as_ref()
-            .map(|info| info.events.iter().map(EventContext::from).collect())
+            .map(|info| info.events.iter().map(|e| EventContext::new(e, symbol_table)).collect())
             .unwrap_or_default();
 
         let has_fault_listeners = events.iter().any(|event| event.has_fault_listener);
@@ -176,8 +184,15 @@ impl<'a> DiagnosticsContext<'a> {
     }
 }
 
-pub fn render_symbol(service_bundle: ServiceBundleSymbol, handlebars: &Handlebars) -> String {
-    render_diagnostics_context(&DiagnosticsContext::from_symbol(&service_bundle), handlebars)
+pub fn render_symbol(
+    service_bundle: ServiceBundleSymbol,
+    symbol_table: &SymbolTable,
+    handlebars: &Handlebars,
+) -> String {
+    render_diagnostics_context(
+        &DiagnosticsContext::from_symbol(&service_bundle, symbol_table),
+        handlebars,
+    )
 }
 
 fn render_diagnostics_context(
