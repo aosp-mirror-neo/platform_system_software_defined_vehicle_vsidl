@@ -536,7 +536,7 @@ impl LanguageConfig {
                 (
                     "event",
                     true,
-                    &[],
+                    if uses_pdk29 { &[] } else { &["topic"] },
                     Some("Diagnostic event and fault listener declaration"),
                     false,
                 ),
@@ -599,6 +599,13 @@ impl LanguageConfig {
                     false,
                     &[],
                     Some("Service unit name of event publisher"),
+                    false,
+                ),
+                (
+                    "topic",
+                    false,
+                    &[],
+                    Some("Specific topic on which the event is published"),
                     false,
                 ),
             ],
@@ -848,6 +855,7 @@ impl LanguageConfig {
                     | Rule::subscriber_body
                     | Rule::server_body
                     | Rule::client_body
+                    | Rule::diagnostics_event_body
                     | Rule::vsidl_file
             ),
             _ => false,

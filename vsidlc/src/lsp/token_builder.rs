@@ -212,6 +212,7 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::diagnostics_event_extended_data_message_name
         | Rule::diagnostics_event_fault_listener_mask
         | Rule::diagnostics_event_service_unit_name
+        | Rule::diagnostics_event_topic
 
         // --- VHAL Properties ---
         | Rule::vhal_data_source_unit_type
