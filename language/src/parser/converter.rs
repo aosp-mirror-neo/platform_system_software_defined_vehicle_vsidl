@@ -477,6 +477,9 @@ pub fn convert_to_diagnostics_event(pair: Pair<Rule>) -> diagnostics_declaration
             Rule::diagnostics_event_service_unit_name => {
                 event.service_unit_name = unquote(get_inner_str(item));
             }
+            Rule::diagnostics_event_topic => {
+                event.topic = unquote(get_inner_str(item));
+            }
             _ => (),
         }
     }
