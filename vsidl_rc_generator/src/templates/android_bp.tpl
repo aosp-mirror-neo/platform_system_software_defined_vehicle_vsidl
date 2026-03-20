@@ -67,7 +67,8 @@ genrule \{
 {{- for dependency in dependencies }}
         " --dependency-catalog-path {dependency}" +
 {{- endfor }}
-        " --package-name {package}",
+        " --package-name {package}" +
+        " --target-api {target_api}",
     out: [
         "vsidl-config.binpb",
     ],
@@ -120,7 +121,8 @@ genrule \{
         " --dependency-catalog-path {dependency}" +
 {{- endfor }}
         " --package-name {bundle.package}" +
-        " --service-bundle-name {bundle.name}",
+        " --service-bundle-name {bundle.name}" +
+        " --target-api {target_api}",
     out: [
 {{- if bundle.has_diagnostics }}
         "diagnostics-config.binpb",
@@ -172,7 +174,8 @@ genrule \{
 {{- for dependency in dependencies }}
         " --dependency-catalog-path {dependency}" +
 {{- endfor }}
-        " --output-path $(genDir) ",
+        " --output-path $(genDir) " +
+        " --target-api {target_api}",
     out: [
 {{- if package_contains_some_ip }}
         "someip-config.binpb",
