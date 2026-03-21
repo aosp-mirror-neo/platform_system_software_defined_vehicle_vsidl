@@ -13,18 +13,38 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-impl Channel<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
+impl PublisherDescriptors<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
     {{#each this.1}}
     /// Publication channel '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
-    pub const {{upper_snake_case this.channel_name}}: &Self = &Self {
-        _proto: std::marker::PhantomData,
-        name: "{{this.channel_name}}",
-        service_unit: "{{this.service_unit_name}}",
-        capacity: {{this.capacity}},
+    pub const {{upper_snake_case this.channel_name}}: &sdv::mw::clientlib::PublisherDescriptor<{{../this.0.unit_type.crate_name}}::{{../this.0.unit_type.proto_filename}}::{{../this.0.unit_type.proto_type_name}}> = {
+        {{#if ../register_reflection_metadata}}
+        fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+            sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+                file_descriptors: vec![
+                    {{#each ../this.0.proto_dependencies}}
+                    {{this.crate_name}}::{{this.file_name}}::file_descriptor().proto().clone(),
+                    {{/each}}
+                ],
+                message_full_name: String::from(".{{../this.0.message_fqn}}"),
+                ..Default::default()
+            }
+        }
+        {{/if}} {{! register_reflection_metadata}}
+
+        &sdv::mw::clientlib::PublisherDescriptor::new("{{this.channel_name}}")
+        .with_message("{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}")
+        .with_service_unit_name("{{this.service_unit_name}}")
+        .with_capacity({{this.capacity}})
+        .with_max_message_size({{../this.0.message_size}})
+        {{#if ../register_reflection_metadata}}
+        .with_message_metadata_required(true)
+        .with_message_metadata(get_message_metadata)
+        {{/if}} {{! register_reflection_metadata}}
     };
     {{/each}}
+
     /// List of all publication channels of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
-    pub const ALL_VARIANTS: &'static [&'static Self] = &[
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>] = &[
         {{#each this.1}}Self::{{upper_snake_case this.channel_name}},{{/each}}
     ];
 }

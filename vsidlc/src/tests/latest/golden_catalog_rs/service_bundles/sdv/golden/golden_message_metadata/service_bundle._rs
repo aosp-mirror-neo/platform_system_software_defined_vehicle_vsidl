@@ -16,37 +16,13 @@
 //! WARNING: Changes will be overwritten when the file is regenerated.
 pub mod diagnostics;
 use crate::diagnostics::Diagnostics;
-/// Provides access to publications available to the service bundle
-pub mod publisher {
-    /// Lists channels per protobuf message of every publication available to the service bundle
-    ///
-    /// This struct acts as an opaque handle to a specific publication channel.
-    /// Its internal details are not part of the public API for service bundle authors.
-    #[derive(Debug)]
-    pub struct Channel<Proto: ::protobuf::Message> {
-        _proto: std::marker::PhantomData<Proto>,
-        /// Unique name of a channel
-        pub name: &'static str,
-        service_unit: &'static str,
-        capacity: u32,
-    }
-    impl<Proto: ::protobuf::Message> sdv::mw::clientlib::channel::publisher::Identity
-    for Channel<Proto> {
-        type ProtoMessage = Proto;
-        fn get_name(&self) -> &str {
-            self.name
-        }
-        fn get_service_unit_name(&self) -> &str {
-            self.service_unit
-        }
-        fn get_capacity(&self) -> u32 {
-            self.capacity
-        }
-    }
-    impl sdv::mw::clientlib::channel::publisher::Metadata
-    for Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        const MESSAGE_SIZE: u32 = 6;
-        const IS_MESSAGE_METADATA_REQUIRED: bool = true;
+/// Namespace for publication descriptors available to the service bundle.
+pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
+impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
+    /// Publication channel 'tire-temperature-rear-left' of 'sdv.golden.TireTemperature'
+    pub const TIRE_TEMPERATURE_REAR_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TireTemperature,
+    > = {
         fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
             sdv_proto_reflection_rs::message_metadata::MessageMetadata {
                 file_descriptors: vec![
@@ -57,29 +33,20 @@ pub mod publisher {
                 ..Default::default()
             }
         }
-    }
-    impl sdv::mw::clientlib::ToTypeName
-    for Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-            sdv::mw::TypeName::builder()
-                .package_name("sdv.golden")
-                .type_name("TireTemperature")
-                .build()
-        }
-    }
-    impl Channel<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-        /// Publication channel 'tire-temperature-rear-left' of 'sdv.golden.TireTemperature'
-        pub const TIRE_TEMPERATURE_REAR_LEFT: &Self = &Self {
-            _proto: std::marker::PhantomData,
-            name: "tire-temperature-rear-left",
-            service_unit: "sdv-golden-tire-temperature-tire-temperature-rear-left",
-            capacity: 8,
-        };
-        /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
-        pub const ALL_VARIANTS: &'static [&'static Self] = &[
-            Self::TIRE_TEMPERATURE_REAR_LEFT,
-        ];
-    }
+        &sdv::mw::clientlib::PublisherDescriptor::new("tire-temperature-rear-left")
+            .with_message("sdv.golden.TireTemperature")
+            .with_service_unit_name(
+                "sdv-golden-tire-temperature-tire-temperature-rear-left",
+            )
+            .with_capacity(8)
+            .with_max_message_size(6)
+            .with_message_metadata_required(true)
+            .with_message_metadata(get_message_metadata)
+    };
+    /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
+        sdv_vsidlc_goldens_catalog::tire::TireTemperature,
+    >] = &[Self::TIRE_TEMPERATURE_REAR_LEFT];
 }
 /// Service bundle
 pub struct GoldenMessageMetadata {

@@ -125,10 +125,6 @@ macro_rules! define_common_templates {
 
             /* Publisher Module Impls */
             (
-                "service_bundles/publisher/impl_metadata/impl",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/publisher/impl_metadata/impl.hbs")),
-            ),
-            (
                 "service_bundles/publisher/impl_channel/impl",
                 include_str!(concat!($prefix, "/generated_rs/service_bundles/publisher/impl_channel/impl.hbs")),
             ),
@@ -221,62 +217,6 @@ define_common_templates!(COMMON_TEMPLATES_LATEST, "../templates/latest");
 define_common_templates!(COMMON_TEMPLATES_PDK29, "../templates/pdk29");
 
 const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
-    /* Publisher Module Impls */
-    (
-        "service_bundles/publisher/impl_identity/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/impl.hbs"),
-    ),
-    (
-        "service_bundles/publisher/impl_metadata/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_metadata/impl.hbs"),
-    ),
-    (
-        "service_bundles/publisher/impl_to_type_name/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_to_type_name/impl.hbs"),
-    ),
-
-    /* Subscriber Module Impls */
-    (
-        "service_bundles/subscriber/impl_identity/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/impl.hbs"),
-    ),
-    (
-        "service_bundles/subscriber/impl_to_type_name/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_to_type_name/impl.hbs"),
-    ),
-
-    /* Publisher Module Impl Functions */
-    (
-        "generated_rs/service_bundles/publisher/impl_identity/functions/get_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_name.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/publisher/impl_identity/functions/get_service_unit_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_service_unit_name.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/publisher/impl_identity/functions/get_capacity",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_identity/functions/get_capacity.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/publisher/impl_to_type_name/functions/type_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_to_type_name/functions/type_name.hbs"),
-    ),
-
-    /* Subscriber Module Impl Functions */
-    (
-        "generated_rs/service_bundles/subscriber/impl_identity/functions/get_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_identity/functions/get_name.hbs"),
-    ),
-    (
-        "generated_rs/service_bundles/subscriber/impl_to_type_name/functions/type_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_to_type_name/functions/type_name.hbs"),
-    ),
-
     /* Service Bundle Builder Functions */
     (
         "service_bundles/functions/service_bundle_builder",
@@ -309,22 +249,6 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
         include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor/impl.hbs")
     ),
     (
-        "service_bundles/rpc_client/impl_to_type_name/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_to_type_name/impl.hbs")
-    ),
-    (
-        "service_bundles/rpc_client/impl_to_type_name/functions/type_name",
-        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_to_type_name/functions/type_name.hbs")
-    ),
-    (
-        "service_bundles/rpc_client/impl_descriptor_trait/impl",
-        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor_trait/impl.hbs")
-    ),
-    (
-        "service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel",
-        include_str!("../templates/latest/generated_rs/service_bundles/rpc_client/impl_descriptor_trait/functions/get_channel.hbs")
-    ),
-    (
         "permissions_android_bp",
         include_str!("../templates/latest/configs/permissions/Android.bp.hbs")),
     (
@@ -333,6 +257,12 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
 ];
 
 const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[
+    (
+        "service_bundles/publisher/impl_metadata/impl",
+        include_str!(
+            "../templates/pdk29/generated_rs/service_bundles/publisher/impl_metadata/impl.hbs"
+        ),
+    ),
     (
         "service_bundles/functions/take_publisher",
         include_str!(

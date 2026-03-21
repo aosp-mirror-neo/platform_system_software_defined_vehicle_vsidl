@@ -13,12 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-impl Descriptor<{{this.0.unit_type.crate_name}}::Client> {
+impl ClientDescriptors<{{this.0.unit_type.crate_name}}::Client> {
     {{#each this.1}}
     /// {{this.channel}} channel
-    pub const {{upper_snake_case this.channel}}: &Self = &Self {
-        channel: "{{this.channel}}",
-        _phantom: std::marker::PhantomData,
-    };
+    pub const {{upper_snake_case this.channel}}: &sdv::mw::clientlib::ClientDescriptor<{{../this.0.unit_type.crate_name}}::Client> = &sdv::mw::clientlib::ClientDescriptor::new("{{this.channel}}")
+        .with_service("{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}");
     {{/each}}
 }

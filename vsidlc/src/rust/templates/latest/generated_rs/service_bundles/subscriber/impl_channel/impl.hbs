@@ -13,17 +13,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-impl Channel<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
+impl SubscriberDescriptors<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
     {{#each this.1}}
     /// Enables access to subscription channel '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
-    pub const {{upper_snake_case this.channel_name}}: &Self = &Self {
-        _proto: std::marker::PhantomData,
-        name: "{{this.channel_name}}",
-    };
+    pub const {{upper_snake_case this.channel_name}}: &sdv::mw::clientlib::SubscriberDescriptor<{{../this.0.unit_type.crate_name}}::{{../this.0.unit_type.proto_filename}}::{{../this.0.unit_type.proto_type_name}}> = &sdv::mw::clientlib::SubscriberDescriptor::new("{{this.channel_name}}")
+        .with_message("{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}");
     {{/each}}
 
     /// List of all subscription channels of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
-    pub const ALL_VARIANTS: &'static [&'static Self] = &[
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>] = &[
         {{#each this.1}}
         Self::{{upper_snake_case this.channel_name}},
         {{/each}}
