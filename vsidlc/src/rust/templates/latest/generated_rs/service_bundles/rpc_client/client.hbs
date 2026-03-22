@@ -13,26 +13,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-/// Provides access to RPC clients available to the service bundle
-pub mod client {
 
-    /// A strongly-typed handle identifying a specific RPC client channel.
-    ///
-    /// This struct carries the channel information required to connect to the service
-    /// and enforces type safety by associating the channel with its specific `ClientType`.
-    /// It is intended for use with middleware functions like `create_rpc_client`.
-    #[derive(Debug)]
-    pub struct Descriptor<T> {
-      channel: &'static str,
-      _phantom: std::marker::PhantomData<T>,
-    }
+/// Namespace for RPC client descriptors available to the service bundle.
+pub struct ClientDescriptors<T>(std::marker::PhantomData<T>);
 
-    {{> service_bundles/rpc_client/impl_descriptor_trait/impl}}
-
-    {{#each rpc_client_groups}}
-    {{> service_bundles/rpc_client/impl_descriptor/impl}}
-
-    {{> service_bundles/rpc_client/impl_to_type_name/impl}}
-    {{/each}}
-
-}
+{{#each rpc_client_groups}}
+{{> service_bundles/rpc_client/impl_descriptor/impl}}
+{{/each}}

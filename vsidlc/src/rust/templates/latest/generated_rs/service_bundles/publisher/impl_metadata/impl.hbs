@@ -13,10 +13,5 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-impl sdv::mw::clientlib::channel::publisher::Metadata for Channel<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
-    const MESSAGE_SIZE: u32 = {{this.0.message_size}};
-    {{#if ../register_reflection_metadata}}
-    const IS_MESSAGE_METADATA_REQUIRED: bool = true;
-    {{> generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata}}
-    {{/if}} {{! register_reflection_metadata}}
-}
+
+{{> generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata}}
