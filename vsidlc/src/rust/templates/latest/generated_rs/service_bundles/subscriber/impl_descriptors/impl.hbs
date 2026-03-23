@@ -15,12 +15,12 @@
 --}}
 impl SubscriberDescriptors<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
     {{#each this.1}}
-    /// Enables access to subscription channel '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
+    /// Subscriber descriptor '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
     pub const {{upper_snake_case this.channel_name}}: &sdv::mw::clientlib::SubscriberDescriptor<{{../this.0.unit_type.crate_name}}::{{../this.0.unit_type.proto_filename}}::{{../this.0.unit_type.proto_type_name}}> = &sdv::mw::clientlib::SubscriberDescriptor::new("{{this.channel_name}}")
         .with_message("{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}");
     {{/each}}
 
-    /// List of all subscription channels of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
+    /// List of all subscriber descriptors of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>] = &[
         {{#each this.1}}
         Self::{{upper_snake_case this.channel_name}},

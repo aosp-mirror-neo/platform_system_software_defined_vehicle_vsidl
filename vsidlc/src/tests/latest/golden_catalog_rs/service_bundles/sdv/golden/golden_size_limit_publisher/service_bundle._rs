@@ -17,7 +17,7 @@
 /// Namespace for publication descriptors available to the service bundle.
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit> {
-    /// Publication channel 'message-with-size-limit' of 'sdv.golden.size_limit.MessageWithSizeLimit'
+    /// Publisher descriptor 'message-with-size-limit' of 'sdv.golden.size_limit.MessageWithSizeLimit'
     pub const MESSAGE_WITH_SIZE_LIMIT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit,
     > = {
@@ -29,7 +29,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::size_limit::MessageWithSiz
             .with_capacity(8)
             .with_max_message_size(1332)
     };
-    /// List of all publication channels of 'sdv.golden.size_limit.MessageWithSizeLimit' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.size_limit.MessageWithSizeLimit' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::size_limit::MessageWithSizeLimit,
     >] = &[Self::MESSAGE_WITH_SIZE_LIMIT];

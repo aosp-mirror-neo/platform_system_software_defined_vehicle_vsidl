@@ -123,24 +123,6 @@ macro_rules! define_common_templates {
             ),
             ("service_bundles/struct", include_str!(concat!($prefix, "/generated_rs/service_bundles/struct.hbs"))),
 
-            /* Publisher Module Impls */
-            (
-                "service_bundles/publisher/impl_channel/impl",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/publisher/impl_channel/impl.hbs")),
-            ),
-
-            /* Subscriber Module Impls */
-            (
-                "service_bundles/subscriber/impl_channel/impl",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/subscriber/impl_channel/impl.hbs")),
-            ),
-
-            /* Publisher Module Impl Functions */
-            (
-                "generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata",
-                include_str!(concat!($prefix, "/generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata.hbs")),
-            ),
-
             /* Diagnostics */
             ("diagnostics", include_str!("../diagnostics/templates/diagnostics.hbs")),
             ("data_item_server", include_str!("../diagnostics/templates/server/data_item.hbs")),
@@ -157,7 +139,6 @@ macro_rules! define_common_templates {
                 "routine_handler_types_list",
                 include_str!("../diagnostics/templates/routine_control/types_list.hbs"),
             ),
-
             (
                 "apex_android_bp",
                 include_str!(concat!($prefix, "/apex/Android.bp.hbs")),
@@ -217,6 +198,20 @@ define_common_templates!(COMMON_TEMPLATES_LATEST, "../templates/latest");
 define_common_templates!(COMMON_TEMPLATES_PDK29, "../templates/pdk29");
 
 const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
+    /* Publisher Module Impls */
+    (
+        "service_bundles/publisher/impl_descriptors/impl",
+        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_descriptors/impl.hbs"),
+    ),
+    ("service_bundles/publisher/impl_descriptors/functions/get_message_metadata",
+        include_str!("../templates/latest/generated_rs/service_bundles/publisher/impl_descriptors/functions/get_message_metadata.hbs"),
+    ),
+
+    /* Subscriber Module Impls */
+    (
+        "service_bundles/subscriber/impl_descriptors/impl",
+        include_str!("../templates/latest/generated_rs/service_bundles/subscriber/impl_descriptors/impl.hbs"),
+    ),
     /* Service Bundle Builder Functions */
     (
         "service_bundles/functions/service_bundle_builder",
@@ -257,11 +252,30 @@ const LATEST_ONLY_TEMPLATES: &[(&str, &str)] = &[
 ];
 
 const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[
+    /* Subscriber Module Impls */
+    (
+        "service_bundles/subscriber/impl_channel/impl",
+        include_str!(
+            "../templates/pdk29/generated_rs/service_bundles/subscriber/impl_channel/impl.hbs"
+        ),
+    ),
+    /* Publisher Module Impl Functions */
+    (
+        "service_bundles/publisher/impl_channel/impl",
+        include_str!(
+            "../templates/pdk29/generated_rs/service_bundles/publisher/impl_channel/impl.hbs"
+        ),
+    ),
     (
         "service_bundles/publisher/impl_metadata/impl",
         include_str!(
             "../templates/pdk29/generated_rs/service_bundles/publisher/impl_metadata/impl.hbs"
         ),
+    ),
+    (
+        "service_bundles/publisher/impl_metadata/functions/get_message_metadata",
+       include_str!(
+            "../templates/pdk29/generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata.hbs"),
     ),
     (
         "service_bundles/functions/take_publisher",

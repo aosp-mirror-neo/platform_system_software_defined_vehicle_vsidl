@@ -15,20 +15,10 @@
 --}}
 impl PublisherDescriptors<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
     {{#each this.1}}
-    /// Publication channel '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
+    /// Publisher descriptor '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
     pub const {{upper_snake_case this.channel_name}}: &sdv::mw::clientlib::PublisherDescriptor<{{../this.0.unit_type.crate_name}}::{{../this.0.unit_type.proto_filename}}::{{../this.0.unit_type.proto_type_name}}> = {
         {{#if ../register_reflection_metadata}}
-        fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
-            sdv_proto_reflection_rs::message_metadata::MessageMetadata {
-                file_descriptors: vec![
-                    {{#each ../this.0.proto_dependencies}}
-                    {{this.crate_name}}::{{this.file_name}}::file_descriptor().proto().clone(),
-                    {{/each}}
-                ],
-                message_full_name: String::from(".{{../this.0.message_fqn}}"),
-                ..Default::default()
-            }
-        }
+        {{> service_bundles/publisher/impl_descriptors/functions/get_message_metadata ../this.0}}
         {{/if}} {{! register_reflection_metadata}}
 
         &sdv::mw::clientlib::PublisherDescriptor::new("{{this.channel_name}}")
@@ -43,7 +33,7 @@ impl PublisherDescriptors<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.pr
     };
     {{/each}}
 
-    /// List of all publication channels of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
+    /// List of all publisher descriptors of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>] = &[
         {{#each this.1}}Self::{{upper_snake_case this.channel_name}},{{/each}}
     ];

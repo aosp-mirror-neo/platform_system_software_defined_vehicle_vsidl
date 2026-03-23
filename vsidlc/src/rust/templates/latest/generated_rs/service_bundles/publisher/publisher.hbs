@@ -18,5 +18,5 @@
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 
 {{#each publications}}
-{{> service_bundles/publisher/impl_channel/impl register_reflection_metadata=../register_reflection_metadata}}
+{{> service_bundles/publisher/impl_descriptors/impl register_reflection_metadata=../register_reflection_metadata}}
 {{/each}}

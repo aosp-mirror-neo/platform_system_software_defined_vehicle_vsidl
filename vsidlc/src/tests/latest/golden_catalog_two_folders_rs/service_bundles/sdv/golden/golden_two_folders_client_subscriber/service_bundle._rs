@@ -19,12 +19,12 @@ pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl SubscriberDescriptors<
     sdv_vsidlc_goldens_two_folders_folder_a_catalog::speed_a::VehicleSpeedA,
 > {
-    /// Enables access to subscription channel 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
+    /// Subscriber descriptor 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
     pub const VEHICLE_SPEED_A: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_two_folders_folder_a_catalog::speed_a::VehicleSpeedA,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("vehicle-speed-a")
         .with_message("sdv.golden.VehicleSpeedA");
-    /// List of all subscription channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.VehicleSpeedA' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_two_folders_folder_a_catalog::speed_a::VehicleSpeedA,
     >] = &[Self::VEHICLE_SPEED_A];
@@ -32,12 +32,12 @@ impl SubscriberDescriptors<
 impl SubscriberDescriptors<
     sdv_vsidlc_goldens_two_folders_folder_b_catalog::speed_b::VehicleSpeedB,
 > {
-    /// Enables access to subscription channel 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
+    /// Subscriber descriptor 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
     pub const VEHICLE_SPEED_B: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_two_folders_folder_b_catalog::speed_b::VehicleSpeedB,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("vehicle-speed-b")
         .with_message("sdv.golden.VehicleSpeedB");
-    /// List of all subscription channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.VehicleSpeedB' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_two_folders_folder_b_catalog::speed_b::VehicleSpeedB,
     >] = &[Self::VEHICLE_SPEED_B];

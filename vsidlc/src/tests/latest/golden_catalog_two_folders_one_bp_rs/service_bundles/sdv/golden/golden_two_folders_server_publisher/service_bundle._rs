@@ -19,7 +19,7 @@ pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<
     sdv_vsidlc_goldens_two_folders_one_bp_folder_a_catalog::speed_a::VehicleSpeedA,
 > {
-    /// Publication channel 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
+    /// Publisher descriptor 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
     pub const VEHICLE_SPEED_A: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_two_folders_one_bp_folder_a_catalog::speed_a::VehicleSpeedA,
     > = {
@@ -29,7 +29,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(5)
     };
-    /// List of all publication channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.VehicleSpeedA' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_two_folders_one_bp_folder_a_catalog::speed_a::VehicleSpeedA,
     >] = &[Self::VEHICLE_SPEED_A];

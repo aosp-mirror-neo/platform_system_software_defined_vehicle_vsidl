@@ -17,12 +17,12 @@
 /// Namespace for subscription descriptors available to the service bundle.
 pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-    /// Enables access to subscription channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
+    /// Subscriber descriptor 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
     pub const VEHICLE_SPEED: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("vehicle-speed")
         .with_message("sdv.golden.VehicleSpeed");
-    /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.VehicleSpeed' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
     >] = &[Self::VEHICLE_SPEED];

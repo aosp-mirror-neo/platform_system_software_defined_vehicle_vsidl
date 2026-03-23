@@ -18,6 +18,6 @@ impl Metadata for {{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_file
     const MESSAGE_COUNT: u32 = {{this.0.message_count}};
     const IS_MULTIPUB: bool = {{this.0.is_multipub}};
     {{#if ../register_reflection_metadata}}
-    {{> generated_rs/service_bundles/publisher/impl_metadata/functions/get_message_metadata}}
+    {{> service_bundles/publisher/impl_metadata/functions/get_message_metadata}}
     {{/if}}
 }

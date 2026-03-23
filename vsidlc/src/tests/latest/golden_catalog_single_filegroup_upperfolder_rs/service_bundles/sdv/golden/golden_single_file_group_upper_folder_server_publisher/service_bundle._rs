@@ -19,7 +19,7 @@ pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<
     sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_a::VehicleSpeedA,
 > {
-    /// Publication channel 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
+    /// Publisher descriptor 'vehicle-speed-a' of 'sdv.golden.VehicleSpeedA'
     pub const VEHICLE_SPEED_A: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_a::VehicleSpeedA,
     > = {
@@ -29,7 +29,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(5)
     };
-    /// List of all publication channels of 'sdv.golden.VehicleSpeedA' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.VehicleSpeedA' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_a::VehicleSpeedA,
     >] = &[Self::VEHICLE_SPEED_A];
@@ -37,7 +37,7 @@ impl PublisherDescriptors<
 impl PublisherDescriptors<
     sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedB,
 > {
-    /// Publication channel 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
+    /// Publisher descriptor 'vehicle-speed-b' of 'sdv.golden.VehicleSpeedB'
     pub const VEHICLE_SPEED_B: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedB,
     > = {
@@ -47,7 +47,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(5)
     };
-    /// List of all publication channels of 'sdv.golden.VehicleSpeedB' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.VehicleSpeedB' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_single_filegroup_upperfolder_catalog::speed_b::VehicleSpeedB,
     >] = &[Self::VEHICLE_SPEED_B];
