@@ -157,6 +157,17 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.service_oriented_mapping_span);
     }
 
+    fn start_visit_someip_topic(
+        &mut self,
+        node: &mut vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::Topic,
+    ) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.type_definition_span);
+        self.update_message_field_span(&mut node.simple_mapping_span);
+        self.update_message_field_span(&mut node.someip_ff_methods_span);
+        self.update_message_field_span(&mut node.multipub_topic_info_span);
+    }
+
     fn start_visit_someip_service_oriented_mapping(
         &mut self,
         node: &mut SomeIpServiceOrientedMapping,

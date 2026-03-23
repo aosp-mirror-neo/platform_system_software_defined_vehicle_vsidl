@@ -1372,6 +1372,12 @@ pub fn convert_to_some_ip_publication_mapping(
                 mapping.topic_mapping.push(convert_to_some_ip_topic_mapping(inner, file_path));
                 mapping.topic_mapping_span.push(proto_span(item, file_path).unwrap());
             }
+            Rule::some_ip_offered_topic => {
+                let inner = item.clone();
+                mapping.offered_topic =
+                    MessageField::some(convert_to_some_ip_offered_topic(inner, file_path));
+                mapping.offered_topic_span = proto_span(item, file_path);
+            }
             _ => (),
         }
     }
@@ -1397,6 +1403,11 @@ pub fn convert_to_some_ip_topic_mapping(
                 let inner = get_inner_pair(item.clone());
                 mapping.instance_id = parse_string::<u32>(get_inner_str(item)).unwrap();
                 mapping.instance_id_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_fire_and_forget_method => {
+                let inner = item.clone();
+                mapping.fire_and_forget_method.push(convert_to_some_ip_ff_method(inner, file_path));
+                mapping.fire_and_forget_method_span.push(proto_span(item, file_path).unwrap());
             }
             _ => (),
         }
@@ -1917,7 +1928,7 @@ mod test {
             converter::convert_to_vsidl_entry(parsed_file.into_iter().next().unwrap(), FILE_PATH);
 
         // THEN the some_ip_mapping is correct
-        assert_eq!(vsidl_entry.some_ip_mapping.len(), 4);
+        assert_eq!(vsidl_entry.some_ip_mapping.len(), 5);
         let some_ip_mapping = &vsidl_entry.some_ip_mapping[0];
         let service_mapping = some_ip_mapping.mapping_type.as_ref().unwrap();
         match service_mapping {
@@ -2096,6 +2107,44 @@ mod test {
                 }
             }
             _ => panic!("Expected SdvTypeMapping for mapping 4"),
+        }
+
+        let some_ip_mapping_5 = &vsidl_entry.some_ip_mapping[4];
+        let service_mapping_5 = some_ip_mapping_5.mapping_type.as_ref().unwrap();
+        match service_mapping_5 {
+            vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
+                assert_eq!(
+                    mapping.unit_type.as_ref().unwrap().package_name,
+                    "com.android.sdv.someip.sample"
+                );
+                assert_eq!(
+                    mapping.unit_type.as_ref().unwrap().service_bundle_name,
+                    "ServiceBundleFoo"
+                );
+                assert_eq!(mapping.unit_type.as_ref().unwrap().type_name, "SdvInterface");
+                assert_eq!(mapping.someip_service_id, 0x48);
+                assert_eq!(mapping.version_major, 0x1);
+                assert_eq!(mapping.version_minor, 0x0);
+                match mapping.interface_type {
+                    Some(vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::Interface_type::OfferedTopic(ref offered_topic)) => {
+                        match offered_topic.topic_mapping {
+                            Some(vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::topic::Topic_mapping::SomeipFfMethods(val)) => assert!(val),
+                            _ => panic!("Expected SomeipFfMethods"),
+                        }
+                    }
+                    _ => panic!("Expected OfferedTopic"),
+                }
+                assert_eq!(mapping.service_unit_mapping.len(), 1);
+                assert_eq!(mapping.service_unit_mapping[0].instance_id, 0x0001);
+                assert_eq!(mapping.service_unit_mapping[0].fire_and_forget_method.len(), 1);
+                let ff_method = &mapping.service_unit_mapping[0].fire_and_forget_method[0];
+                assert_eq!(ff_method.service_id, 0x3700);
+                assert_eq!(ff_method.instance_id, 0x1000);
+                assert_eq!(ff_method.version_major, 0x1);
+                assert_eq!(ff_method.version_minor, 0x0);
+                assert_eq!(ff_method.method_id, 0x1000);
+            }
+            _ => panic!("Expected SdvTypeMapping for mapping 5"),
         }
     }
 
