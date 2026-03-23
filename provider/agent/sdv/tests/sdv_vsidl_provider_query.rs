@@ -20,18 +20,20 @@
 
 use clap::Parser;
 use clap::ValueEnum;
+use futures::StreamExt;
 use log::info;
 use sdv_comms::id::ServiceFqin;
 use sdv_comms::sd::UnitType;
 use sdv_comms::ContextRef;
+use sdv_config_provider::vsidl_provider_api::AvailabilityChangeEvent;
 use sdv_config_provider::{vsidl_provider, vsidl_provider_api::VsidlConfigProvider};
 use sdv_dump::DumpBinderConnection;
 use sdv_dump::DumpStateReporter;
 use std::future;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::time::sleep;
 use tokio::time::Duration;
+use tokio::time::{sleep, timeout};
 
 static DEFAULT_CLIENT_FQIN_STR: &str =
     "ignored:com.android.sdv.sample.vsidl_provider.Client/default";
@@ -42,6 +44,7 @@ enum QueryVariant {
     PublicationDescriptor,
     RpcMethodDescriptor,
     MessageDescriptor,
+    SubscribeAvailabilityChange,
 }
 
 #[derive(Parser, Debug)]
@@ -51,10 +54,10 @@ struct Args {
     server_vm_name: String,
 
     #[arg(long)]
-    service_bundle_package_name: String,
+    service_bundle_package_name: Option<String>,
 
     #[arg(long)]
-    service_bundle_name: String,
+    service_bundle_name: Option<String>,
 
     #[arg(value_enum, long)]
     query_variant: QueryVariant,
@@ -85,6 +88,29 @@ struct Args {
 
     #[arg(long)]
     num_loops: Option<u64>,
+
+    #[arg(long, default_value_t = 5)]
+    availability_timeout_s: u64,
+}
+
+// --- Helper function to build server_fqin when needed ---
+fn build_server_fqin(args: &Args) -> anyhow::Result<ServiceFqin> {
+    let package_name = args.service_bundle_package_name.clone().ok_or_else(|| {
+        anyhow::anyhow!("--service-bundle-package-name is required for this query")
+    })?;
+
+    let bundle_name = args
+        .service_bundle_name
+        .clone()
+        .ok_or_else(|| anyhow::anyhow!("--service-bundle-name is required for this query"))?;
+
+    ServiceFqin::builder()
+        .sdv_vm_name(args.server_vm_name.clone())
+        .sdv_package_name(package_name)
+        .service_bundle_name(bundle_name)
+        .service_instance_name("ignored")
+        .build()
+        .map_err(|e| anyhow::anyhow!("Failed to build ServiceFqin: {:?}", e))
 }
 
 async fn query_diagnostics_declaration(
@@ -183,6 +209,34 @@ async fn query_rpc_method_descriptor(
     }).ok()
 }
 
+async fn query_subscribe_availability_change(
+    args: &Args,
+    ctx: ContextRef,
+    provider: &Arc<impl VsidlConfigProvider>,
+) -> Option<String> {
+    let vm_name = &args.server_vm_name;
+    let timeout_duration = Duration::from_secs(args.availability_timeout_s);
+
+    let test_future = async {
+        let mut availability_stream =
+            provider.subscribe_availability_change_by_vm(vm_name).await.ok()?;
+        match availability_stream.next().await {
+            Some(AvailabilityChangeEvent::Available) => Some("Server is reachable".to_string()),
+            _ => Some("Server is not reachable".to_string()),
+        }
+    };
+
+    match timeout(timeout_duration, test_future).await {
+        Ok(Some(result)) => Some(format!(
+            "Querying VSIDL Provider availability on VM {} from VM {}. Received response: {}",
+            vm_name,
+            ctx.get_self_fqin().get_sdv_vm_name(),
+            result
+        )),
+        _ => Some(format!("Timed out waiting for availability from VM {}", vm_name)),
+    }
+}
+
 struct QueryTester {
     latest_query_result: Option<String>,
 }
@@ -246,6 +300,14 @@ impl QueryTester {
                 .await,
         }
     }
+
+    async fn query_subscribe_availability_change(
+        args: &Args,
+        ctx: ContextRef,
+        provider: &Arc<impl VsidlConfigProvider>,
+    ) -> Self {
+        Self { latest_query_result: query_subscribe_availability_change(args, ctx, provider).await }
+    }
 }
 
 static BINDER_TAG: &str = "vsidl_provider_test";
@@ -273,27 +335,28 @@ async fn main() -> anyhow::Result<()> {
     let provider = Arc::new(vsidl_provider::new_for_integration_test(ctx));
     dm.add_reporter("VSIDL Provider", &provider);
 
-    let server_fqin = ServiceFqin::builder()
-        .sdv_vm_name(args.server_vm_name.clone())
-        .sdv_package_name(args.service_bundle_package_name.clone())
-        .service_bundle_name(args.service_bundle_name.clone())
-        .service_instance_name("ignored")
-        .build()?;
-
     let mut dumpsys_reporters = Vec::new();
     for _ in 0..args.num_loops.unwrap_or(1) {
         let query_tester = Arc::new(match args.query_variant {
             QueryVariant::DiagnosticsDeclaration => {
+                let server_fqin = build_server_fqin(&args)?;
                 QueryTester::query_diagnostics_declaration(ctx, &provider, &server_fqin).await
             }
             QueryVariant::PublicationDescriptor => {
+                let server_fqin = build_server_fqin(&args)?;
                 QueryTester::query_publication_descriptor(&args, ctx, &provider, &server_fqin).await
             }
             QueryVariant::RpcMethodDescriptor => {
+                let server_fqin = build_server_fqin(&args)?;
                 QueryTester::query_rpc_method_descriptor(&args, ctx, &provider, &server_fqin).await
             }
             QueryVariant::MessageDescriptor => {
+                let server_fqin = build_server_fqin(&args)?;
                 QueryTester::query_message_descriptor(&args, ctx, &provider, &server_fqin).await
+            }
+            QueryVariant::SubscribeAvailabilityChange => {
+                // This query variant does not require service_bundle_package_name or service_bundle_name
+                QueryTester::query_subscribe_availability_change(&args, ctx, &provider).await
             }
         });
         dumpsys_reporters.push(query_tester.clone());
