@@ -16,11 +16,11 @@
 
 use super::types;
 use super::types::ProtoMessage;
-use crate::message_size::{self, MessageSize, MessageSizeMetadataSet};
 use crate::Catalog;
 use heck::ToKebabCase;
 use indexmap::IndexMap;
 use protobuf::MessageField;
+use sdv_proto_utils::{self, MessageSize, MessageSizeMetadataSet};
 use std::collections::HashMap;
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::routine::Method;
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::DataItem;
@@ -298,7 +298,7 @@ impl DiagnosticsContext {
     /// Creates a new context by scanning the catalog. This is an expensive operation.
     pub fn new(catalog: &Catalog) -> anyhow::Result<Self> {
         let messages = types::get_all_protobuf_messages(catalog)?;
-        let message_sizes_metadata_set = message_size::get_message_size_metadata(
+        let message_sizes_metadata_set = sdv_proto_utils::get_message_size_metadata(
             &catalog.proto_descriptors.iter().map(|(_, d)| d.clone()).collect(),
         )?;
 
@@ -319,7 +319,7 @@ impl DiagnosticsContext {
                 .get(full_message_name)
                 .ok_or_else(|| anyhow::anyhow!("Message {full_message_name} not found"))?
                 .clone(),
-            message_size: message_size::compute_message_size(
+            message_size: sdv_proto_utils::compute_message_size(
                 full_message_name,
                 &mut self.messages_computed_sizes,
                 &self.message_sizes_metadata_set,

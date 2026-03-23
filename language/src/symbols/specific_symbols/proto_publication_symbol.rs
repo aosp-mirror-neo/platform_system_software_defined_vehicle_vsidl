@@ -19,8 +19,8 @@ use crate::{
     SymbolTable,
 };
 use protobuf::descriptor::DescriptorProto;
+use sdv_proto_utils::MessageSize;
 use vsidl_v1::span::Span;
-use vsidl_v1_common::message_size::MessageSize;
 use vsidl_v1_common::ProtoMetadata;
 
 use super::proto_enum_symbol::ProtoEnumSymbol;

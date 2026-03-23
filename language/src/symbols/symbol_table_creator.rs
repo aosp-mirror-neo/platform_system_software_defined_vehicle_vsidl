@@ -45,11 +45,11 @@ use crate::service_bundle_symbol::ServiceBundleSource;
 use pest::iterators::Pair;
 use pest::Parser;
 use protobuf::descriptor::{DescriptorProto, EnumDescriptorProto, ServiceDescriptorProto};
+use sdv_proto_utils::{self, MessageSize, MessageSizeMetadataSet};
 use std::collections::{HashMap, HashSet};
-use vsidl_v1_common::message_size::{MessageSize, MessageSizeMetadataSet};
 use vsidl_v1_common::{
-    get_proto_dependencies, message_size, DiagnosticsContext, DiagnosticsInfo, DiskFileProvider,
-    FileProvider, ProgressPrinter, ProtoMetadata, VsidlVisitor,
+    get_proto_dependencies, DiagnosticsContext, DiagnosticsInfo, DiskFileProvider, FileProvider,
+    ProgressPrinter, ProtoMetadata, VsidlVisitor,
 };
 use vsidl_v1_common::{visitors::visitor::ProtoFile, Catalog};
 use vsidl_v1_pest_parser::proto_parser::{ProtoParser, Rule as ProtoRule};
@@ -318,7 +318,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.printer = ProgressPrinter::new(self.total_files);
 
         // Calculate max proto message size
-        self.message_size_metadata = message_size::get_message_size_metadata(
+        self.message_size_metadata = sdv_proto_utils::get_message_size_metadata(
             &catalog.proto_descriptors.iter().map(|(_, d)| d.clone()).collect(),
         )
         .unwrap_or_default();
@@ -449,7 +449,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
         self.symbol_table.add_subscope(&current_scope_id, &new_scope_id);
 
         let message_fqn = format!("{}.{}", self.package, message_name);
-        let max_size: Option<MessageSize> = message_size::compute_message_size(
+        let max_size: Option<MessageSize> = sdv_proto_utils::compute_message_size(
             &message_fqn,
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
@@ -518,7 +518,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
 
         // Add symbol for proto publisher
         let message_fqn = format!("{}.{}", self.package, message_name);
-        let message_size: MessageSize = message_size::compute_message_size(
+        let message_size: MessageSize = sdv_proto_utils::compute_message_size(
             &message_fqn,
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
@@ -587,7 +587,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
 
         // Add symbol for proto publisher
         let message_fqn = format!("{}.{}", self.package, message_name);
-        let message_size: MessageSize = message_size::compute_message_size(
+        let message_size: MessageSize = sdv_proto_utils::compute_message_size(
             &message_fqn,
             &mut self.messages_computed_sizes,
             &self.message_size_metadata,
