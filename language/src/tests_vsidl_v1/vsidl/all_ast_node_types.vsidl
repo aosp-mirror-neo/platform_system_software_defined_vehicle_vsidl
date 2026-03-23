@@ -97,6 +97,34 @@ some_ip_mapping {
         key: 1
         value: "second_service_unit"
       }
+      sdv_topic_paramaterization {
+        key: 0
+        value {
+          topic: "first_topic"
+          capacity: 10
+        }
+      }
+      sdv_topic_paramaterization {
+        key: 1
+        value {
+          topic: "second_topic"
+          capacity: 20
+        }
+      }
+      sdv_topic_paramaterization {
+        key: 2
+        value {
+          topic: "third_topic"
+          capacity: 30
+        }
+      }
+      sdv_topic_paramaterization {
+        key: 3
+        value {
+          topic: "fourth_topic"
+          capacity: 40
+        }
+      }
     }
     instance_impl {
       offered_event {
@@ -109,8 +137,7 @@ some_ip_mapping {
             type_name: "SamplePressureUnitType"
           }
           service_unit: 0
-          topic: "pressure-topic"
-          capacity: 100
+          topic: 0
           type_definition {
             length_field_size: ZERO
             field {
@@ -134,8 +161,7 @@ some_ip_mapping {
             type_name: "SampleTemperatureUnitType"
           }
           service_unit: 1
-          topic: "temperature-topic"
-          capacity: 50
+          topic: 1
           type_definition {
             length_field_size: ZERO
             field {
@@ -174,8 +200,7 @@ some_ip_mapping {
               type_name: "FirstPart"
             }
             service_unit: 0
-            topic: "bool-part-topic"
-            capacity: 10
+            topic: 2
             field_name_mapping {
               key: "some_bool"
               value: "sample_boolean"
@@ -188,8 +213,7 @@ some_ip_mapping {
               type_name: "SecondPart"
             }
             service_unit: 1
-            topic: "int-part-topic"
-            capacity: 20
+            topic: 3
             field_name_mapping {
               key: "some_int"
               value: "sample_int"
@@ -206,7 +230,6 @@ some_ip_mapping {
           type_name: "SomeIpInterface"
         }
         service_unit: 1
-        channel: "rpc-channel-1"
         method {
           procedure: "DoubleNum"
           method_id: 0x1500

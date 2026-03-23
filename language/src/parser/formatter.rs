@@ -235,6 +235,8 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::some_ip_service_mapping
         | Rule::some_ip_instance
         | Rule::some_ip_sdv_service_unit_parameterization_block
+        | Rule::some_ip_sdv_topic_parameterization_block
+        | Rule::some_ip_sdv_topic_parameterization_block_value
         | Rule::some_ip_instance_impl
         | Rule::some_ip_offered_interface
         | Rule::some_ip_sdv_offered_interface
@@ -355,16 +357,17 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::some_ip_fire_and_forget_method_instance_id
         | Rule::some_ip_multipub_topic_info_someip_instance_id
         | Rule::some_ip_sdv_service_unit_parameterization_block_key
+        | Rule::some_ip_sdv_topic_parameterization_block_key
+        | Rule::some_ip_sdv_topic
+        | Rule::some_ip_capacity
         | Rule::some_ip_map_entry_key
         | Rule::some_ip_sdv_service_unit_parameterization_block_value
         | Rule::some_ip_map_entry_value
         | Rule::some_ip_service_unit
         | Rule::some_ip_simple_event_service_unit
         | Rule::some_ip_simple_event_topic
-        | Rule::some_ip_simple_event_capacity
         | Rule::some_ip_event_part_service_unit
         | Rule::some_ip_event_part_topic
-        | Rule::some_ip_event_part_capacity
         | Rule::some_ip_unit_type_ref_package_name
         | Rule::some_ip_service_unit_id_package_name
         | Rule::some_ip_unit_type_ref_service_bundle_name
@@ -384,7 +387,6 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::some_ip_service_unit_id_vm_name
         | Rule::some_ip_service_unit_id_service_instance_name
         | Rule::some_ip_service_unit_id_service_unit_name
-        | Rule::some_ip_channel
         | Rule::some_ip_rpc_channel_mapping_channel
         | Rule::some_ip_rpc_channel_mapping_instance_id
         | Rule::some_ip_topic_mapping_topic

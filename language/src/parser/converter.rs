@@ -42,7 +42,7 @@ use vsidl_v1::someip::{
         },
         some_ip_instance_implementation,
         some_ip_instance_implementation::event,
-        some_ip_service_mapping,
+        some_ip_instance_mapping, some_ip_service_mapping,
     },
     SomeIpMapping,
 };
@@ -679,10 +679,57 @@ pub fn convert_to_some_ip_instance_mapping(
                 }
                 instance_mapping.sdv_service_unit_parameterization.insert(key, value);
             }
+            Rule::some_ip_sdv_topic_parameterization_block => {
+                let mut key = 0;
+                let mut value = some_ip_instance_mapping::SdvTopicParameters::new();
+                for sub_item in item.into_inner() {
+                    match sub_item.as_rule() {
+                        Rule::some_ip_sdv_topic_parameterization_block_key => {
+                            key = parse_string::<u32>(get_inner_str(sub_item.clone())).unwrap();
+                            instance_mapping
+                                .sdv_topic_parameterization_span
+                                .insert(key, proto_span(sub_item, file_path).unwrap());
+                        }
+                        Rule::some_ip_sdv_topic_parameterization_block_value => {
+                            let inner = get_inner_pair(sub_item.clone()); // sdv_topic_parameters_ref
+                            value = convert_to_sdv_topic_parameters(inner, file_path);
+                        }
+                        _ => (),
+                    }
+                }
+                instance_mapping.sdv_topic_parameterization.insert(key, value);
+            }
             _ => (),
         }
     }
     instance_mapping
+}
+
+pub fn convert_to_sdv_topic_parameters(
+    pair: Pair<Rule>,
+    file_path: &str,
+) -> some_ip_instance_mapping::SdvTopicParameters {
+    let mut sdv_topic_parameters = some_ip_instance_mapping::SdvTopicParameters {
+        span: proto_span(pair.clone(), file_path),
+        ..Default::default()
+    };
+    for item in pair.into_inner() {
+        match item.as_rule() {
+            Rule::some_ip_sdv_topic => {
+                let inner = get_inner_pair(item.clone());
+                sdv_topic_parameters.topic = unquote(get_inner_str(item));
+                sdv_topic_parameters.topic_span = proto_span(inner, file_path);
+            }
+            Rule::some_ip_capacity => {
+                let inner = get_inner_pair(item.clone());
+                sdv_topic_parameters.capacity =
+                    parse_string::<u32>(get_inner_str(item.clone())).unwrap();
+                sdv_topic_parameters.capacity_span = proto_span(inner, file_path);
+            }
+            _ => (),
+        }
+    }
+    sdv_topic_parameters
 }
 
 pub fn convert_to_some_ip_instance_implementation(
@@ -744,11 +791,6 @@ pub fn convert_to_some_ip_rpc_interface(
                     .method
                     .push(convert_to_some_ip_request_response_method(inner, file_path));
                 rpc_interface.method_span.push(proto_span(item, file_path).unwrap());
-            }
-            Rule::some_ip_channel => {
-                let inner = get_inner_pair(item.clone());
-                rpc_interface.channel = unquote(get_inner_str(item));
-                rpc_interface.channel_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -902,13 +944,8 @@ pub fn convert_to_some_ip_simple_event(pair: Pair<Rule>, file_path: &str) -> eve
             }
             Rule::some_ip_simple_event_topic => {
                 let inner = get_inner_pair(item.clone());
-                simple_event.topic = unquote(get_inner_str(item));
+                simple_event.topic = parse_string::<u32>(get_inner_str(item)).unwrap();
                 simple_event.topic_span = proto_span(inner, file_path);
-            }
-            Rule::some_ip_simple_event_capacity => {
-                let inner = get_inner_pair(item.clone());
-                simple_event.capacity = parse_string::<u32>(get_inner_str(item)).unwrap();
-                simple_event.capacity_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -985,13 +1022,8 @@ pub fn convert_to_some_ip_group_event_part(
             }
             Rule::some_ip_event_part_topic => {
                 let inner = get_inner_pair(item.clone());
-                group_event_part.topic = unquote(get_inner_str(item));
+                group_event_part.topic = parse_string::<u32>(get_inner_str(item)).unwrap();
                 group_event_part.topic_span = proto_span(inner, file_path);
-            }
-            Rule::some_ip_event_part_capacity => {
-                let inner = get_inner_pair(item.clone());
-                group_event_part.capacity = parse_string::<u32>(get_inner_str(item)).unwrap();
-                group_event_part.capacity_span = proto_span(inner, file_path);
             }
             _ => (),
         }
@@ -1901,6 +1933,45 @@ mod test {
                     mapping.instance[0].sdv_service_unit_parameterization.get(&1),
                     Some(&"second_service_unit".to_string())
                 );
+                assert!(mapping.instance[0].sdv_topic_parameterization.contains_key(&0));
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&0).unwrap().topic,
+                    "first_topic"
+                );
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&0).unwrap().capacity,
+                    10
+                );
+
+                assert!(mapping.instance[0].sdv_topic_parameterization.contains_key(&1));
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&1).unwrap().topic,
+                    "second_topic"
+                );
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&1).unwrap().capacity,
+                    20
+                );
+
+                assert!(mapping.instance[0].sdv_topic_parameterization.contains_key(&2));
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&2).unwrap().topic,
+                    "third_topic"
+                );
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&2).unwrap().capacity,
+                    30
+                );
+
+                assert!(mapping.instance[0].sdv_topic_parameterization.contains_key(&3));
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&3).unwrap().topic,
+                    "fourth_topic"
+                );
+                assert_eq!(
+                    mapping.instance[0].sdv_topic_parameterization.get(&3).unwrap().capacity,
+                    40
+                );
 
                 assert_eq!(mapping.instance_impl.len(), 4);
 
@@ -1908,8 +1979,7 @@ mod test {
                 let instance_impl_0 = &mapping.instance_impl[0];
                 if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedEvent(event)) = &instance_impl_0.interface_type {
                     if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::event::Event_type::SimpleEvent(simple_event)) = &event.event_type {
-                        assert_eq!(simple_event.topic, "pressure-topic");
-                        assert_eq!(simple_event.capacity, 100);
+                        assert_eq!(simple_event.topic, 0);
                     } else {
                         panic!("Expected SimpleEvent");
                     }
@@ -1921,8 +1991,7 @@ mod test {
                 let instance_impl_1 = &mapping.instance_impl[1];
                 if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedEvent(event)) = &instance_impl_1.interface_type {
                     if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::event::Event_type::SimpleEvent(simple_event)) = &event.event_type {
-                        assert_eq!(simple_event.topic, "temperature-topic");
-                        assert_eq!(simple_event.capacity, 50);
+                        assert_eq!(simple_event.topic, 1);
                     } else {
                         panic!("Expected SimpleEvent");
                     }
@@ -1935,10 +2004,8 @@ mod test {
                 if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::Interface_type::OfferedEvent(event)) = &instance_impl_2.interface_type {
                     if let Some(vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::event::Event_type::GroupEvent(group_event)) = &event.event_type {
                         assert_eq!(group_event.event_part.len(), 2);
-                        assert_eq!(group_event.event_part[0].topic, "bool-part-topic");
-                        assert_eq!(group_event.event_part[0].capacity, 10);
-                        assert_eq!(group_event.event_part[1].topic, "int-part-topic");
-                        assert_eq!(group_event.event_part[1].capacity, 20);
+                        assert_eq!(group_event.event_part[0].topic, 2);
+                        assert_eq!(group_event.event_part[1].topic, 3);
                     } else {
                         panic!("Expected GroupEvent");
                     }
@@ -1954,7 +2021,6 @@ mod test {
                         assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().service_bundle_name, "SomeIpBroker");
                         assert_eq!(rpc_interface.sdv_unit_type.as_ref().unwrap().type_name, "SomeIpInterface");
                         assert_eq!(rpc_interface.service_unit, 1);
-                        assert_eq!(rpc_interface.channel, "rpc-channel-1");
                         assert_eq!(rpc_interface.method.len(), 1);
                         assert_eq!(rpc_interface.method[0].procedure, "DoubleNum");
                         assert_eq!(rpc_interface.method[0].method_id, 0x1500);
@@ -2143,6 +2209,13 @@ mod test {
                     i.span.clear();
                     i.instance_id_span.clear();
                     i.sdv_service_unit_parameterization_span.clear();
+                    i.sdv_topic_parameterization_span.clear();
+                    for i in i.sdv_topic_parameterization.values_mut() {
+                        i.span.clear();
+                        i.topic_span.clear();
+                        i.capacity_span.clear();
+                        i.special_fields.clear();
+                    }
                     i.special_fields.clear();
                 }
                 for i in &mut s.instance_impl {
@@ -2156,7 +2229,6 @@ mod test {
                         o.sdv_unit_type_span.clear();
                         o.service_unit_span.clear();
                         o.method_span.clear();
-                        o.channel_span.clear();
                         o.special_fields.clear();
                         if let Some(u) = o.sdv_unit_type.as_mut() {
                             u.span.clear();
@@ -2190,7 +2262,6 @@ mod test {
                             s.service_unit_span.clear();
                             s.message_translation_mode_span.clear();
                             s.topic_span.clear();
-                            s.capacity_span.clear();
                             s.special_fields.clear();
                             if let Some(u) = s.sdv_unit_type.as_mut() {
                                 u.span.clear();
@@ -2224,7 +2295,6 @@ mod test {
                                 p.field_name_mapping_span.clear();
                                 p.service_unit_span.clear();
                                 p.topic_span.clear();
-                                p.capacity_span.clear();
                                 p.special_fields.clear();
                                 if let Some(u) = p.sdv_unit_type.as_mut() {
                                     u.span.clear();

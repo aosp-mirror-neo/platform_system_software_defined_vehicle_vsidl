@@ -3352,6 +3352,8 @@ mod test {
         mock.expect_end_visit_someip_service_mapping().times(1..).return_const(());
         mock.expect_start_visit_someip_instance_mapping().times(1..).return_const(());
         mock.expect_end_visit_someip_instance_mapping().times(1..).return_const(());
+        mock.expect_start_visit_sdv_topic_parameters().times(1..).return_const(());
+        mock.expect_end_visit_sdv_topic_parameters().times(1..).return_const(());
         mock.expect_start_visit_someip_instance_implementation().times(1..).return_const(());
         mock.expect_end_visit_someip_instance_implementation().times(1..).return_const(());
         mock.expect_start_visit_someip_rpc_interface().times(1..).return_const(());
