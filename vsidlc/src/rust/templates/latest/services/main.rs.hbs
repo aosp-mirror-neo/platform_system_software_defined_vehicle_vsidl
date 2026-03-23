@@ -151,9 +151,9 @@ async fn sdv_main(
             }
         };
 
-    {{#unless is_empty}}
+    {{#if has_tasks_in_join_set}}
     let mut futures_join_set = tokio::task::JoinSet::new();
-    {{/unless}}
+    {{/if}}
 
     {{#each publications}}
     {{#each this.1}}
@@ -184,7 +184,7 @@ async fn sdv_main(
     }
     {{/each}}
 
-    {{#if has_clients_or_subscriptions}}
+    {{#if has_tasks_in_join_set}}
     while let Some(e) = futures_join_set.join_next().await {
         error!("Future joined with result: {e:?}");
     }

@@ -148,7 +148,9 @@ where
 async fn sdv_main(mut service_bundle: sdv_mw_rs_{{snake_case @root.package_name}}_{{snake_case service_bundle_name}}::{{service_bundle_name}}) -> sdv::status::SdvResult<()> {
     info!("Starting service bundle '{{service_bundle_name}}'");
 
+    {{#if has_tasks_in_join_set}}
     let mut futures_join_set = tokio::task::JoinSet::new();
+    {{/if}}
 
     {{#each publications}}
     {{#each this.1}}
@@ -179,9 +181,15 @@ async fn sdv_main(mut service_bundle: sdv_mw_rs_{{snake_case @root.package_name}
     }
     {{/each}}
 
+    {{#if has_tasks_in_join_set}}
     while let Some(e) = futures_join_set.join_next().await {
         error!("Future joined with result: {e:?}");
     }
+    {{else}}
+    {{#unless is_empty}}
+    std::future::pending::<()>().await;
+    {{/unless}}
+    {{/if}}
 
     Ok(())
 }
