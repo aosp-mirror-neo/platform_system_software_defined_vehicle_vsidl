@@ -21,8 +21,8 @@ use crate::{
     implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
 };
 use protobuf::descriptor::DescriptorProto;
+use sdv_proto_utils::MessageSize;
 use vsidl_v1::span::Span;
-use vsidl_v1_common::message_size::MessageSize;
 use vsidl_v1_common::ProtoMetadata;
 
 /// Represents a Protobuf Message definition within the symbol table.

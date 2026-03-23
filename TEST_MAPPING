@@ -56,6 +56,9 @@
       "name": "sdv_core_vsidl_unit_vsidl_rc_generator_golden_tests"
     },
     {
+      "name": "sdv_core_vsidl_unit_vsidl_rc_generator_soa_golden_tests"
+    },
+    {
       "name": "sdv_core_vsidl_unit_vsidlc_cli_test"
     }
   ]

@@ -17,7 +17,7 @@
 /// Namespace for publication descriptors available to the service bundle.
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-    /// Publication channel 'tire-pressure-front-left' of 'sdv.golden.TIREPressure'
+    /// Publisher descriptor 'tire-pressure-front-left' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_FRONT_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = {
@@ -27,7 +27,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
+    /// Publisher descriptor 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_FRONT_RIGHT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = {
@@ -37,7 +37,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
+    /// Publisher descriptor 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_REAR_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = {
@@ -47,7 +47,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
+    /// Publisher descriptor 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_REAR_RIGHT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = {
@@ -57,7 +57,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// List of all publication channels of 'sdv.golden.TIREPressure' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TIREPressure' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     >] = &[
@@ -70,7 +70,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
 impl PublisherDescriptors<
     sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances,
 > {
-    /// Publication channel 'tire-pressure-explicit-front-left' of 'sdv.golden.TirePressureExplicitInstances'
+    /// Publisher descriptor 'tire-pressure-explicit-front-left' of 'sdv.golden.TirePressureExplicitInstances'
     pub const TIRE_PRESSURE_EXPLICIT_FRONT_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances,
     > = {
@@ -84,7 +84,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-pressure-explicit-front-right' of 'sdv.golden.TirePressureExplicitInstances'
+    /// Publisher descriptor 'tire-pressure-explicit-front-right' of 'sdv.golden.TirePressureExplicitInstances'
     pub const TIRE_PRESSURE_EXPLICIT_FRONT_RIGHT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances,
     > = {
@@ -98,7 +98,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-pressure-explicit-rear-left' of 'sdv.golden.TirePressureExplicitInstances'
+    /// Publisher descriptor 'tire-pressure-explicit-rear-left' of 'sdv.golden.TirePressureExplicitInstances'
     pub const TIRE_PRESSURE_EXPLICIT_REAR_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances,
     > = {
@@ -110,7 +110,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-pressure-explicit-rear-right' of 'sdv.golden.TirePressureExplicitInstances'
+    /// Publisher descriptor 'tire-pressure-explicit-rear-right' of 'sdv.golden.TirePressureExplicitInstances'
     pub const TIRE_PRESSURE_EXPLICIT_REAR_RIGHT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances,
     > = {
@@ -124,7 +124,7 @@ impl PublisherDescriptors<
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// List of all publication channels of 'sdv.golden.TirePressureExplicitInstances' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TirePressureExplicitInstances' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TirePressureExplicitInstances,
     >] = &[
@@ -135,7 +135,7 @@ impl PublisherDescriptors<
     ];
 }
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-    /// Publication channel 'tire-temperature-front-right' of 'sdv.golden.TireTemperature'
+    /// Publisher descriptor 'tire-temperature-front-right' of 'sdv.golden.TireTemperature'
     pub const TIRE_TEMPERATURE_FRONT_RIGHT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     > = {
@@ -147,13 +147,13 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TireTemperature' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     >] = &[Self::TIRE_TEMPERATURE_FRONT_RIGHT];
 }
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-    /// Publication channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
+    /// Publisher descriptor 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
     pub const VEHICLE_SPEED: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
     > = {
@@ -163,7 +163,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
             .with_capacity(8)
             .with_max_message_size(5)
     };
-    /// List of all publication channels of 'sdv.golden.VehicleSpeed' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.VehicleSpeed' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
     >] = &[Self::VEHICLE_SPEED];

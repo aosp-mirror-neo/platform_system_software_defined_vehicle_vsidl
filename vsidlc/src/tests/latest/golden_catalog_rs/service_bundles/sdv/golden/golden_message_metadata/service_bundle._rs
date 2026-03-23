@@ -19,7 +19,7 @@ use crate::diagnostics::Diagnostics;
 /// Namespace for publication descriptors available to the service bundle.
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-    /// Publication channel 'tire-temperature-rear-left' of 'sdv.golden.TireTemperature'
+    /// Publisher descriptor 'tire-temperature-rear-left' of 'sdv.golden.TireTemperature'
     pub const TIRE_TEMPERATURE_REAR_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     > = {
@@ -43,7 +43,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
             .with_message_metadata_required(true)
             .with_message_metadata(get_message_metadata)
     };
-    /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TireTemperature' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     >] = &[Self::TIRE_TEMPERATURE_REAR_LEFT];

@@ -17,7 +17,7 @@
 /// Namespace for publication descriptors available to the service bundle.
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-    /// Publication channel 'tire-temperature-front-left' of 'sdv.golden.TireTemperature'
+    /// Publisher descriptor 'tire-temperature-front-left' of 'sdv.golden.TireTemperature'
     pub const TIRE_TEMPERATURE_FRONT_LEFT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     > = {
@@ -27,7 +27,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// Publication channel 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
+    /// Publisher descriptor 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
     pub const TIRE_TEMPERATURE_REAR_RIGHT: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     > = {
@@ -37,13 +37,13 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
             .with_capacity(8)
             .with_max_message_size(6)
     };
-    /// List of all publication channels of 'sdv.golden.TireTemperature' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TireTemperature' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     >] = &[Self::TIRE_TEMPERATURE_FRONT_LEFT, Self::TIRE_TEMPERATURE_REAR_RIGHT];
 }
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
-    /// Publication channel 'tire-speed-unique' of 'sdv.golden.TireSpeed'
+    /// Publisher descriptor 'tire-speed-unique' of 'sdv.golden.TireSpeed'
     pub const TIRE_SPEED_UNIQUE: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireSpeed,
     > = {
@@ -53,7 +53,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
             .with_capacity(8)
             .with_max_message_size(5)
     };
-    /// List of all publication channels of 'sdv.golden.TireSpeed' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TireSpeed' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireSpeed,
     >] = &[Self::TIRE_SPEED_UNIQUE];
@@ -61,17 +61,17 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
 /// Namespace for subscription descriptors available to the service bundle.
 pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::TireTemperature> {
-    /// Enables access to subscription channel 'tire-temperature-front-left' of 'sdv.golden.TireTemperature'
+    /// Subscriber descriptor 'tire-temperature-front-left' of 'sdv.golden.TireTemperature'
     pub const TIRE_TEMPERATURE_FRONT_LEFT: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-temperature-front-left")
         .with_message("sdv.golden.TireTemperature");
-    /// Enables access to subscription channel 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
+    /// Subscriber descriptor 'tire-temperature-rear-right' of 'sdv.golden.TireTemperature'
     pub const TIRE_TEMPERATURE_REAR_RIGHT: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-temperature-rear-right")
         .with_message("sdv.golden.TireTemperature");
-    /// List of all subscription channels of 'sdv.golden.TireTemperature' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.TireTemperature' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireTemperature,
     >] = &[Self::TIRE_TEMPERATURE_FRONT_LEFT, Self::TIRE_TEMPERATURE_REAR_RIGHT];

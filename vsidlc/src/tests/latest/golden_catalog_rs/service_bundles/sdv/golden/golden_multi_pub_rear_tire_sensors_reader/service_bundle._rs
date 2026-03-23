@@ -17,7 +17,7 @@
 /// Namespace for publication descriptors available to the service bundle.
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
-    /// Publication channel 'tire-speed-unique' of 'sdv.golden.TireSpeed'
+    /// Publisher descriptor 'tire-speed-unique' of 'sdv.golden.TireSpeed'
     pub const TIRE_SPEED_UNIQUE: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireSpeed,
     > = {
@@ -27,7 +27,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::tire::TireSpeed> {
             .with_capacity(8)
             .with_max_message_size(5)
     };
-    /// List of all publication channels of 'sdv.golden.TireSpeed' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.TireSpeed' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TireSpeed,
     >] = &[Self::TIRE_SPEED_UNIQUE];

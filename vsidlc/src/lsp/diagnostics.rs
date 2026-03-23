@@ -44,8 +44,18 @@ pub(crate) fn validate_and_publish_diagnostics(
     file_provider: &LspFileProvider,
     changed_path: Option<&Path>,
 ) -> Result<()> {
-    let mut session = DiagnosticSession::new(context, connection, file_provider);
-    session.run(changed_path)
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut session = DiagnosticSession::new(context, connection, file_provider);
+        session.run(changed_path)
+    }));
+
+    match result {
+        Ok(res) => res,
+        Err(_) => {
+            eprintln!("Panic during diagnostics for: {:?}", changed_path);
+            Ok(())
+        }
+    }
 }
 
 struct DiagnosticSession<'a> {
@@ -94,20 +104,17 @@ impl<'a> DiagnosticSession<'a> {
         let update_result = self.update_catalog(changed_path.as_deref())?;
 
         if let Some(incremental) = update_result {
-            // Check if ANY file in the catalog now has a persistent syntax error.
-            if self.context.recovered_syntax_errors.is_empty() {
-                // All files in the catalog are touched during a semantic project check.
-                for (path, _) in &self.context.catalog.catalog_vsidl_files {
-                    let abs = self.cli.catalog_path.join(path).to_string_lossy().to_string();
-                    let source = self.map_to_source(&abs);
-                    self.touched_files.insert(source);
-                }
-
-                // 2. Prepare Symbols
-                let creator = self.prepare_symbols(changed_path.as_deref(), incremental);
-                // 3. Collect Findings
-                findings = self.collect_findings(creator);
+            // All files in the catalog are touched during a semantic project check.
+            for (path, _) in &self.context.catalog.catalog_vsidl_files {
+                let abs = self.cli.catalog_path.join(path).to_string_lossy().to_string();
+                let source = self.map_to_source(&abs);
+                self.touched_files.insert(source);
             }
+
+            // 2. Prepare Symbols
+            let creator = self.prepare_symbols(changed_path.as_deref(), incremental);
+            // 3. Collect Findings
+            findings = self.collect_findings(creator);
         }
 
         // 4. Publish (Always call if an update was attempted)
@@ -432,30 +439,42 @@ impl<'a> DiagnosticSession<'a> {
             _ => checker.enable_pdk29(),
         };
 
+        let mut total_errors = 0;
+
         // 1. AST Check
         KeywordConverter::traverse(&mut self.context.catalog);
         let _ = checker.check_ast(&self.context.catalog);
+        total_errors += checker.error_count();
         let ast = checker.findings();
-        if checker.error_count() > 0 {
-            return FindingsByStage { ast, unlinked: None, linked: None };
-        }
         checker.clear_findings();
 
         // 2. Unlinked Check
-        let _ = checker.check_symbol_table(creator.symbol_table());
-        let unlinked = Some(checker.findings());
-        if checker.error_count() > 0 {
-            return FindingsByStage { ast, unlinked, linked: None };
+        let created_symbol_table = creator.symbol_table();
+
+        // Only execute next stage of CoCos if previous stage succeeded
+        // Otherwise, CoCo might panic (because symbol table contains errors) and
+        // found errors may just be consequences of earlier errors that do not need
+        // to be addressed by the developer
+        if ast.is_empty() {
+            let _ = checker.check_symbol_table(created_symbol_table);
+            total_errors += checker.error_count();
         }
+        let unlinked = Some(checker.findings());
         checker.clear_findings();
 
         // 3. Linked Check
         let mut linker = SymbolTableLinker::from(creator);
         linker.execute();
-        let _ = checker.check_linked_symbol_table(linker.symbol_table());
 
-        if checker.error_count() == 0 {
-            self.context.symbol_table = linker.into_symbol_table();
+        if ast.is_empty() && unlinked.as_deref().is_none_or(|v| v.is_empty()) {
+            let _ = checker.check_linked_symbol_table(linker.symbol_table());
+            total_errors += checker.error_count();
+        }
+
+        // Always update the symbol table for LSP features, even if there are errors.
+        self.context.symbol_table = linker.into_symbol_table();
+
+        if total_errors == 0 {
             self.context.last_valid_symbol_table = Some(self.context.symbol_table.clone());
         }
 
@@ -620,7 +639,7 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
     use vsidl_v1_parser::file_provider::DiskFileProvider;
-    use vsidl_v1_parser::Catalog;
+    use vsidl_v1_parser::{Catalog, SymbolTable};
 
     #[test]
     fn test_is_in_main_catalog() {
@@ -635,9 +654,15 @@ mod tests {
             disk_fallback: DiskFileProvider,
         };
 
+        let mut symbol_table = SymbolTable::default();
+        match cli.target_api.as_str() {
+            "latest" => symbol_table.set_target_api(vsidl_v1_parser::TargetApi::Latest),
+            _ => symbol_table.set_target_api(vsidl_v1_parser::TargetApi::Pdk29),
+        }
+
         let mut context = CatalogContext {
             cli: cli.clone(),
-            symbol_table: Default::default(),
+            symbol_table,
             catalog: Catalog::new(),
             last_valid_symbol_table: None,
             active_findings: HashMap::new(),

@@ -1,0 +1,40 @@
+{{!--
+  Copyright (C) 2026 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+--}}
+impl PublisherDescriptors<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}> {
+    {{#each this.1}}
+    /// Publisher descriptor '{{this.channel_name}}' of '{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}'
+    pub const {{upper_snake_case this.channel_name}}: &sdv::mw::clientlib::PublisherDescriptor<{{../this.0.unit_type.crate_name}}::{{../this.0.unit_type.proto_filename}}::{{../this.0.unit_type.proto_type_name}}> = {
+        {{#if ../register_reflection_metadata}}
+        {{> service_bundles/publisher/impl_descriptors/functions/get_message_metadata ../this.0}}
+        {{/if}} {{! register_reflection_metadata}}
+
+        &sdv::mw::clientlib::PublisherDescriptor::new("{{this.channel_name}}")
+        .with_message("{{../this.0.unit_type.package}}.{{../this.0.unit_type.type_name}}")
+        .with_service_unit_name("{{this.service_unit_name}}")
+        .with_capacity({{this.capacity}})
+        .with_max_message_size({{../this.0.message_size}})
+        {{#if ../register_reflection_metadata}}
+        .with_message_metadata_required(true)
+        .with_message_metadata(get_message_metadata)
+        {{/if}} {{! register_reflection_metadata}}
+    };
+    {{/each}}
+
+    /// List of all publisher descriptors of '{{this.0.unit_type.package}}.{{this.0.unit_type.type_name}}' available to the service bundle
+    pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<{{this.0.unit_type.crate_name}}::{{this.0.unit_type.proto_filename}}::{{this.0.unit_type.proto_type_name}}>] = &[
+        {{#each this.1}}Self::{{upper_snake_case this.channel_name}},{{/each}}
+    ];
+}

@@ -72,6 +72,18 @@ fn extract_ranges(ranges: &mut Vec<FoldingRange>, pair: pest::iterators::Pair<Ru
             let last_part = service.rsplit('.').next().unwrap_or(&service);
             Some(last_part.to_string())
         }
+        Rule::some_ip_rpc_channel_mapping => pair
+            .clone()
+            .into_inner()
+            .find(|p| p.as_rule() == Rule::some_ip_rpc_channel_mapping_channel)
+            .and_then(|p| p.into_inner().next())
+            .map(|p| p.as_str().trim_matches('"').to_string()),
+        Rule::some_ip_topic_mapping => pair
+            .clone()
+            .into_inner()
+            .find(|p| p.as_rule() == Rule::some_ip_topic_mapping_topic)
+            .and_then(|p| p.into_inner().next())
+            .map(|p| p.as_str().trim_matches('"').to_string()),
         _ => None,
     };
 
@@ -136,6 +148,11 @@ fn extract_ranges(ranges: &mut Vec<FoldingRange>, pair: pest::iterators::Pair<Ru
         // --- SOME/IP: SDV Type Mapping ---
         | Rule::some_ip_sdv_type_mapping
         | Rule::some_ip_sdv_type_mapping_unit_type
+        | Rule::some_ip_service_oriented_mapping
+        | Rule::some_ip_rpc_interface_mapping
+        | Rule::some_ip_rpc_channel_mapping
+        | Rule::some_ip_publication_mapping
+        | Rule::some_ip_topic_mapping
         | Rule::some_ip_sdv_offered_interface
         | Rule::some_ip_sdv_method
         | Rule::some_ip_offered_topic

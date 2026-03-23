@@ -37,7 +37,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use vsidl_v1_parser::file_provider::{DiskFileProvider, FileProvider};
-use vsidl_v1_parser::{Catalog, SymbolTable};
+use vsidl_v1_parser::{Catalog, SymbolTable, TargetApi};
 
 /// Starts the VSIDL Language Server Protocol (LSP) server.
 ///
@@ -164,44 +164,47 @@ pub(crate) fn lsp_server_loop(state: Arc<ServerState>, rt: &Runtime) -> Result<(
 async fn handle_request(state: Arc<ServerState>, req: Request) {
     let method = req.method.clone();
     let id = req.id.clone();
-    let result = match method.as_str() {
-        "textDocument/completion" => handle_completion(&state, req),
-        "textDocument/definition" => handle_definition(&state, req),
-        "textDocument/references" => handle_references(&state, req),
-        "textDocument/hover" => handle_hover(&state, req),
-        "textDocument/formatting" => handle_formatting(&state, req),
-        "textDocument/semanticTokens/full" => handle_semantic_tokens(&state, req),
-        "textDocument/foldingRange" => handle_folding_range(&state, req),
-        "textDocument/documentSymbol" => handle_document_symbol(&state, req),
-        _ => {
-            let error = ResponseError {
-                code: lsp_server::ErrorCode::MethodNotFound as i32,
-                message: format!("Method not found: {}", method),
-                data: None,
-            };
-            let _ = state.connection.sender.send(Message::Response(Response {
-                id,
-                result: None,
-                error: Some(error),
-            }));
-            return;
-        }
-    };
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| match method.as_str() {
+        "textDocument/completion" => Some(handle_completion(&state, req)),
+        "textDocument/definition" => Some(handle_definition(&state, req)),
+        "textDocument/references" => Some(handle_references(&state, req)),
+        "textDocument/hover" => Some(handle_hover(&state, req)),
+        "textDocument/formatting" => Some(handle_formatting(&state, req)),
+        "textDocument/semanticTokens/full" => Some(handle_semantic_tokens(&state, req)),
+        "textDocument/foldingRange" => Some(handle_folding_range(&state, req)),
+        "textDocument/documentSymbol" => Some(handle_document_symbol(&state, req)),
+        _ => None,
+    }));
 
     let resp = match result {
-        // If result is None, explicitly default to JSON Null
-        // VS Code treats 'None' results as an error of the server,
-        // not as an empty response.
-        Ok(maybe_result) => Response {
+        // Method found and executed successfully
+        Ok(Some(Ok(maybe_result))) => Response {
             id,
             result: Some(maybe_result.unwrap_or(serde_json::Value::Null)),
             error: None,
         },
-        Err(error) => Response {
+        // Method found but handler returned an error
+        Ok(Some(Err(error))) => Response {
             id,
             result: None,
             error: Some(ResponseError { code: 0, message: format!("{}", error), data: None }),
         },
+        // Method not found
+        Ok(None) => Response {
+            id,
+            result: None,
+            error: Some(ResponseError {
+                code: lsp_server::ErrorCode::MethodNotFound as i32,
+                message: format!("Method not found: {}", method),
+                data: None,
+            }),
+        },
+        // Panic in handler (or during method matching)
+        Err(_) => {
+            eprintln!("Panic while handling request {}: {:?}", method, id);
+            Response { id, result: Some(serde_json::Value::Null), error: None }
+        }
     };
 
     let _ = state.connection.sender.send(Message::Response(resp.clone()));
@@ -256,11 +259,11 @@ fn handle_completion(state: &ServerState, req: Request) -> Result<Option<serde_j
     let params: CompletionParams = serde_json::from_value(req.params)?;
     let uri = &params.text_document_position.text_document.uri;
     let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
-    let (key, _) = resolve_context(&path, &state.cli);
+    let (key, cli_template) = resolve_context(&path, &state.cli);
 
     let mut contexts = state.lock_contexts();
     let context = contexts.entry(key).or_insert_with(|| CatalogContext {
-        cli: state.cli.clone(),
+        cli: cli_template,
         symbol_table: SymbolTable::default(),
         catalog: Catalog::new(),
         last_valid_symbol_table: None,
@@ -274,7 +277,8 @@ fn handle_completion(state: &ServerState, req: Request) -> Result<Option<serde_j
 }
 
 async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notification) {
-    match not.method.as_str() {
+    let method = not.method.clone();
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| match method.as_str() {
         "textDocument/didOpen" => {
             if let Ok(params) = serde_json::from_value::<DidOpenTextDocumentParams>(not.params) {
                 update_document_store(
@@ -309,7 +313,7 @@ async fn handle_notification(state: Arc<ServerState>, not: lsp_server::Notificat
             }
         }
         _ => {}
-    }
+    }));
 }
 
 fn update_document_store(state: &ServerState, uri: Url, text: String) {
@@ -347,14 +351,21 @@ fn process_document_internal(
     let path = uri.to_file_path().map_err(|_| anyhow!("Invalid URI"))?;
     let (context_key, cli_template) = resolve_context(&path, &state.cli);
 
-    let context = contexts.entry(context_key).or_insert_with(|| CatalogContext {
-        cli: cli_template,
-        symbol_table: SymbolTable::default(),
-        catalog: Catalog::new(),
-        last_valid_symbol_table: None,
-        active_findings: HashMap::new(),
-        shadow_workspace: None,
-        recovered_syntax_errors: HashMap::new(),
+    let context = contexts.entry(context_key).or_insert_with(|| {
+        let mut symbol_table = SymbolTable::default();
+        match cli_template.target_api.as_str() {
+            "latest" => symbol_table.set_target_api(TargetApi::Latest),
+            _ => symbol_table.set_target_api(TargetApi::Pdk29),
+        }
+        CatalogContext {
+            cli: cli_template,
+            symbol_table,
+            catalog: Catalog::new(),
+            last_valid_symbol_table: None,
+            active_findings: HashMap::new(),
+            shadow_workspace: None,
+            recovered_syntax_errors: HashMap::new(),
+        }
     });
 
     // Initialize shadow workspace if needed
