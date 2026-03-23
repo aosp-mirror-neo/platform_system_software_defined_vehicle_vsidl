@@ -19,7 +19,7 @@ use crate::diagnostics::Diagnostics;
 /// Namespace for publication descriptors available to the service bundle.
 pub struct PublisherDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-    /// Publication channel 'pressure-one' of 'sdv.golden.Pressure'
+    /// Publisher descriptor 'pressure-one' of 'sdv.golden.Pressure'
     pub const PRESSURE_ONE: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
     > = {
@@ -42,7 +42,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressu
             .with_message_metadata_required(true)
             .with_message_metadata(get_message_metadata)
     };
-    /// Publication channel 'pressure-two' of 'sdv.golden.Pressure'
+    /// Publisher descriptor 'pressure-two' of 'sdv.golden.Pressure'
     pub const PRESSURE_TWO: &sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
     > = {
@@ -65,7 +65,7 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressu
             .with_message_metadata_required(true)
             .with_message_metadata(get_message_metadata)
     };
-    /// List of all publication channels of 'sdv.golden.Pressure' available to the service bundle
+    /// List of all publisher descriptors of 'sdv.golden.Pressure' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::PublisherDescriptor<
         sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
     >] = &[Self::PRESSURE_ONE, Self::PRESSURE_TWO];
@@ -73,12 +73,12 @@ impl PublisherDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressu
 /// Namespace for subscription descriptors available to the service bundle.
 pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure> {
-    /// Enables access to subscription channel 'pressure-two' of 'sdv.golden.Pressure'
+    /// Subscriber descriptor 'pressure-two' of 'sdv.golden.Pressure'
     pub const PRESSURE_TWO: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("pressure-two")
         .with_message("sdv.golden.Pressure");
-    /// List of all subscription channels of 'sdv.golden.Pressure' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.Pressure' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::all_ast_node_types::Pressure,
     >] = &[Self::PRESSURE_TWO];

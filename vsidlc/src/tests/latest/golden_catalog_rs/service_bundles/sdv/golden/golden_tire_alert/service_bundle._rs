@@ -19,27 +19,27 @@ use crate::diagnostics::Diagnostics;
 /// Namespace for subscription descriptors available to the service bundle.
 pub struct SubscriberDescriptors<Proto>(std::marker::PhantomData<Proto>);
 impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
-    /// Enables access to subscription channel 'tire-pressure-front-left' of 'sdv.golden.TIREPressure'
+    /// Subscriber descriptor 'tire-pressure-front-left' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_FRONT_LEFT: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-front-left")
         .with_message("sdv.golden.TIREPressure");
-    /// Enables access to subscription channel 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
+    /// Subscriber descriptor 'tire-pressure-front-right' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_FRONT_RIGHT: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-front-right")
         .with_message("sdv.golden.TIREPressure");
-    /// Enables access to subscription channel 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
+    /// Subscriber descriptor 'tire-pressure-rear-left' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_REAR_LEFT: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-rear-left")
         .with_message("sdv.golden.TIREPressure");
-    /// Enables access to subscription channel 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
+    /// Subscriber descriptor 'tire-pressure-rear-right' of 'sdv.golden.TIREPressure'
     pub const TIRE_PRESSURE_REAR_RIGHT: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("tire-pressure-rear-right")
         .with_message("sdv.golden.TIREPressure");
-    /// List of all subscription channels of 'sdv.golden.TIREPressure' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.TIREPressure' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::TIREPressure,
     >] = &[
@@ -50,12 +50,12 @@ impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::TIREPressure> {
     ];
 }
 impl SubscriberDescriptors<sdv_vsidlc_goldens_catalog::tire::VehicleSpeed> {
-    /// Enables access to subscription channel 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
+    /// Subscriber descriptor 'vehicle-speed' of 'sdv.golden.VehicleSpeed'
     pub const VEHICLE_SPEED: &sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
     > = &sdv::mw::clientlib::SubscriberDescriptor::new("vehicle-speed")
         .with_message("sdv.golden.VehicleSpeed");
-    /// List of all subscription channels of 'sdv.golden.VehicleSpeed' available to the service bundle
+    /// List of all subscriber descriptors of 'sdv.golden.VehicleSpeed' available to the service bundle
     pub const ALL_VARIANTS: &[&sdv::mw::clientlib::SubscriberDescriptor<
         sdv_vsidlc_goldens_catalog::tire::VehicleSpeed,
     >] = &[Self::VEHICLE_SPEED];

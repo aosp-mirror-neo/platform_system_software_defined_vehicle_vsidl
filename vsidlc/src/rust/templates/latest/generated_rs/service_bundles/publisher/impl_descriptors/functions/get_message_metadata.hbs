@@ -13,10 +13,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 --}}
-fn type_name() -> sdv::status::SdvResult<sdv::mw::TypeName> {
-    sdv::mw::TypeName::builder()
-        .package_name("{{this.0.unit_type.package}}")
-        .bundle_name("{{this.0.unit_type.bundle_name}}")
-        .type_name("{{this.0.unit_type.type_name}}")
-        .build()
+fn get_message_metadata() -> sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+    sdv_proto_reflection_rs::message_metadata::MessageMetadata {
+        file_descriptors: vec![
+            {{#each proto_dependencies}}
+            {{this.crate_name}}::{{this.file_name}}::file_descriptor().proto().clone(),
+            {{/each}}
+        ],
+        message_full_name: String::from(".{{message_fqn}}"),
+        ..Default::default()
+    }
 }
