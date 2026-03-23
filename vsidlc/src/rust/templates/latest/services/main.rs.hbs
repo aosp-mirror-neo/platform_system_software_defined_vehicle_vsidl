@@ -180,7 +180,7 @@ async fn sdv_main(
 
     {{#each rpc_clients}}
     if let Some(client) = create_{{snake_case unit_type.proto_type_name}}_{{snake_case this.channel}}_rpc_client_with_retry(comms.as_ref()).await {
-        futures_join_set.spawn(handle_{{#if has_user_defined_name}}{{snake_case user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_client(client));
+        futures_join_set.spawn(handle_{{snake_case unit_type.proto_type_name}}_{{snake_case this.channel}}_client(client));
     }
     {{/each}}
 
@@ -265,7 +265,7 @@ async fn create_{{snake_case unit_type.proto_type_name}}_{{snake_case this.chann
     }
 }
 
-async fn handle_{{#if has_user_defined_name}}{{user_defined_name}}{{else}}{{snake_case unit_type.proto_type_name}}{{/if}}_client(client: {{this.unit_type.crate_name}}::Client) {
+async fn handle_{{snake_case unit_type.proto_type_name}}_{{snake_case this.channel}}_client(client: {{this.unit_type.crate_name}}::Client) {
     loop {
         // TODO: Modify the frequency of sending requests here.
         sleep(Duration::from_secs(1)).await;
