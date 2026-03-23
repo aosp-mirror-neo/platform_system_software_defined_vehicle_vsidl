@@ -61,6 +61,11 @@ fn extract_document_symbols(symbols: &mut Vec<DocumentSymbol>, pair: pest::itera
         Rule::diagnostics_routine => Some(SymbolKind::METHOD),
         Rule::diagnostics_event => Some(SymbolKind::ENUM_MEMBER),
         Rule::some_ip_mapping => Some(SymbolKind::CLASS),
+        Rule::some_ip_service_oriented_mapping => Some(SymbolKind::CLASS),
+        Rule::some_ip_rpc_interface_mapping => Some(SymbolKind::CLASS),
+        Rule::some_ip_rpc_channel_mapping => Some(SymbolKind::CLASS),
+        Rule::some_ip_publication_mapping => Some(SymbolKind::CLASS),
+        Rule::some_ip_topic_mapping => Some(SymbolKind::CLASS),
         Rule::vhal_mapping => Some(SymbolKind::CLASS),
         _ => None,
     };
@@ -144,6 +149,23 @@ fn extract_document_symbols(symbols: &mut Vec<DocumentSymbol>, pair: pest::itera
                         }
                     })
             }
+            Rule::some_ip_service_oriented_mapping => "service_oriented_mapping".to_string(),
+            Rule::some_ip_rpc_interface_mapping => "rpc_interface_mapping".to_string(),
+            Rule::some_ip_publication_mapping => "publication_mapping".to_string(),
+            Rule::some_ip_rpc_channel_mapping => pair
+                .clone()
+                .into_inner()
+                .find(|p| p.as_rule() == Rule::some_ip_rpc_channel_mapping_channel)
+                .and_then(|p| p.into_inner().next())
+                .map(|p| p.as_str().trim_matches('"').to_string())
+                .unwrap_or_else(|| "rpc_channel_mapping".to_string()),
+            Rule::some_ip_topic_mapping => pair
+                .clone()
+                .into_inner()
+                .find(|p| p.as_rule() == Rule::some_ip_topic_mapping_topic)
+                .and_then(|p| p.into_inner().next())
+                .map(|p| p.as_str().trim_matches('"').to_string())
+                .unwrap_or_else(|| "topic_mapping".to_string()),
             _ => format!("{:?}", pair.as_rule()),
         };
 
