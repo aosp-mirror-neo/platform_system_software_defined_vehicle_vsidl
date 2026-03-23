@@ -130,3 +130,24 @@ rust_test_host {
     ],
     crate_root: "src/tests/latest/golden_tests.rs",
 }
+
+rust_test_host {
+    name: "sdv_core_vsidl_unit_vsidl_rc_generator_soa_golden_tests",
+    defaults: ["vsidl_rc_defaults"],
+    rustlibs: [
+        "libvsidl_rc_generator",
+        "libtempfile",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    test_suites: [
+        "automotive-sdv-tests",
+        "sdv-host-unit-tests",
+    ],
+    data: [
+        "src/tests/**/*",
+        ":sdv_vsidl_v1_protos",
+    ],
+    crate_root: "src/tests/soa/golden_tests.rs",
+}

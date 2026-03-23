@@ -1,0 +1,17 @@
+
+Y
+sdv.tests.soa.transmissionTirePressure"-
+'sdv.tests.soa.transmission.TirePressure|
+_
+sdv.tests.soa.transmissionTireTemperature"0
+*sdv.tests.soa.transmission.TireTemperature5
+'sdv.tests.soa.transmission.TirePressure
+tire.proto8
+*sdv.tests.soa.transmission.TireTemperature
+tire.proto‘
+
+tire.protosdv.tests.soa.transmission"*
+TirePressure
+pressure (Rpressure"3
+TireTemperature 
+temperature (Rtemperaturebproto3
