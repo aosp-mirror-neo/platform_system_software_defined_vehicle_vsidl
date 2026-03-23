@@ -32,4 +32,5 @@ rust_binary {
         "libclap",
         "libsdv_dump",
     ],
+    required: ["com.sdv.google.sample.vsidl_provider"],
 }
