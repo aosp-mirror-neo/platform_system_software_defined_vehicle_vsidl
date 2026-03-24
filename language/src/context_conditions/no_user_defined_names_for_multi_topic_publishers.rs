@@ -47,7 +47,7 @@ impl SymbolTableChecker for NoUserDefinedNamesForMultiChannelPublishers {
                     publisher.service_unit_name,
                     topics,
                 ),
-                vec![publisher.message_span.clone().into_option()]
+                vec![publisher.service_unit_name_span.clone().into_option()]
             );
         }
     }

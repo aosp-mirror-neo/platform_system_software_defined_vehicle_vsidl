@@ -57,7 +57,10 @@ impl SymbolTableChecker for RpcChannelUniquePerService {
 
         if !channel_name.is_empty() {
             self.channel_to_services.entry(channel_name.clone()).or_default().insert(service_id);
-            self.channel_to_spans.entry(channel_name).or_default().push(server.symbol.span.clone());
+            self.channel_to_spans
+                .entry(channel_name)
+                .or_default()
+                .push(server.ast_node.channel_span.clone().into_option());
         }
     }
 

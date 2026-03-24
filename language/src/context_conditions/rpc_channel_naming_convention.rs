@@ -64,7 +64,7 @@ impl VsidlVisitor for RpcChannelNamingConvention {
             self.finding_collector.error(
                 FindingId::RpcChannelNamingConvention,
                 format!("RPC channel '{}' must be in lowercase kebab case", node.channel),
-                vec![node.span.clone().into_option()],
+                vec![node.channel_span.clone().into_option()],
             );
         }
     }
@@ -74,7 +74,7 @@ impl VsidlVisitor for RpcChannelNamingConvention {
             self.finding_collector.error(
                 FindingId::RpcChannelNamingConvention,
                 format!("RPC channel '{}' must be in lowercase kebab case", node.channel),
-                vec![node.span.clone().into_option()],
+                vec![node.channel_span.clone().into_option()],
             );
         }
     }

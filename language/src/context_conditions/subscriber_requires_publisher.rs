@@ -40,7 +40,7 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
                     "There is no publisher for the message of subscriber '{}'",
                     subscriber.full_name(symbol_table)
                 ),
-                vec![subscriber.span.clone().into_option()],
+                vec![subscriber.ast_node.message_span.clone().into_option()],
             );
             return;
         }

@@ -32,7 +32,7 @@ impl VsidlVisitor for UserDefinedNamesOnlyOneTopic {
             self.finding_collector.error(
                 FindingId::UserDefinedNamesOnlyOneChannel,
                 format!("Publisher '{}' must not serve multiple topic names and have a user-defined name", node.service_unit_name.clone()),
-                vec![node.span.clone().into_option()],
+                vec![node.service_unit_name_span.clone().into_option()],
             );
         }
     }

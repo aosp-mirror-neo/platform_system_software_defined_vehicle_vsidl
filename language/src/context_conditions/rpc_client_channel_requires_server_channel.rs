@@ -49,7 +49,7 @@ impl SymbolTableChecker for RpcClientChannelRequiresServerChannel {
                     channel.name(),
                     requested_service.full_name(symbol_table)
                 ),
-                vec![rpc_client.span.clone().into_option()],
+                vec![rpc_client.ast_node.channel_span.clone().into_option()],
             );
         }
     }
