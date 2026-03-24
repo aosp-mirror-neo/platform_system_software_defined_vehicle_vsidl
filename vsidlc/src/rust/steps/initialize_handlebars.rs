@@ -160,14 +160,6 @@ macro_rules! define_common_templates {
                 include_str!(concat!($prefix, "/apex/sdv_service_bundles_manifest.textproto.hbs")),
             ),
             (
-                "acls_android_bp",
-                include_str!(concat!($prefix, "/configs/acls/Android.bp.hbs")),
-            ),
-            (
-                "service_bundles_acls",
-                include_str!(concat!($prefix, "/configs/acls/service_bundles_acls.textproto.hbs")),
-            ),
-            (
                 "orchestration_android_bp",
                 include_str!(concat!($prefix, "/configs/orchestration/Android.bp.hbs")),
             ),
@@ -296,6 +288,11 @@ const PDK29_ONLY_TEMPLATES: &[(&str, &str)] = &[
         include_str!(
             "../templates/pdk29//generated_rs/service_bundles/subscriber/impl_metadata/impl.hbs"
         ),
+    ),
+    ("acls_android_bp", include_str!("../templates/pdk29/configs/acls/Android.bp.hbs")),
+    (
+        "service_bundles_acls",
+        include_str!("../templates/pdk29/configs/acls/service_bundles_acls.textproto.hbs"),
     ),
 ];
 

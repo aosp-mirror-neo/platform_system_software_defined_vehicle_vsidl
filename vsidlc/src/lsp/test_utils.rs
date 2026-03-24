@@ -109,7 +109,6 @@ pub(crate) fn setup_mock_cli(temp_dir: &TempDir) -> Cli {
         services: false,
         target_api: "pdk29".to_string(),
         no_warn: true,
-        use_acls: false,
         lsp: true,
     }
 }
