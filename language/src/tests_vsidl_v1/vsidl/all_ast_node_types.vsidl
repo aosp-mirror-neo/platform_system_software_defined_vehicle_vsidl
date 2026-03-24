@@ -97,28 +97,28 @@ some_ip_mapping {
         key: 1
         value: "second_service_unit"
       }
-      sdv_topic_paramaterization {
+      sdv_topic_parameterization {
         key: 0
         value {
           topic: "first_topic"
           capacity: 10
         }
       }
-      sdv_topic_paramaterization {
+      sdv_topic_parameterization {
         key: 1
         value {
           topic: "second_topic"
           capacity: 20
         }
       }
-      sdv_topic_paramaterization {
+      sdv_topic_parameterization {
         key: 2
         value {
           topic: "third_topic"
           capacity: 30
         }
       }
-      sdv_topic_paramaterization {
+      sdv_topic_parameterization {
         key: 3
         value {
           topic: "fourth_topic"

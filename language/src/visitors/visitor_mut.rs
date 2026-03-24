@@ -53,6 +53,7 @@ use vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::{
     rpc_interface::RequestResponseMethod as SomeIpRequestResponseMethod, Event as SomeIpEvent,
     RpcInterface as SomeIpRpcInterface,
 };
+use vsidl_v1::someip::some_ip_mapping::some_ip_instance_mapping::SdvTopicParameters;
 use vsidl_v1::someip::some_ip_mapping::{
     sdv_type_mapping::ServiceOrientedMapping as SomeIpServiceOrientedMapping,
     SdvTypeMapping as SomeIpSdvTypeMapping, SomeIpInstanceImplementation, SomeIpInstanceMapping,
@@ -414,6 +415,19 @@ pub trait VsidlVisitorMut: AsDynVisitorMut {
     /// # Parameters
     /// * `_node`: A mutable reference to the [SomeIpServiceMapping] being visited.
     fn end_visit_someip_service_mapping(&mut self, _node: &mut SomeIpServiceMapping) {}
+
+    /// Called before visiting the children of a [SdvTopicParameters] node.
+    /// Allows modification of the [SdvTopicParameters] before its children are visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SdvTopicParameters] being visited.
+    fn start_visit_sdv_topic_parameters(&mut self, _node: &mut SdvTopicParameters) {}
+    /// Called after visiting the children of a [SdvTopicParameters] node.
+    /// Allows modification of the [SdvTopicParameters] after its children have been visited.
+    ///
+    /// # Parameters
+    /// * `_node`: A mutable reference to the [SdvTopicParameters] being visited.
+    fn end_visit_sdv_topic_parameters(&mut self, _node: &mut SdvTopicParameters) {}
 
     /// Called before visiting the children of a mutable [SomeIpInstanceMapping] node.
     /// Allows modification of the [SomeIpInstanceMapping] before its children are visited.
@@ -2361,10 +2375,35 @@ impl AstNodeMut for SomeIpInstanceMapping {
 
     /// Traverses the children of a mutable [SomeIpInstanceMapping] node.
     ///
-    /// Currently, [SomeIpInstanceMapping] has no defined children in the AST traversal logic.
+    /// # Parameters
+    /// * `visitor`: The mutable visitor.
+    fn traverse(&mut self, visitor: &mut dyn VsidlVisitorMut) {
+        for sdv_topic_parameter in self.sdv_topic_parameterization.values_mut() {
+            sdv_topic_parameter.accept(visitor);
+        }
+    }
+}
+
+/// Implements the [AstNodeMut] trait for the [SdvTopicParameters] struct.
+impl AstNodeMut for SdvTopicParameters {
+    /// Accepts a [VsidlVisitor] for a SOME/IP SdvTopicParameters node.
+    ///
+    /// Calls `start_visit_sdv_topic_parameters`, `traverse`, and `end_visit_sdv_topic_parameters`.
     ///
     /// # Parameters
-    /// * `_visitor`: The mutable visitor (unused).
+    /// * `visitor`: The visitor to accept.
+    fn accept(&mut self, visitor: &mut dyn VsidlVisitorMut) {
+        visitor.start_visit_sdv_topic_parameters(self);
+        self.traverse(visitor);
+        visitor.end_visit_sdv_topic_parameters(self);
+    }
+
+    /// Traverses the children of a [SdvTopicParameters] node.
+    ///
+    /// Currently, [SdvTopicParameters] has no defined children in the AST traversal logic.
+    ///
+    /// # Parameters
+    /// * `_visitor`: The visitor (unused).
     fn traverse(&mut self, _visitor: &mut dyn VsidlVisitorMut) {
         // No child nodes
     }

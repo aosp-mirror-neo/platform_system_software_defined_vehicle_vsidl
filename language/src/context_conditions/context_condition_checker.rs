@@ -332,10 +332,6 @@ impl ContextConditionChecker {
         )
         .add_context_condition(
             SymbolTableState::NotCreated,
-            Box::new(SomeIpParameterizationConflict::default()),
-        )
-        .add_context_condition(
-            SymbolTableState::NotCreated,
             Box::new(SomeIpMappingTypeConflict::default()),
         )
         .add_context_condition(

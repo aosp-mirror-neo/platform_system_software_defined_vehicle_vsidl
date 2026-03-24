@@ -138,6 +138,7 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::some_ip_service_mapping
         | Rule::some_ip_instance
         | Rule::some_ip_sdv_service_unit_parameterization_block
+        | Rule::some_ip_sdv_topic_parameterization_block
         | Rule::some_ip_instance_impl
         | Rule::some_ip_offered_interface
         | Rule::some_ip_offered_interface_sdv_unit_type
@@ -255,6 +256,9 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::some_ip_instance_id
         | Rule::some_ip_sdv_service_unit_parameterization_block_key
         | Rule::some_ip_sdv_service_unit_parameterization_block_value
+        | Rule::some_ip_sdv_topic_parameterization_block_key
+        | Rule::some_ip_sdv_topic
+        | Rule::some_ip_capacity
         | Rule::some_ip_service_unit
         | Rule::some_ip_unit_type_ref_package_name
         | Rule::some_ip_unit_type_ref_service_bundle_name
@@ -297,11 +301,8 @@ fn get_token_type_index(pair: &pest::iterators::Pair<Rule>) -> Option<u32> {
         | Rule::some_ip_struct_body_length_field_size
         | Rule::some_ip_struct_field_data_tag
         | Rule::some_ip_struct_field_field_name
-        | Rule::some_ip_channel
         | Rule::some_ip_simple_event_topic
-        | Rule::some_ip_simple_event_capacity
         | Rule::some_ip_event_part_topic
-        | Rule::some_ip_event_part_capacity
         | Rule::some_ip_rpc_channel_mapping_channel
         | Rule::some_ip_rpc_channel_mapping_instance_id
         | Rule::some_ip_topic_mapping_topic
