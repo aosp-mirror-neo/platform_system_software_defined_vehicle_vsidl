@@ -21,9 +21,7 @@ package com.android.sdv.vsidl_provider_agent;
 import "google/protobuf/descriptor.proto";
 import "sdv/diagnostics/v1/diagnostics_syntax.proto";
 
-message GetDiagnosticsDeclarationRequest {
-  ServiceFqbn fqbn = 1;
-}
+message GetDiagnosticsDeclarationRequest { ServiceFqbn fqbn = 1; }
 
 message GetDiagnosticsDeclarationResponse {
   .sdv.diagnostics.v1.DiagnosticsDeclaration declaration = 1;

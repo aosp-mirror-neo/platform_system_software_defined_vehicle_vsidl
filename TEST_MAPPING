@@ -60,6 +60,9 @@
     },
     {
       "name": "sdv_core_vsidl_unit_vsidlc_cli_test"
+    },
+    {
+      "name": "sdv_vsidl_provider_query_test"
     }
   ]
 }

@@ -309,3 +309,47 @@ async fn main() -> anyhow::Result<()> {
     future::pending::<()>().await;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use googletest::assert_that;
+    use googletest::prelude::{eq, some};
+    use sdv_comms::id::ServiceFqin;
+    use sdv_comms::ContextRef;
+    use sdv_config_provider::vsidl_provider::new_for_integration_test;
+    use sdv_config_provider::vsidl_provider_api::AvailabilityChangeEvent;
+    use sdv_config_provider::vsidl_provider_api::VsidlConfigProvider;
+    use std::str::FromStr;
+    use std::time::Duration;
+    use tokio::time::timeout;
+
+    use futures::StreamExt;
+    const TEST_TIMEOUT_DURATION: Duration = Duration::from_secs(30);
+
+    #[tokio::test]
+    async fn test_rpc_server_on_local_agent_is_reachable() {
+        let test_future = async {
+            // setup Binder thread pool to enable use of Comms "listener" API.
+            sdv_dump::ProcessState::start_thread_pool();
+            let ctx = ContextRef::create(
+                ServiceFqin::from_str(
+                    "ignored:com.android.sdv.sample.test_rpc_server_on_local_agent_is_reachable.Client/ignored",
+                )
+                .expect("Valid ServiceFqin"),
+            );
+
+            let provider = new_for_integration_test(ctx);
+            let own_vm = ctx.get_self_fqin().get_sdv_vm_name().to_string();
+
+            let mut availability_stream =
+                provider.subscribe_availability_change_by_vm(&own_vm).await.unwrap();
+
+            assert_that!(
+                availability_stream.next().await,
+                some(eq(AvailabilityChangeEvent::Available))
+            );
+        };
+
+        timeout(TEST_TIMEOUT_DURATION, test_future).await.expect("Test timed out - most likely because the RPC server on the VSIDL Provider Agent is not reachable or does not exist (or the agent is not running or does not exist).");
+    }
+}

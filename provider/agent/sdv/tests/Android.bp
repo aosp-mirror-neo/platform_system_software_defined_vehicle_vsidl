@@ -34,3 +34,39 @@ rust_binary {
     ],
     required: ["com.sdv.google.sample.vsidl_provider"],
 }
+
+rust_test {
+    name: "sdv_vsidl_provider_query_test",
+    srcs: ["sdv_vsidl_provider_query.rs"],
+    defaults: ["vsidl_provider_lib@rust_defaults"],
+    rustlibs: [
+        "libtempfile",
+        "libprotobuf_parse",
+        "libgoogletest_rust",
+        "libvsidl_provider_agent_api_test_protos",
+        "libanyhow",
+        "libclap",
+        "libfutures",
+        "liblog_rust",
+        "libsdv_comms_rs",
+        "libsdv_config_provider",
+        "libsdv_dump",
+        "libsdv_log_rust",
+        "libsdv_status_rs",
+        "libtokio",
+    ],
+    data: [
+        "test_data/v1/invalid/**/*",
+        "test_data/v1/with_overwrites/**/*",
+        ":generate_vsidl_files_test_v1_catalog_files{someip-config.binpb}",
+        ":generate_vsidl_files_test_v1_catalog_files{vsidl-config.binpb}",
+    ],
+    test_suites: [
+        "automotive-sdv-tests",
+    ],
+    test_options: {
+        unit_test: true,
+    },
+    require_root: true,
+    team: "trendy_team_automotive",
+}
