@@ -48,6 +48,7 @@ impl ServiceUnitNameTooLong {
                 format!(
                     "Service unit name for {node_type} '{service_unit_name}' exceeds {SERVICE_UNIT_NAME_MAX_LENGTH_BYTES} chars"
                 ),
+                Some(format!("Exceeds maximum length of {SERVICE_UNIT_NAME_MAX_LENGTH_BYTES} characters")),
                 vec![span],
             );
         }

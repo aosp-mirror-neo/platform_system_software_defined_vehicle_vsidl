@@ -87,6 +87,11 @@ impl SymbolTableChecker for TopicNameUnique {
                         messages.len(),
                         message_names.join(", ")
                     ),
+                    Some(format!(
+                        "Used for {} different message types: {}",
+                        messages.len(),
+                        message_names.join(", ")
+                    )),
                     spans,
                 );
             }

@@ -47,6 +47,7 @@ impl SymbolTableChecker for NoUserDefinedNamesForMultiChannelPublishers {
                     publisher.service_unit_name,
                     channels,
                 ),
+                Some(format!("May not have a user-defined name without specifying the used channel. Possible channels: {:?}", channels)),
                 vec![publisher.service_unit_name_span.clone().into_option()]
             );
         }

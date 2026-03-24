@@ -728,7 +728,7 @@ mod tests {
         checker.disable_finding_id(finding_id);
 
         // WHEN adding a finding with the disabled id
-        checker.finding_collector.error(finding_id, "test", Vec::new());
+        checker.finding_collector.error(finding_id, "test", None, Vec::new());
 
         // THEN there's no finding (because it's disabled)
         assert!(checker.finding_collector.findings().is_empty());

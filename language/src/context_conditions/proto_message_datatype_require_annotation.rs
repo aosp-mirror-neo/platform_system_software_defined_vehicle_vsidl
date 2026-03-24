@@ -110,6 +110,7 @@ impl ProtoMessageRequireAnnotationType {
                         annotation_name,
                         field.name()
                     ),
+                    None,
                     Vec::new(),
                 );
             }
@@ -122,6 +123,7 @@ impl ProtoMessageRequireAnnotationType {
                     annotation_name,
                     field.name()
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -136,7 +138,7 @@ impl ProtoMessageRequireAnnotationType {
                 "File name: {}, detect a loop in message path: {}. Please resolve the circular dependency.",
                 file_name, loop_path
             ),
-            Vec::new(),
+            None, Vec::new(),
         );
     }
 

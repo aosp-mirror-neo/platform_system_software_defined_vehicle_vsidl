@@ -37,6 +37,7 @@ impl VsidlVisitor for TopicNameTooLong {
                         "Topic '{}' exceeds the length limit of {} characters",
                         topic, TOPIC_NAME_MAX_LENGTH_BYTES
                     ),
+                    None,
                     vec![node.topic_span.get(index).cloned()],
                 );
             }
@@ -52,6 +53,7 @@ impl VsidlVisitor for TopicNameTooLong {
                         "Topic '{}' exceeds the length limit of {} characters",
                         topic, TOPIC_NAME_MAX_LENGTH_BYTES
                     ),
+                    None,
                     vec![node.topic_span.get(index).cloned()],
                 );
             }

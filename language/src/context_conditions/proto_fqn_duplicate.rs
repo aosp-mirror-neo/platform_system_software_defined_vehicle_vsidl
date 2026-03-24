@@ -41,6 +41,7 @@ impl SymbolTableChecker for ProtoFqnDuplicate {
                 format!(
                     "There are multiple Protobuf messages with the fully-qualified name '{fqn}'"
                 ),
+                None,
                 vec![message.span()],
             );
         }
@@ -58,7 +59,7 @@ impl SymbolTableChecker for ProtoFqnDuplicate {
             self.finding_collector.warn(
                 FindingId::ProtoFqnDuplicate,
                 format!("There are multiple Protobuf RPC services with the fully-qualified name '{fqn}'"),
-                vec![rpc_service.span()],
+                None, vec![rpc_service.span()],
             );
         }
     }

@@ -36,6 +36,7 @@ impl VsidlVisitor for PublisherCapacity {
             self.finding_collector.error(
                 FindingId::PublisherCapacity,
                 format!("Publisher capacity must be at least 2, but was {}", node.capacity),
+                None,
                 vec![node.capacity_span.clone().into_option()],
             );
         } else if node.capacity > u32::MAX.into() {
@@ -46,12 +47,14 @@ impl VsidlVisitor for PublisherCapacity {
                     u32::MAX,
                     node.capacity
                 ),
+                None,
                 vec![node.capacity_span.clone().into_option()],
             );
         } else if node.capacity % 2 != 0 {
             self.finding_collector.error(
                 FindingId::PublisherCapacity,
                 format!("Publisher capacity must be an even number, but was {}", node.capacity),
+                None,
                 vec![node.capacity_span.clone().into_option()],
             );
         }

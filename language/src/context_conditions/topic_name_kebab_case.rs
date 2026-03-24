@@ -42,6 +42,7 @@ impl VsidlVisitor for TopicNameKebabCase {
                 self.finding_collector.error(
                     FindingId::TopicNameKebabCase,
                     format!("Topic '{}' must be in lowercase kebab case", topic),
+                    Some("Must be in lowercase kebab case".to_string()),
                     vec![node.topic_span.get(index).cloned()],
                 );
             }
@@ -54,6 +55,7 @@ impl VsidlVisitor for TopicNameKebabCase {
                 self.finding_collector.error(
                     FindingId::TopicNameKebabCase,
                     format!("Topic '{}' must be in lowercase kebab case", topic),
+                    Some("Must be in lowercase kebab case".to_string()),
                     vec![node.topic_span.get(index).cloned()],
                 );
             }
@@ -65,6 +67,7 @@ impl VsidlVisitor for TopicNameKebabCase {
             self.finding_collector.error(
                 FindingId::TopicNameKebabCase,
                 format!("Topic '{}' must be in lowercase kebab case", &node.topic),
+                None,
                 vec![],
             );
         }

@@ -44,6 +44,7 @@ impl AndroidBpFields {
                         String::new()
                     }
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -56,6 +57,7 @@ impl AndroidBpFields {
                     android_bp.file_path.display(),
                     if !name.is_empty() { format!(" with name '{name}'") } else { String::new() }
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -73,6 +75,7 @@ impl AndroidBpFields {
                         String::new()
                     },
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -87,6 +90,7 @@ impl AndroidBpFields {
                     "missing 'name' attribute in filegroup target in '{}'",
                     android_bp.file_path.display(),
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -100,6 +104,7 @@ impl AndroidBpFields {
                     android_bp.file_path.display(),
                     if !name.is_empty() { format!(" with name '{name}'") } else { String::new() },
                 ),
+                None,
                 Vec::new(),
             );
         }

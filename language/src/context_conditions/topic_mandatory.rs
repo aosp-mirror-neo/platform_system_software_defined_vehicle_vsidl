@@ -33,6 +33,7 @@ impl VsidlVisitor for TopicMandatory {
             self.finding_collector.error(
                 FindingId::TopicMandatory,
                 "Publisher topic is mandatory. Please specify 'topic: \"topic-name\"'",
+                Some("Topic is mandatory. Please specify 'topic: \"topic-name\"'".to_string()),
                 vec![node.span.clone().into_option()],
             );
         }
@@ -43,6 +44,7 @@ impl VsidlVisitor for TopicMandatory {
             self.finding_collector.error(
                 FindingId::TopicMandatory,
                 "Subscriber topic is mandatory. Please specify 'topic: \"topic-name\"'",
+                Some("Topic is mandatory. Please specify 'topic: \"topic-name\"'".to_string()),
                 vec![node.span.clone().into_option()],
             );
         }
@@ -53,6 +55,7 @@ impl VsidlVisitor for TopicMandatory {
             self.finding_collector.error(
                 FindingId::TopicMandatory,
                 "Event topic is mandatory. Please specify 'topic: \"topic-name\"'",
+                None,
                 vec![],
             );
         }

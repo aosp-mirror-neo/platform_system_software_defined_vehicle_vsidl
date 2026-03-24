@@ -59,6 +59,7 @@ impl ServiceUnitNameDuplicate {
                 format!(
                     "Service unit name '{service_unit_name}' is used multiple times in service bundle '{service_bundle_name}'"
                 ),
+                Some("Used multiple times in this service bundle".to_string()),
                 vec![span.clone()],
             );
         }
@@ -66,6 +67,7 @@ impl ServiceUnitNameDuplicate {
             self.finding_collector.error(
                 FindingId::ServiceUnitNameDuplicate,
                 format!("Service unit name '{service_unit_name}' is used by multiple publishers"),
+                Some("Used by multiple publishers".to_string()),
                 vec![span],
             );
         }

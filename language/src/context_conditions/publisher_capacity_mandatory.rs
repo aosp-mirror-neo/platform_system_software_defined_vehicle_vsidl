@@ -33,6 +33,7 @@ impl VsidlVisitor for PublisherCapacityMandatory {
             self.finding_collector.error(
                 FindingId::PublisherCapacityMandatory,
                 "Publisher capacity is mandatory in latest VSIDL syntax. Please specify 'capacity: <even_number_ge_2>'",
+                Some("Capacity is mandatory. Please specify 'capacity: <even_number_ge_2>'".to_string()),
                 vec![node.span.clone().into_option()],
             );
         }

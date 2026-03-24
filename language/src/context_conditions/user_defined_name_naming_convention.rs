@@ -40,6 +40,7 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionFirstChar,
                 format!("Service unit name '{}' {}", service_unit_name, err),
+                Some("Must start with a lowercase letter [a-z]".to_string()),
                 vec![span.clone()],
             );
         }
@@ -50,6 +51,10 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionCharset,
                 format!("Service unit name '{}' {}", service_unit_name, err),
+                Some(
+                    "Must only contain lowercase alphanumeric characters or hyphens [a-z0-9-]"
+                        .to_string(),
+                ),
                 vec![span.clone()],
             );
         }
@@ -60,6 +65,7 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionConsecutiveHyphen,
                 format!("Service unit name '{}' {}", service_unit_name, err),
+                Some("May not contain consecutive hyphens".to_string()),
                 vec![span.clone()],
             );
         }
@@ -70,6 +76,7 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionLastChar,
                 format!("Service unit name '{}' {}", service_unit_name, err),
+                Some("May not end with a hyphen".to_string()),
                 vec![span.clone()],
             );
         }

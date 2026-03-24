@@ -65,6 +65,7 @@ impl SymbolTableChecker for PublisherChannel {
                             "'UNIQUE' channel specification is redundant in publisher '{}'",
                             publisher.symbol.name.clone()
                         ),
+                        Some("'UNIQUE' channel specification is redundant".to_string()),
                         vec![publisher.channel_span.get(index).cloned()],
                     );
                     continue;
@@ -72,6 +73,7 @@ impl SymbolTableChecker for PublisherChannel {
                 self.finding_collector.error(
                     FindingId::PublisherChannelForChannellessProto,
                     format!("Publisher channel '{channel}' does not exist"),
+                    Some("Channel does not exist".to_string()),
                     vec![publisher.channel_span.get(index).cloned()],
                 );
             }
@@ -103,7 +105,7 @@ impl SymbolTableChecker for PublisherChannel {
                 self.finding_collector.error(
                     FindingId::PublisherChannelDoesNotExist,
                     format!("Publisher channel '{channel}' does not exist in enum '{channels_enum_name}'"),
-                    vec![publisher.channel_span.get(index).cloned()],
+                    None, vec![publisher.channel_span.get(index).cloned()],
                 )
             }
         }
@@ -142,7 +144,7 @@ impl SymbolTableChecker for PublisherChannel {
                 };
                 self.finding_collector.error(FindingId::PublisherChannelSinglePubUsedByMultiplePublishers,
                     format!("Publication channel '{channel}' of '{publication_name}' is used by multiple publishers despite being Single Pub"),
-                    vec![span],
+                    None, vec![span],
                 )
             }
         }

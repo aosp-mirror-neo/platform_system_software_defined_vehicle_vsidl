@@ -44,6 +44,7 @@ impl SymbolTableChecker for RpcClientType {
                     "RPC client '{}' does not have a corresponding Proto RPC service",
                     rpc_client.service
                 ),
+                Some("RPC service does not exist in Proto".to_string()),
                 vec![rpc_client.service_span.clone().into_option()],
             );
         }
@@ -56,6 +57,7 @@ impl SymbolTableChecker for RpcClientType {
                     "RPC client '{}' has more than one corresponding Proto RPC service - the first found RPC service will be used!",
                     rpc_client.service
                 ),
+                Some("Ambiguous - multiple Proto RPC services found".to_string()),
                 vec![rpc_client.service_span.clone().into_option()],
             );
         }

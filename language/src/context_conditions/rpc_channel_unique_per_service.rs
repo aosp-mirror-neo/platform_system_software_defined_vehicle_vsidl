@@ -87,6 +87,11 @@ impl SymbolTableChecker for RpcChannelUniquePerService {
                         services.len(),
                         service_names.join(", ")
                     ),
+                    Some(format!(
+                        "Used for {} different services: {}",
+                        services.len(),
+                        service_names.join(", ")
+                    )),
                     spans,
                 );
             }

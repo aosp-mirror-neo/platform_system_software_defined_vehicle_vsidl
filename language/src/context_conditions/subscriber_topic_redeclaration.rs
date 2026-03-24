@@ -51,15 +51,16 @@ impl SymbolTableChecker for SubscriberChannelsRedeclaration {
         for ((sub_name, topic_name), spans) in topic_spans {
             if spans.len() > 1 {
                 self.finding_collector.error(
-                FindingId::SubscriberChannelsRedeclaration,
-                format!(
-                    "Service Bundle: '{}', topic '{}' of subscriber '{}' is redeclared in this service bundle",
-                    service_bundle.full_name(symbol_table),
-                    topic_name,
-                    sub_name,
-                ),
-                spans,
-            );
+                    FindingId::SubscriberChannelsRedeclaration,
+                    format!(
+                        "Service Bundle: '{}', topic '{}' of subscriber '{}' is redeclared in this service bundle",
+                        service_bundle.full_name(symbol_table),
+                        topic_name,
+                        sub_name,
+                    ),
+                    Some("Topic is redeclared in this service bundle".to_string()),
+                    spans,
+                );
             }
         }
     }
