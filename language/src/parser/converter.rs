@@ -68,11 +68,11 @@ fn unquote(s: &str) -> String {
 }
 
 fn get_inner_str(pair: Pair<Rule>) -> &str {
-    pair.into_inner().next().unwrap().as_str().trim()
+    pair.into_inner().find(|p| p.as_rule() != Rule::COMMENT).unwrap().as_str().trim()
 }
 
 fn get_inner_pair(pair: Pair<Rule>) -> Pair<Rule> {
-    pair.into_inner().next().unwrap()
+    pair.into_inner().find(|p| p.as_rule() != Rule::COMMENT).unwrap()
 }
 
 fn proto_span(pair: Pair<Rule>, file_path: &str) -> MessageField<Span> {
@@ -93,7 +93,7 @@ pub fn convert_to_vsidl_entry(pair: Pair<Rule>, file_path: &str) -> VsidlEntry {
     for item in pair.into_inner() {
         match item.as_rule() {
             Rule::package => {
-                let value = item.into_inner().next().unwrap();
+                let value = item.into_inner().find(|p| p.as_rule() != Rule::COMMENT).unwrap();
                 vsidl_entry.package = unquote(value.as_str());
                 vsidl_entry.package_span = proto_span(value, file_path);
             }
