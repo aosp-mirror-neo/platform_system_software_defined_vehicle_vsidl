@@ -463,6 +463,41 @@ some_ip_mapping {
   }
 }
 
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.android.sdv.someip.sample"
+      type_name: "SimpleMapping"
+    }
+    someip_service_id: 0x14
+    version_major: 0x1
+    version_minor: 0x0
+    service_oriented_mapping {
+      publication_mapping {
+        offered_topic {
+          type_definition {
+            length_field_size: ZERO
+            field {
+              field_name: "value"
+              field_type {
+                someip_primitive: UINT32
+              }
+            }
+          }
+          simple_mapping {
+            group_id: 0x491
+            event_id: 54
+          }
+        }
+        topic_mapping {
+          topic: "soa-simple-mapping-topic"
+          instance_id: 0x1
+        }
+      }
+    }
+  }
+}
+
 vhal_mapping {
   property {
     prop_config {

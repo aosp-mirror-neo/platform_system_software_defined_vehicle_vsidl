@@ -1934,7 +1934,7 @@ mod test {
             converter::convert_to_vsidl_entry(parsed_file.into_iter().next().unwrap(), FILE_PATH);
 
         // THEN the some_ip_mapping is correct
-        assert_eq!(vsidl_entry.some_ip_mapping.len(), 6);
+        assert_eq!(vsidl_entry.some_ip_mapping.len(), 7);
         let some_ip_mapping = &vsidl_entry.some_ip_mapping[0];
         let service_mapping = some_ip_mapping.mapping_type.as_ref().unwrap();
         match service_mapping {
@@ -2199,6 +2199,44 @@ mod test {
                 }
             }
             _ => panic!("Expected SdvTypeMapping for mapping 6"),
+        }
+
+        let some_ip_mapping_7 = &vsidl_entry.some_ip_mapping[6];
+        let service_mapping_7 = some_ip_mapping_7.mapping_type.as_ref().unwrap();
+        match service_mapping_7 {
+            vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
+                assert_eq!(
+                    mapping.unit_type.as_ref().unwrap().package_name,
+                    "com.android.sdv.someip.sample"
+                );
+                assert_eq!(mapping.unit_type.as_ref().unwrap().type_name, "SimpleMapping");
+                assert_eq!(mapping.someip_service_id, 0x14);
+                assert_eq!(mapping.version_major, 0x1);
+                assert_eq!(mapping.version_minor, 0x0);
+                let som = mapping.service_oriented_mapping.as_ref().unwrap();
+                match som.soa_mapping_type.as_ref().unwrap() {
+                    vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::service_oriented_mapping::Soa_mapping_type::PublicationMapping(pub_mapping) => {
+                        assert_eq!(pub_mapping.topic_mapping.len(), 1);
+                        assert_eq!(pub_mapping.topic_mapping[0].topic, "soa-simple-mapping-topic");
+                        assert_eq!(pub_mapping.topic_mapping[0].instance_id, 0x1);
+                        let offered_topic = pub_mapping.offered_topic.as_ref().unwrap();
+                        let type_def = offered_topic.type_definition.as_ref().unwrap();
+                        assert_eq!(type_def.length_field_size, Some(vsidl_v1::someip_type::some_ip_type::LengthFieldSize::ZERO.into()));
+                        assert_eq!(type_def.field.len(), 1);
+                        assert_eq!(type_def.field[0].field_name, "value");
+                        assert_eq!(type_def.field[0].field_type.as_ref().unwrap().someip_type.as_ref().unwrap(), &vsidl_v1::someip_type::some_ip_type::Someip_type::SomeipPrimitive(vsidl_v1::someip_type::some_ip_type::SomeIpPrimitive::UINT32.into()));
+                        match offered_topic.topic_mapping.as_ref().unwrap() {
+                            vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::topic::Topic_mapping::SimpleMapping(sm) => {
+                                assert_eq!(sm.group_id, 0x491);
+                                assert_eq!(sm.event_id, 54);
+                            }
+                            _ => panic!("Expected SimpleMapping"),
+                        }
+                    }
+                    _ => panic!("Expected PublicationMapping"),
+                }
+            }
+            _ => panic!("Expected SdvTypeMapping for mapping 7"),
         }
     }
 
@@ -2540,6 +2578,13 @@ mod test {
                             o.span.clear();
                             o.type_definition_span.clear();
                             o.simple_mapping_span.clear();
+                            o.multipub_topic_info_span.clear();
+                            if o.has_simple_mapping() {
+                                let sm = o.mut_simple_mapping();
+                                sm.span.clear();
+                                sm.group_id_span.clear();
+                                sm.event_id_span.clear();
+                            }
                             o.someip_ff_methods_span.clear();
                             o.special_fields.clear();
                             if let Some(td) = o.type_definition.as_mut() {
