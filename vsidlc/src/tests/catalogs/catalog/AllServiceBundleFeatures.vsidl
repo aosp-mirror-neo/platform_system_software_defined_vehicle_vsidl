@@ -43,6 +43,7 @@ service_bundle {
             id: "event1"
             extended_data_message_name: "sdv.test.diagnostics.FirstEventExt"
             fault_listener_mask: 0x3
+            topic: "event1-topic"
         }
 
         routine {

@@ -17,6 +17,7 @@
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition;
 use sdv_comms_id_validator::topic_name_validation::validate_topic_name;
+use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
 use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
@@ -56,6 +57,16 @@ impl VsidlVisitor for TopicNameKebabCase {
                     vec![node.span.clone().into_option()],
                 );
             }
+        }
+    }
+
+    fn start_visit_diagnostics_event(&mut self, node: &Event) {
+        if !is_kebab_case(&node.topic) {
+            self.finding_collector.error(
+                FindingId::TopicNameKebabCase,
+                format!("Topic '{}' must be in lowercase kebab case", &node.topic),
+                vec![],
+            );
         }
     }
 }
@@ -99,6 +110,14 @@ mod tests {
 
             check.start_visit_subscriber(&subscriber);
             assert!(check.is_err(), "Should have rejected invalid topic name: '{}'", topic);
+
+            // GIVEN a diagnostics event WITHOUT a topic
+            let mut check = TopicNameKebabCase::default();
+            let event = Event { topic: topic.to_string(), ..Default::default() };
+
+            // WHEN visiting the event
+            check.start_visit_diagnostics_event(&event);
+            assert!(check.is_err(), "Should have rejected invalid topic name: '{}'", topic);
         }
     }
 
@@ -119,6 +138,14 @@ mod tests {
             subscriber.topic.push(topic.to_string());
 
             check.start_visit_subscriber(&subscriber);
+            assert!(check.is_ok(), "Should have accepted valid topic name: '{}'", topic);
+
+            // GIVEN a diagnostics event WITHOUT a topic
+            let mut check = TopicNameKebabCase::default();
+            let event = Event { topic: topic.to_string(), ..Default::default() };
+
+            // WHEN visiting the event
+            check.start_visit_diagnostics_event(&event);
             assert!(check.is_ok(), "Should have accepted valid topic name: '{}'", topic);
         }
     }

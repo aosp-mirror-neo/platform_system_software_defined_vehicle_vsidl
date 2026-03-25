@@ -16,6 +16,7 @@
 
 use super::{FindingCollector, FindingId};
 use crate::impl_context_condition;
+use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
 use vsidl_v1::syntax::service_bundle::{Publisher, Subscriber};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
@@ -43,6 +44,16 @@ impl VsidlVisitor for TopicMandatory {
                 FindingId::TopicMandatory,
                 "Subscriber topic is mandatory. Please specify 'topic: \"topic-name\"'",
                 vec![node.span.clone().into_option()],
+            );
+        }
+    }
+
+    fn start_visit_diagnostics_event(&mut self, node: &Event) {
+        if node.topic.is_empty() {
+            self.finding_collector.error(
+                FindingId::TopicMandatory,
+                "Event topic is mandatory. Please specify 'topic: \"topic-name\"'",
+                vec![],
             );
         }
     }
@@ -103,6 +114,33 @@ mod tests {
 
         // WHEN visiting the subscriber
         check.start_visit_subscriber(&subscriber);
+
+        // THEN it should be OK
+        assert!(check.is_ok());
+    }
+
+    #[test]
+    fn test_should_reject_event_missing_topic() {
+        // GIVEN a diagnostics event WITHOUT a topic
+        let mut check = TopicMandatory::default();
+        let event = Event::default();
+
+        // WHEN visiting the event
+        check.start_visit_diagnostics_event(&event);
+
+        // THEN it should be an error
+        assert!(check.is_err());
+        assert!(check.any_finding_contains(FindingSeverity::Error, "Event topic is mandatory"));
+    }
+
+    #[test]
+    fn test_should_accept_event_provided_topic() {
+        // GIVEN a diagnostics event WITH a topic
+        let mut check = TopicMandatory::default();
+        let event = Event { topic: "some-topic".to_string(), ..Default::default() };
+
+        // WHEN visiting the event
+        check.start_visit_diagnostics_event(&event);
 
         // THEN it should be OK
         assert!(check.is_ok());

@@ -58,7 +58,11 @@ impl GeneratorStepExecution for GenerateDiagnostics {
                     fs::create_dir_all(&output_dir)?;
 
                     write_rust_file(
-                        &diagnostics::render_symbol((*service_bundle).clone(), handlebars),
+                        &diagnostics::render_symbol(
+                            (*service_bundle).clone(),
+                            symbol_table,
+                            handlebars,
+                        ),
                         &output_dir.join("diagnostics.rs"),
                         rust_formatter.as_mut(),
                         state.cli.android_bp_formatter,
