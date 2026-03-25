@@ -77,6 +77,9 @@ impl Diagnostics {
             {{this.publisher_field_name}}: EventPublisher::<{{this.full_message_name}}>::new_with_options(comms.clone(),
                 &sdv::diagnostics::event::EventPublisherOptions::builder()
                     .publication_name("{{this.service_unit_name}}")
+                    {{#if this.topic_name}}
+                    .topic("{{this.topic_name}}")
+                    {{/if}}
                     .data_size({{this.payload_size}})
                     .register_reflection_metadata({{../register_reflection_metadata}})
                     .build()?,

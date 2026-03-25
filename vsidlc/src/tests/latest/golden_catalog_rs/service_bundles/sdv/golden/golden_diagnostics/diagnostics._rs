@@ -63,6 +63,7 @@ impl Diagnostics {
                         .publication_name(
                             "com-android-sdv-diagnostics-event-event-event",
                         )
+                        .topic("event-topic")
                         .data_size(6)
                         .register_reflection_metadata(false)
                         .build()?,
@@ -74,6 +75,7 @@ impl Diagnostics {
                     comms.clone(),
                     &sdv::diagnostics::event::EventPublisherOptions::builder()
                         .publication_name("second-event")
+                        .topic("event2-topic")
                         .data_size(6)
                         .register_reflection_metadata(false)
                         .build()?,
@@ -87,6 +89,7 @@ impl Diagnostics {
                         .publication_name(
                             "com-android-sdv-diagnostics-event-event-event-with-dot",
                         )
+                        .topic("event-with-dot-topic")
                         .data_size(6)
                         .register_reflection_metadata(false)
                         .build()?,
@@ -100,6 +103,7 @@ impl Diagnostics {
                         .publication_name(
                             "com-android-sdv-diagnostics-event-event-event-with-uppercase",
                         )
+                        .topic("event-with-uppercase-topic")
                         .data_size(6)
                         .register_reflection_metadata(false)
                         .build()?,

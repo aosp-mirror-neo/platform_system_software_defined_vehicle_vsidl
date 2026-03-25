@@ -313,6 +313,7 @@ fn format_pair(result: &mut String, pair: Pair<Rule>, context: &mut FormatContex
         | Rule::diagnostics_event_extended_data_message_name
         | Rule::diagnostics_event_fault_listener_mask
         | Rule::diagnostics_event_service_unit_name
+        | Rule::diagnostics_event_topic
         | Rule::vhal_data_source_unit_type
         | Rule::vhal_data_source_action
         | Rule::vhal_data_source_field_path

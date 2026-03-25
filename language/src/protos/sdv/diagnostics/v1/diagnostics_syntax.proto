@@ -105,6 +105,9 @@ message DiagnosticsDeclaration {
 
     // User-defined service unit name of a corresponding event publisher.
     string service_unit_name = 4;
+
+    // Specific topic on which the event is being published.
+    string topic = 5;
   }
 
   // Diagnostic data items exposed by the service bundle.

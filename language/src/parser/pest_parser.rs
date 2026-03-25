@@ -290,7 +290,8 @@ diagnostics_event_body = {
         diagnostics_event_id |
         diagnostics_event_extended_data_message_name |
         diagnostics_event_fault_listener_mask |
-        diagnostics_event_service_unit_name
+        diagnostics_event_service_unit_name |
+        diagnostics_event_topic
     )*
 }
 
@@ -298,6 +299,7 @@ diagnostics_event_id = { "id" ~ ":" ~ string }
 diagnostics_event_extended_data_message_name = { "extended_data_message_name" ~ ":" ~ string }
 diagnostics_event_fault_listener_mask = { "fault_listener_mask" ~ ":" ~ number }
 diagnostics_event_service_unit_name = { "service_unit_name" ~ ":" ~ string }
+diagnostics_event_topic = { "topic" ~ ":" ~ string }
 
 //=================================================================
 // VHAL
@@ -769,6 +771,8 @@ impl Rule {
             Rule::number => "number",
             Rule::integer => "integer",
             Rule::float => "float",
+
+            Rule::diagnostics_event_topic => "'topic:'",
 
             _ => "valid VSIDL construct",
         }
