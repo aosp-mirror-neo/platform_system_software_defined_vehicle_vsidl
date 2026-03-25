@@ -23,6 +23,20 @@ some_ip_mapping {
     version_minor: 0x0
     instance {
         instance_id: 0x1000
+        sdv_topic_parameterization {
+          key: 0
+          value {
+            topic: "front-left"
+            capacity: 10
+          }
+        }
+        sdv_topic_parameterization {
+          key: 1
+          value {
+            topic: "front-right"
+            capacity: 8
+          }
+        }
     }
     instance_impl {
         offered_event {
@@ -33,8 +47,7 @@ some_ip_mapping {
               package_name: "sdv.tests.soa.transmission"
               type_name: "TirePressure"
             }
-            topic: "front-left"
-            capacity: 10
+            topic: 0
             type_definition {
                 length_field_size: ZERO
                 field {
@@ -44,6 +57,8 @@ some_ip_mapping {
             }
           }
         }
+      }
+      instance_impl {
         offered_event {
           group_id: 0x9000
           event_id: 0x8002
@@ -52,8 +67,7 @@ some_ip_mapping {
               package_name: "sdv.tests.soa.transmission"
               type_name: "TireTemperature"
             }
-            topic: "front-right"
-            capacity: 8
+            topic: 1
             type_definition {
                 length_field_size: ZERO
                 field {
