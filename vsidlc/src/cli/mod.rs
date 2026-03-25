@@ -92,10 +92,6 @@ pub struct Cli {
     #[arg(long)]
     pub(crate) apex: bool,
 
-    /// Optional. When set, ACLs are generated instead of Permissions.
-    #[arg(long)]
-    pub(crate) use_acls: bool,
-
     /// Optional. When set, Rust services code is generated for each service bundle.
     #[arg(long)]
     pub(crate) services: bool,

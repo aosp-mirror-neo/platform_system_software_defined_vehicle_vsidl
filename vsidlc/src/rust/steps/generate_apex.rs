@@ -41,7 +41,6 @@ struct AclUnitType {
 #[derive(Serialize)]
 struct AclServiceUnit {
     name: String,
-    channel_name: String,
     acl_name: String,
     members: BTreeSet<String>,
 }
@@ -138,8 +137,7 @@ impl GeneratorStepExecution for GenerateApex {
         let base_package_name =
             package_name.rsplit_once('.').map(|(p, _)| p).unwrap_or(&package_name);
 
-        let use_permissions =
-            !state.cli.use_acls && state.cli.target_api.to_lowercase() == "latest";
+        let use_permissions = state.cli.target_api.to_lowercase() == "latest";
 
         let data = json!({
             "year": crate::rust::generator::get_current_year(),
@@ -235,7 +233,6 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
             let service_unit_name = publisher.service_unit_name(symbol_table, &channel);
             message_service_units.push(AclServiceUnit {
                 name: service_unit_name.clone(),
-                channel_name: channel.clone(),
                 acl_name: format!("{}-publisher-acl", service_unit_name.replace('_', "-")),
                 members: subscribers,
             });
@@ -278,11 +275,6 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
         let service_unit_name = server.service_unit_name(symbol_table);
         rpc_service_units.push(AclServiceUnit {
             name: service_unit_name.clone(),
-            channel_name: if symbol_table.uses_pdk29() {
-                "".to_string()
-            } else {
-                RpcServerSymbol::channel(server, symbol_table).name()
-            },
             acl_name: format!("{}-client-acl", service_unit_name.replace('_', "-")),
             members: clients,
         });
