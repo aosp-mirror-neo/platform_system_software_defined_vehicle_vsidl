@@ -1320,6 +1320,12 @@ pub fn convert_to_some_ip_rpc_interface_mapping(
         RpcInterfaceMapping { span: proto_span(pair.clone(), file_path), ..Default::default() };
     for item in pair.into_inner() {
         match item.as_rule() {
+            Rule::some_ip_sdv_offered_interface => {
+                let inner = item.clone();
+                mapping.offered_interface =
+                    MessageField::some(convert_to_some_ip_sdv_rpc_interface(inner, file_path));
+                mapping.offered_interface_span = proto_span(item, file_path);
+            }
             Rule::some_ip_rpc_channel_mapping => {
                 let inner = item.clone();
                 mapping
@@ -1928,7 +1934,7 @@ mod test {
             converter::convert_to_vsidl_entry(parsed_file.into_iter().next().unwrap(), FILE_PATH);
 
         // THEN the some_ip_mapping is correct
-        assert_eq!(vsidl_entry.some_ip_mapping.len(), 5);
+        assert_eq!(vsidl_entry.some_ip_mapping.len(), 6);
         let some_ip_mapping = &vsidl_entry.some_ip_mapping[0];
         let service_mapping = some_ip_mapping.mapping_type.as_ref().unwrap();
         match service_mapping {
@@ -2132,7 +2138,12 @@ mod test {
                             _ => panic!("Expected SomeipFfMethods"),
                         }
                     }
-                    _ => panic!("Expected OfferedTopic"),
+                    Some(vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::Interface_type::OfferedInterface(ref offered_interface)) => {
+                        assert_eq!(offered_interface.method.len(), 1);
+                        assert_eq!(offered_interface.method[0].procedure, "TestMethod");
+                        assert_eq!(offered_interface.method[0].method_id, 0x0001);
+                    }
+                    _ => panic!("Expected OfferedTopic or OfferedInterface"),
                 }
                 assert_eq!(mapping.service_unit_mapping.len(), 1);
                 assert_eq!(mapping.service_unit_mapping[0].instance_id, 0x0001);
@@ -2145,6 +2156,49 @@ mod test {
                 assert_eq!(ff_method.method_id, 0x1000);
             }
             _ => panic!("Expected SdvTypeMapping for mapping 5"),
+        }
+        let some_ip_mapping_6 = &vsidl_entry.some_ip_mapping[5];
+        let service_mapping_6 = some_ip_mapping_6.mapping_type.as_ref().unwrap();
+        match service_mapping_6 {
+            vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(mapping) => {
+                assert_eq!(
+                    mapping.unit_type.as_ref().unwrap().package_name,
+                    "com.android.sdv.test.someip.soa"
+                );
+                assert_eq!(mapping.unit_type.as_ref().unwrap().type_name, "TestRpc");
+                assert_eq!(mapping.someip_service_id, 0x4002);
+                assert_eq!(mapping.version_major, 0x1);
+                assert_eq!(mapping.version_minor, 0x0);
+                // Check service_oriented_mapping -> RpcInterfaceMapping
+                let som = mapping.service_oriented_mapping.as_ref().unwrap();
+                match som.soa_mapping_type.as_ref().unwrap() {
+                    vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::service_oriented_mapping::Soa_mapping_type::RpcInterfaceMapping(rpc_mapping) => {
+                        assert_eq!(rpc_mapping.rpc_channel_mapping.len(), 1);
+                        assert_eq!(rpc_mapping.rpc_channel_mapping[0].channel, "test_rpc_channel");
+                        assert_eq!(rpc_mapping.rpc_channel_mapping[0].instance_id, 0x0001);
+
+                        let offered_interface = rpc_mapping.offered_interface.as_ref().unwrap();
+                        assert_eq!(offered_interface.method.len(), 1);
+                        let method = &offered_interface.method[0];
+                        assert_eq!(method.procedure, "TestMethod");
+                        assert_eq!(method.method_id, 0x0001);
+
+                        let req_mapping = method.request_payload_mapping.as_ref().unwrap();
+                        assert_eq!(req_mapping.length_field_size, Some(vsidl_v1::someip_type::some_ip_type::LengthFieldSize::ZERO.into()));
+                        assert_eq!(req_mapping.field.len(), 1);
+                        assert_eq!(req_mapping.field[0].field_name, "req_val");
+                        assert_eq!(req_mapping.field[0].field_type.as_ref().unwrap().someip_type.as_ref().unwrap(), &vsidl_v1::someip_type::some_ip_type::Someip_type::SomeipPrimitive(vsidl_v1::someip_type::some_ip_type::SomeIpPrimitive::INT16.into()));
+
+                        let res_mapping = method.response_payload_mapping.as_ref().unwrap();
+                        assert_eq!(res_mapping.length_field_size, Some(vsidl_v1::someip_type::some_ip_type::LengthFieldSize::ZERO.into()));
+                        assert_eq!(res_mapping.field.len(), 1);
+                        assert_eq!(res_mapping.field[0].field_name, "res_val");
+                        assert_eq!(res_mapping.field[0].field_type.as_ref().unwrap().someip_type.as_ref().unwrap(), &vsidl_v1::someip_type::some_ip_type::Someip_type::SomeipPrimitive(vsidl_v1::someip_type::some_ip_type::SomeIpPrimitive::INT16.into()));
+                    }
+                    _ => panic!("Expected RpcInterfaceMapping"),
+                }
+            }
+            _ => panic!("Expected SdvTypeMapping for mapping 6"),
         }
     }
 

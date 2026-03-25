@@ -574,9 +574,8 @@ some_ip_service_oriented_mapping = { "service_oriented_mapping" ~ "{" ~ (
     some_ip_rpc_interface_mapping |
     some_ip_publication_mapping
 )* ~ "}" }
-
 some_ip_rpc_interface_mapping = { "rpc_interface_mapping" ~ "{" ~ (
-    some_ip_offered_interface |
+    some_ip_sdv_offered_interface |
     some_ip_rpc_channel_mapping
 )* ~ "}" }
 

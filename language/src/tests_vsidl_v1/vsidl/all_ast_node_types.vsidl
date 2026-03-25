@@ -419,6 +419,50 @@ some_ip_mapping {
   }
 }
 
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.android.sdv.test.someip.soa"
+      type_name: "TestRpc"
+    }
+    someip_service_id: 0x4002
+    version_major: 1
+    version_minor: 0
+    service_oriented_mapping {
+      rpc_interface_mapping {
+        offered_interface {
+          method {
+            procedure: "TestMethod"
+            method_id: 0x0001
+            request_payload_mapping {
+              length_field_size: ZERO
+              field {
+                field_name: "req_val"
+                field_type {
+                  someip_primitive: INT16
+                }
+              }
+            }
+            response_payload_mapping {
+              length_field_size: ZERO
+              field {
+                field_name: "res_val"
+                field_type {
+                  someip_primitive: INT16
+                }
+              }
+            }
+          }
+        }
+        rpc_channel_mapping {
+          channel: "test_rpc_channel"
+          instance_id: 0x0001
+        }
+      }
+    }
+  }
+}
+
 vhal_mapping {
   property {
     prop_config {
