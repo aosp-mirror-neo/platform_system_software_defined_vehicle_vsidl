@@ -15,6 +15,6 @@
 # proto-message: Catalog
 
 output_path: ".."
-vsidlc_gen_args: "--genrule"
+vsidlc_gen_args: "--genrule --target-api latest"
 prebuilts_filegroup: "vsidl_rc_gen_tests_soa_tire_catalog_protos"
 prebuilts_output_path: "../vsidl_provider_targets/Android.bp"
