@@ -98,7 +98,7 @@ pub struct Cli {
 
     /// Optional. Specifies the target API level for code generation.
     /// Examples: "latest", "pdk29".
-    #[arg(long, default_value = "pdk29")]
+    #[arg(long, default_value = "latest")]
     pub(crate) target_api: String,
 
     /// Suppress all compiler warnings. Errors stay enabled.
@@ -135,6 +135,18 @@ mod test {
     use super::*;
     use clap::Parser;
     use std::path::PathBuf;
+
+    #[test]
+    fn test_execute_default_target_api() {
+        // GIVEN a list of vsidlc command line argument without --target-api
+        let args = vec!["fakeCommand", "--catalog-path", "catalog", "--output-path", "output"];
+
+        // WHEN Cli is parsing those arguments
+        let cli = Cli::parse_from(args);
+
+        // THEN Cli is correctly initialized with default target-api
+        assert_eq!(cli.target_api, "latest");
+    }
 
     #[test]
     fn test_execute() {
