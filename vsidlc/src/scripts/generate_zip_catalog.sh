@@ -90,21 +90,35 @@ for dep_file in $DEP_FILES; do
   DEP_DIRS="$DEP_DIRS $dep_dir"
 done
 
-UNIQUE_DEP_DIRS=$(echo "$DEP_DIRS" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+UNIQUE_DEP_DIRS=$(echo "$DEP_DIRS" | tr ' ' '\n' | sort -u)
 
-FILTERED_DEP_DIRS=""
-for dir in $UNIQUE_DEP_DIRS; do
+# Filter out subdirectories. Since the list of directories is sorted,
+# a subdirectory will always appear after its parent. We only need to
+# check if a directory is a child of the last top-level directory we found.
+FINAL_DEP_DIRS=()
+last_top_level_dir=""
+while IFS= read -r dir; do
+  if [ -z "$dir" ]; then
+    continue
+  fi
+
+  # If last_top_level_dir is empty or dir is not a child of it...
+  if [[ -z "$last_top_level_dir" ]] || [[ ! "$dir" == "$last_top_level_dir"/* ]]; then
+    # ...then we've found a new top-level directory.
+    FINAL_DEP_DIRS+=("$dir")
+    last_top_level_dir="$dir"
+  fi
+done <<< "$UNIQUE_DEP_DIRS"
+
+DEP_FLAGS=()
+for dir in "${FINAL_DEP_DIRS[@]}"; do
     # Check if dir is a sub-directory of CATALOG_DIR, is CATALOG_DIR
     # itself, or an ancestor of CATALOG_DIR.
     if [[ "$dir" != "$CATALOG_DIR" && "$dir" != "$CATALOG_DIR"/* && "$CATALOG_DIR" != "$dir"/* ]]; then
-        FILTERED_DEP_DIRS="$FILTERED_DEP_DIRS $dir"
+        DEP_FLAGS+=(--dependency-catalog-path "$dir")
     fi
 done
 
-DEP_FLAGS=()
-for dir in $FILTERED_DEP_DIRS; do
-    DEP_FLAGS+=(--dependency-catalog-path "$dir")
-done
 echo "dependency flags: ${DEP_FLAGS[@]}"
 
 echo "--- Running VSIDL Generation ---"
