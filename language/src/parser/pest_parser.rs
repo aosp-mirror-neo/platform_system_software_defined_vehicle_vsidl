@@ -425,7 +425,8 @@ some_ip_sd_behavior = { "sd_behavior" ~ ":" ~ IDENTIFIER }
 
 some_ip_instance = { "instance" ~ "{" ~ (
     some_ip_instance_id |
-    some_ip_sdv_service_unit_parameterization_block
+    some_ip_sdv_service_unit_parameterization_block |
+    some_ip_sdv_topic_parameterization_block
 )* ~ "}" }
 
 some_ip_instance_id = { "instance_id" ~ ":" ~ integer }
@@ -438,6 +439,22 @@ some_ip_sdv_service_unit_parameterization_block = { "sdv_service_unit_parameteri
 some_ip_sdv_service_unit_parameterization_block_key = { "key" ~ ":" ~ integer }
 some_ip_sdv_service_unit_parameterization_block_value = { "value" ~ ":" ~ string }
 
+some_ip_sdv_topic_parameterization_block = { "sdv_topic_parameterization" ~ "{" ~ (
+    some_ip_sdv_topic_parameterization_block_key |
+    some_ip_sdv_topic_parameterization_block_value
+)* ~ "}" }
+
+some_ip_sdv_topic_parameterization_block_key = { "key" ~ ":" ~ integer }
+some_ip_sdv_topic_parameterization_block_value = { "value" ~ "{" ~ sdv_topic_parameters_ref ~ "}" }
+
+sdv_topic_parameters_ref = { (
+    some_ip_sdv_topic |
+    some_ip_capacity
+)* }
+
+some_ip_sdv_topic = { "topic" ~ ":" ~ string }
+some_ip_capacity = { "capacity" ~ ":" ~ integer }
+
 some_ip_instance_impl = { "instance_impl" ~ "{" ~ (
     some_ip_offered_interface |
     some_ip_offered_event
@@ -446,13 +463,11 @@ some_ip_instance_impl = { "instance_impl" ~ "{" ~ (
 some_ip_offered_interface = { "offered_interface" ~ "{" ~ (
     some_ip_offered_interface_sdv_unit_type |
     some_ip_service_unit |
-    some_ip_channel |
     some_ip_method
 )* ~ "}" }
 
 some_ip_offered_interface_sdv_unit_type = { "sdv_unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
 some_ip_service_unit = { "service_unit" ~ ":" ~ integer }
-some_ip_channel = { "channel" ~ ":" ~ channel_str }
 
 some_ip_unit_type_ref = { (
     some_ip_unit_type_ref_package_name |
@@ -492,16 +507,14 @@ some_ip_simple_event = { "simple_event" ~ "{" ~ (
     some_ip_simple_event_service_unit |
     some_ip_simple_event_type_definition |
     some_ip_simple_event_message_translation_mode |
-    some_ip_simple_event_topic |
-    some_ip_simple_event_capacity
+    some_ip_simple_event_topic
 )* ~ "}" }
 
 some_ip_simple_event_sdv_unit_type = { "sdv_unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
 some_ip_simple_event_service_unit = { "service_unit" ~ ":" ~ integer }
 some_ip_simple_event_type_definition = { "type_definition" ~ "{" ~ some_ip_struct_body ~ "}" }
 some_ip_simple_event_message_translation_mode = { "message_translation_mode" ~ ":" ~ IDENTIFIER }
-some_ip_simple_event_topic = { "topic" ~ ":" ~ topic_str }
-some_ip_simple_event_capacity = { "capacity" ~ ":" ~ integer }
+some_ip_simple_event_topic = { "topic" ~ ":" ~ integer }
 
 some_ip_group_event = { "group_event" ~ "{" ~ (
     some_ip_group_event_type_definition |
@@ -514,15 +527,13 @@ some_ip_event_part = { "event_part" ~ "{" ~ (
     some_ip_event_part_sdv_unit_type |
     some_ip_event_part_service_unit |
     some_ip_event_part_field_name_mapping |
-    some_ip_event_part_topic |
-    some_ip_event_part_capacity
+    some_ip_event_part_topic
 )* ~ "}" }
 
 some_ip_event_part_sdv_unit_type = { "sdv_unit_type" ~ "{" ~ some_ip_unit_type_ref ~ "}" }
 some_ip_event_part_service_unit = { "service_unit" ~ ":" ~ integer }
 some_ip_event_part_field_name_mapping = { "field_name_mapping" ~ "{" ~ some_ip_map_entry_str_str* ~ "}" }
-some_ip_event_part_topic = { "topic" ~ ":" ~ topic_str }
-some_ip_event_part_capacity = { "capacity" ~ ":" ~ integer }
+some_ip_event_part_topic = { "topic" ~ ":" ~ integer }
 
 some_ip_map_entry_str_str = { some_ip_map_entry_key | some_ip_map_entry_value }
 
@@ -742,14 +753,11 @@ impl Rule {
                 "'service_unit_name:'"
             }
 
-            Rule::some_ip_channel
-            | Rule::some_ip_rpc_channel_mapping_channel
+            Rule::some_ip_rpc_channel_mapping_channel
             | Rule::some_ip_simple_event_topic
             | Rule::some_ip_event_part_topic
             | Rule::some_ip_topic_mapping_topic => "'channel:' or 'topic:'",
-            Rule::some_ip_simple_event_capacity | Rule::some_ip_event_part_capacity => {
-                "'capacity:'"
-            }
+
             Rule::some_ip_rpc_channel_mapping_instance_id
             | Rule::some_ip_topic_mapping_instance_id => "'instance_id:'",
 

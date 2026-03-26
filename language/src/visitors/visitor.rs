@@ -51,6 +51,7 @@ use vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::{
     rpc_interface::RequestResponseMethod as SomeIpRequestResponseMethod, Event as SomeIpEvent,
     RpcInterface as SomeIpRpcInterface,
 };
+use vsidl_v1::someip::some_ip_mapping::some_ip_instance_mapping::SdvTopicParameters;
 use vsidl_v1::someip::some_ip_mapping::{
     sdv_type_mapping::ServiceOrientedMapping as SomeIpServiceOrientedMapping,
     SdvTypeMapping as SomeIpSdvTypeMapping, SomeIpInstanceImplementation, SomeIpInstanceMapping,
@@ -370,6 +371,17 @@ pub trait VsidlVisitor: AsDynVisitor {
     /// # Parameters
     /// * `_node`: A reference to the [SomeIpServiceMapping] being visited.
     fn end_visit_someip_service_mapping(&mut self, _node: &SomeIpServiceMapping) {}
+
+    /// Called before visiting the children of a [SdvTopicParameters] node.
+    ///
+    /// # Parameters
+    /// * `_node`: A reference to the [SdvTopicParameters] being visited.
+    fn start_visit_sdv_topic_parameters(&mut self, _node: &SdvTopicParameters) {}
+    /// Called after visiting the children of a [SdvTopicParameters] node.
+    ///
+    /// # Parameters
+    /// * `_node`: A reference to the [SdvTopicParameters] being visited.
+    fn end_visit_sdv_topic_parameters(&mut self, _node: &SdvTopicParameters) {}
 
     /// Called before visiting the children of a [SomeIpInstanceMapping] node.
     ///
@@ -2139,7 +2151,31 @@ impl AstNode for SomeIpInstanceMapping {
 
     /// Traverses the children of a [SomeIpInstanceMapping] node.
     ///
-    /// Currently, [SomeIpInstanceMapping] has no defined children in the AST traversal logic.
+    /// # Parameters
+    /// * `visitor`: The visitor.
+    fn traverse(&self, visitor: &mut dyn VsidlVisitor) {
+        for sdv_topic_parameter in self.sdv_topic_parameterization.values() {
+            sdv_topic_parameter.accept(visitor);
+        }
+    }
+}
+
+impl AstNode for SdvTopicParameters {
+    /// Accepts a [VsidlVisitor] for a SOME/IP SdvTopicParameters node.
+    ///
+    /// Calls `start_visit_sdv_topic_parameters`, `traverse`, and `end_visit_sdv_topic_parameters`.
+    ///
+    /// # Parameters
+    /// * `visitor`: The visitor to accept.
+    fn accept(&self, visitor: &mut dyn VsidlVisitor) {
+        visitor.start_visit_sdv_topic_parameters(self);
+        self.traverse(visitor);
+        visitor.end_visit_sdv_topic_parameters(self);
+    }
+
+    /// Traverses the children of a [SdvTopicParameters] node.
+    ///
+    /// Currently, [SdvTopicParameters] has no defined children in the AST traversal logic.
     ///
     /// # Parameters
     /// * `_visitor`: The visitor (unused).
@@ -3091,6 +3127,8 @@ mod test {
         mock.expect_end_visit_someip_service_mapping().times(1..).return_const(());
         mock.expect_start_visit_someip_instance_mapping().times(1..).return_const(());
         mock.expect_end_visit_someip_instance_mapping().times(1..).return_const(());
+        mock.expect_start_visit_sdv_topic_parameters().times(1..).return_const(());
+        mock.expect_end_visit_sdv_topic_parameters().times(1..).return_const(());
         mock.expect_start_visit_someip_instance_implementation().times(1..).return_const(());
         mock.expect_end_visit_someip_instance_implementation().times(1..).return_const(());
         mock.expect_start_visit_someip_rpc_interface().times(1..).return_const(());
