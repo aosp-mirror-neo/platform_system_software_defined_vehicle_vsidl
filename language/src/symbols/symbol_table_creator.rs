@@ -329,10 +329,10 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
                     if let Some(m) = self.symbol_table.get_proto_message_symbol(message_id) {
                         m.full_name(&self.symbol_table)
                     } else {
-                        s.ast_node.message.clone()
+                        s.message_fqn.clone()
                     }
                 } else {
-                    s.ast_node.message.clone()
+                    s.message_fqn.clone()
                 };
                 (message_name, s.name())
             })
@@ -922,9 +922,8 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             let message_fqn = self.get_proto_message_fqn(&current_scope_id, &node.message);
 
             if !self.created_topics.contains(&(message_fqn.clone(), topic_name.clone())) {
-                let mut ast_node = node.clone();
-                ast_node.message = message_fqn.clone();
-                let topic_symbol = TopicSymbol { ast_node, ..Default::default() };
+                let topic_symbol =
+                    TopicSymbol { message_fqn: message_fqn.clone(), ..Default::default() };
                 let span = node.topic_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
                     topic_name.clone(),
@@ -982,8 +981,8 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             let message_fqn = self.get_proto_message_fqn(&current_scope_id, &node.message);
 
             if !self.created_topics.contains(&(message_fqn.clone(), topic_name.clone())) {
-                let ast_node = Publisher { message: message_fqn.clone(), ..Default::default() };
-                let topic_symbol = TopicSymbol { ast_node, ..Default::default() };
+                let topic_symbol =
+                    TopicSymbol { message_fqn: message_fqn.clone(), ..Default::default() };
                 let span = node.topic_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
                     topic_name.clone(),

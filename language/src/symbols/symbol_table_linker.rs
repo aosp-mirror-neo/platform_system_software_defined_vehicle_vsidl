@@ -566,7 +566,7 @@ impl SymbolTableLinker {
                 // Find the topic that matches the publisher's message.
                 // We resolve the topic's own message name to compare against the linked message ID.
                 for (topic_id, topic_symbol) in resolved_symbols {
-                    let topic_message_name = &topic_symbol.ast_node.message;
+                    let topic_message_name = &topic_symbol.message_fqn;
                     let enclosing_scope_id = &topic_symbol.symbol.enclosing_scope;
                     let resolved_topic_messages =
                         self.symbol_table.resolve(enclosing_scope_id, topic_message_name, false);
@@ -673,7 +673,7 @@ impl SymbolTableLinker {
                 // Find the topic that matches the subscriber's message.
                 // We resolve the topic's own message name to compare against the linked message ID.
                 for (topic_id, topic_symbol) in resolved_symbols {
-                    let topic_message_name = &topic_symbol.ast_node.message;
+                    let topic_message_name = &topic_symbol.message_fqn;
                     let enclosing_scope_id = &topic_symbol.symbol.enclosing_scope;
                     let resolved_topic_messages =
                         self.symbol_table.resolve(enclosing_scope_id, topic_message_name, false);
