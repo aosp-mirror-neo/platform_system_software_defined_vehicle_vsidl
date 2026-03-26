@@ -69,4 +69,5 @@ rust_test {
     },
     require_root: true,
     team: "trendy_team_automotive",
+    test_config_template: ":sdv_authz_enforcement_flag_disabled_config_template",
 }
