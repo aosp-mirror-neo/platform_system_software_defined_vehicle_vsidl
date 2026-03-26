@@ -42,6 +42,7 @@ impl SymbolTableChecker for PublicationMultipubMisuse {
                     "Publication '{}' is used by only one publisher, `MULTI_PUB` specification could be removed.",
                     publication.full_name(symbol_table)
                 ),
+                Some("Publication is used by only one publisher, `MULTI_PUB` specification could be removed.".to_string()),
                 vec![publication.span()],
             );
         }

@@ -50,7 +50,7 @@ impl SymbolTableChecker for PublicationType {
                         publisher.owning_service_bundle(symbol_table).full_name(symbol_table),
                         publisher.message.clone()
                     ),
-                    vec![publisher.message_span.clone().into_option()],
+                    Some("Message field corresponds to an RPC service, not a publication".to_string()), vec![publisher.message_span.clone().into_option()],
                 );
             } else {
                 self.finding_collector.error(
@@ -60,6 +60,7 @@ impl SymbolTableChecker for PublicationType {
                         publisher.owning_service_bundle(symbol_table).full_name(symbol_table),
                         publisher.message.clone()
                     ),
+                    Some("Message has no Proto publication".to_string()),
                     vec![publisher.message_span.clone().into_option()],
                 );
             }

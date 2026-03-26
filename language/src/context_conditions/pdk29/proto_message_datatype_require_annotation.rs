@@ -95,6 +95,7 @@ impl ProtoMessageRequireAnnotationType {
                     file_name.clone(),
                     field_descriptor.name()
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -114,6 +115,7 @@ impl ProtoMessageRequireAnnotationType {
                     file_name.clone(),
                     field_descriptor.name()
                 ),
+                None,
                 Vec::new(),
             );
         }
@@ -169,6 +171,7 @@ impl ProtoMessageRequireAnnotationType {
                     file_name.clone(),
                     message.name()
                 ),
+                None,
                 Vec::new(),
             );
             return;

@@ -35,6 +35,7 @@ impl SomeIpEventCapacity {
                     "SOME/IP topic {} capacity must be at least 2, but was {}",
                     topic, capacity
                 ),
+                None,
                 vec![Some(span.clone())],
             );
         } else if !capacity.is_multiple_of(2) {
@@ -44,6 +45,7 @@ impl SomeIpEventCapacity {
                     "SOME/IP topic {} capacity must be an even number, but was {}",
                     topic, capacity
                 ),
+                None,
                 vec![Some(span.clone())],
             );
         }

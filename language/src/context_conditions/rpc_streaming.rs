@@ -47,7 +47,7 @@ impl VsidlVisitor for RpcStreaming {
                     node.name(),
                     self.service_name.clone()
                 ),
-                Vec::new(),
+                None, Vec::new(),
             );
         }
     }

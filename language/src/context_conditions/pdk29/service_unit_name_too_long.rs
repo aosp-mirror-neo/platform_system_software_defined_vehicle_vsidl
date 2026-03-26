@@ -48,6 +48,7 @@ impl ServiceUnitNameTooLong {
                 format!(
                     "Service unit name for {node_type} '{service_unit_name}' exceeds {SERVICE_UNIT_NAME_MAX_LENGTH_BYTES} chars"
                 ),
+                Some(format!("Exceeds maximum length of {SERVICE_UNIT_NAME_MAX_LENGTH_BYTES} characters")),
                 vec![span],
             );
         }
@@ -64,10 +65,10 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
         if node.service_unit_name.is_empty() && !node.channel.is_empty() {
             // Validate generated name
             let fqn = name_to_fqn(&node.message, &self.package);
-            for channel in &node.channel {
+            for (index, channel) in node.channel.iter().enumerate() {
                 let generated_name =
                     format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
-                self.check(generated_name, "publisher", node.span.clone().into_option());
+                self.check(generated_name, "publisher", node.channel_span.get(index).cloned());
             }
         } else {
             // Validate user-defined name
@@ -84,10 +85,14 @@ impl VsidlVisitor for ServiceUnitNameTooLong {
             // Validate generated name
             let generated_name =
                 name_to_fqn(&node.service, &self.package).replace('.', "-").to_kebab_case();
-            self.check(generated_name, "server", node.span.clone().into_option());
+            self.check(generated_name, "server", node.service_span.clone().into_option());
         } else {
             // Validate user-defined name
-            self.check(node.service_unit_name.clone(), "server", node.span.clone().into_option());
+            self.check(
+                node.service_unit_name.clone(),
+                "server",
+                node.service_unit_name_span.clone().into_option(),
+            );
         }
     }
 
@@ -144,7 +149,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         let fqn = name_to_fqn(&publisher.message, &publisher.package(symbol_table));
         for channel in &channels {
             let generated_name = format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
-            self.check(generated_name, "publisher", publisher.span());
+            self.check(
+                generated_name,
+                "publisher",
+                publisher.ast_node.message_span.clone().into_option(),
+            );
         }
     }
 
@@ -167,7 +176,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         if !publication.publishers(symbol_table).is_empty() {
             let publisher = publication.publishers(symbol_table)[0].clone();
             if publication.is_single_pub() && !publisher.service_unit_name.is_empty() {
-                self.check(publisher.service_unit_name.clone(), "subscriber", subscriber.span());
+                self.check(
+                    publisher.service_unit_name.clone(),
+                    "subscriber",
+                    subscriber.ast_node.message_span.clone().into_option(),
+                );
                 return;
             }
         }
@@ -182,7 +195,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         let fqn = name_to_fqn(&subscriber.message, &subscriber.package(symbol_table));
         for channel in &channels {
             let generated_name = format!("{}-{}", fqn.replace('.', "-"), channel).to_kebab_case();
-            self.check(generated_name, "subscriber", subscriber.span());
+            self.check(
+                generated_name,
+                "subscriber",
+                subscriber.ast_node.message_span.clone().into_option(),
+            );
         }
     }
 
@@ -196,7 +213,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         if !service.servers(symbol_table).is_empty() {
             let server = service.servers(symbol_table)[0].clone();
             if server.has_user_defined_name() {
-                self.check(server.service_unit_name(symbol_table), "client", rpc_client.span());
+                self.check(
+                    server.service_unit_name(symbol_table),
+                    "client",
+                    rpc_client.ast_node.service_span.clone().into_option(),
+                );
                 return;
             }
         }
@@ -204,7 +225,11 @@ impl SymbolTableChecker for ServiceUnitNameTooLong {
         // Validate generated name
         let fqn = name_to_fqn(&service.name(), &service.package(symbol_table));
         let generated_name = fqn.replace('.', "-").to_kebab_case();
-        self.check(generated_name, "client", rpc_client.span());
+        self.check(
+            generated_name,
+            "client",
+            rpc_client.ast_node.service_span.clone().into_option(),
+        );
     }
 }
 

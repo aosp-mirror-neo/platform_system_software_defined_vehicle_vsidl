@@ -56,6 +56,7 @@ impl VsidlUnnecessaryFullyQualifiedName {
                 format!(
                     "{node_description}: '{ast_name}', fully qualified name could be replaced by '{stripped_name}'",
                 ),
+                Some(format!("Fully qualified name could be replaced by '{stripped_name}'")),
                 vec![span]
             );
         }

@@ -19,6 +19,7 @@ use sdv_comms_id_validator::service_unit_name_validation::{
     validate_consecutive_hyphens, validate_first_char, validate_last_char, validate_valid_chars,
 };
 use vsidl_v1::diagnostics_syntax::diagnostics_declaration::Event;
+use vsidl_v1::span::Span;
 use vsidl_v1::syntax::service_bundle::{Publisher, Server};
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 
@@ -32,14 +33,15 @@ impl_context_condition!(UserDefinedNameNamingConvention);
 
 /// Checks that user-defined service unit names follow naming guideline
 impl UserDefinedNameNamingConvention {
-    fn check_name(&mut self, service_unit_name: &String) {
+    fn check_name(&mut self, service_unit_name: &String, span: Option<Span>) {
         // The name must start with a letter [a-z]
         let result = validate_first_char(service_unit_name);
         if let Err(err) = result {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionFirstChar,
                 format!("Service unit name '{}' {}", service_unit_name, err),
-                Vec::new(),
+                Some("Must start with a lowercase letter [a-z]".to_string()),
+                vec![span.clone()],
             );
         }
 
@@ -49,7 +51,11 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionCharset,
                 format!("Service unit name '{}' {}", service_unit_name, err),
-                Vec::new(),
+                Some(
+                    "Must only contain lowercase alphanumeric characters or hyphens [a-z0-9-]"
+                        .to_string(),
+                ),
+                vec![span.clone()],
             );
         }
 
@@ -59,7 +65,8 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionConsecutiveHyphen,
                 format!("Service unit name '{}' {}", service_unit_name, err),
-                Vec::new(),
+                Some("May not contain consecutive hyphens".to_string()),
+                vec![span.clone()],
             );
         }
 
@@ -69,7 +76,8 @@ impl UserDefinedNameNamingConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedNameNamingConventionLastChar,
                 format!("Service unit name '{}' {}", service_unit_name, err),
-                Vec::new(),
+                Some("May not end with a hyphen".to_string()),
+                vec![span.clone()],
             );
         }
     }
@@ -77,15 +85,15 @@ impl UserDefinedNameNamingConvention {
 
 impl VsidlVisitor for UserDefinedNameNamingConvention {
     fn start_visit_publisher(&mut self, node: &Publisher) {
-        self.check_name(&node.service_unit_name);
+        self.check_name(&node.service_unit_name, node.service_unit_name_span.clone().into_option());
     }
 
     fn start_visit_server(&mut self, node: &Server) {
-        self.check_name(&node.service_unit_name);
+        self.check_name(&node.service_unit_name, node.service_unit_name_span.clone().into_option());
     }
 
     fn start_visit_diagnostics_event(&mut self, node: &Event) {
-        self.check_name(&node.service_unit_name);
+        self.check_name(&node.service_unit_name, None);
     }
 }
 

@@ -76,6 +76,7 @@ impl AndroidBpDanglingFiles {
                     "File '{}' is not referenced in any filegroup in an Android.bp file.",
                     dangling_file.display()
                 ),
+                None,
                 Vec::new(),
             );
         }

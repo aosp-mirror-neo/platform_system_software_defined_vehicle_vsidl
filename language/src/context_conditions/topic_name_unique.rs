@@ -55,12 +55,12 @@ impl SymbolTableChecker for TopicNameUnique {
         let message_id = resolved_messages[0].id().clone();
 
         // Collect message types and spans for each topic used by this publisher
-        for topic in &publisher.ast_node.topic {
+        for (index, topic) in publisher.ast_node.topic.iter().enumerate() {
             self.topic_to_messages.entry(topic.clone()).or_default().insert(message_id.clone());
             self.topic_to_spans
                 .entry(topic.clone())
                 .or_default()
-                .push(publisher.symbol.span.clone());
+                .push(publisher.ast_node.topic_span.get(index).cloned());
         }
     }
 
@@ -87,6 +87,11 @@ impl SymbolTableChecker for TopicNameUnique {
                         messages.len(),
                         message_names.join(", ")
                     ),
+                    Some(format!(
+                        "Used for {} different message types: {}",
+                        messages.len(),
+                        message_names.join(", ")
+                    )),
                     spans,
                 );
             }

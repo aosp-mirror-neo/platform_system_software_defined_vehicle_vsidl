@@ -42,6 +42,7 @@ impl SymbolTableChecker for ServiceBundleFqnDuplicate {
             self.finding_collector.error(
                 FindingId::ServiceBundleFqnDuplicate,
                 format!("There are multiple service bundles with the fully-qualified name '{fqn}'"),
+                None,
                 vec![service_bundle.name_span.clone().into_option()],
             );
         }

@@ -47,6 +47,7 @@ impl SymbolTableChecker for SubscriberType {
                     subscriber.full_name(symbol_table),
                     subscriber.message
                 ),
+                Some("Message does not exist as a publication in Proto".to_string()),
                 vec![subscriber.message_span.clone().into_option()],
             );
             return;
@@ -76,6 +77,7 @@ impl SymbolTableChecker for SubscriberType {
                         channel,
                         subscriber.message
                     ),
+                    Some("Channel is not defined for this type".to_string()),
                     vec![subscriber.channel_span.get(index).cloned()],
                 );
             } else if channels_enum_name.is_none() && channel == UNIQUE_CHANNEL {
@@ -85,6 +87,7 @@ impl SymbolTableChecker for SubscriberType {
                         "'UNIQUE' channel specification is redundant in subscriber '{}'",
                         subscriber.symbol.name.clone()
                     ),
+                    Some("'UNIQUE' channel specification is redundant".to_string()),
                     vec![subscriber.channel_span.get(index).cloned()],
                 );
             }

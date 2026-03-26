@@ -53,6 +53,7 @@ impl VsidlVisitor for RpcDuplicateMethodName {
                     method_name,
                     node.name()
                 ),
+                None,
                 Vec::new(),
             );
         }

@@ -38,6 +38,7 @@ impl VsidlVisitor for ProtoDescriptorNameTooLong {
                         "Proto message name '{}' exceeds the length limit of {} characters",
                         name_str, UNIT_TYPE_NAME_MAX_LENGTH_BYTES
                     ),
+                    None,
                     vec![None],
                 );
             }

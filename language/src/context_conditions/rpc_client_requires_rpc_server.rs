@@ -50,6 +50,7 @@ impl SymbolTableChecker for RpcClientRequiresRpcServer {
                     "RPC client '{}' does not have a corresponding RPC server",
                     rpc_client.full_name(symbol_table)
                 ),
+                Some("RPC client does not have a corresponding RPC server".to_string()),
                 vec![rpc_client.service_span.clone().into_option()],
             );
         }

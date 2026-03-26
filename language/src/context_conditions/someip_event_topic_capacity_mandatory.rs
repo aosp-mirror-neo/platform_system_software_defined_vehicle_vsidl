@@ -35,6 +35,7 @@ impl VsidlVisitor for SomeIpEventTopicCapacityMandatory {
             self.finding_collector.error(
                 FindingId::SomeIpTopicAndCapacityMandatoryTogether,
                 format!("SOME/IP topic {} is missing mandatory 'capacity'", node.topic),
+                Some("Missing mandatory 'capacity'".to_string()),
                 vec![node.span.clone().into_option()],
             );
         } else if !has_topic && has_capacity {
@@ -42,6 +43,7 @@ impl VsidlVisitor for SomeIpEventTopicCapacityMandatory {
                 FindingId::SomeIpTopicAndCapacityMandatoryTogether,
                 "SOME/IP SDV topic parameter defines 'capacity' but missing mandatory 'topic'"
                     .to_string(),
+                Some("Missing mandatory 'topic'".to_string()),
                 vec![node.span.clone().into_option()],
             );
         }

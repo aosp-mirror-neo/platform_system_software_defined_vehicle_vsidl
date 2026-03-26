@@ -46,6 +46,7 @@ impl SymbolTableChecker for SubscriberType {
                     subscriber.full_name(symbol_table),
                     subscriber.message
                 ),
+                Some("Message type does not exist in Proto".to_string()),
                 vec![subscriber.message_span.clone().into_option()],
             );
         }

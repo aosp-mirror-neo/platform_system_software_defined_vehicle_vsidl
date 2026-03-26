@@ -49,6 +49,7 @@ impl UserDefinedTargetNameConvention {
                 format!(
                     "target_name '{target_name}' must be lower alphanumeric or a underscore [a-z0-9_]"
                 ),
+                Some("Must be lower alphanumeric or a underscore [a-z0-9_]".to_string()),
                 vec![span.clone()],
             );
         }
@@ -58,6 +59,7 @@ impl UserDefinedTargetNameConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedTargetNameConventionConsecutiveUnderscore,
                 format!("target_name '{target_name}' must not contain consecutive underscores"),
+                Some("Must not contain consecutive underscores".to_string()),
                 vec![span.clone()],
             );
         }
@@ -67,6 +69,7 @@ impl UserDefinedTargetNameConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedTargetNameConventionLastChar,
                 format!("target_name '{target_name}' must not end with underscore"),
+                Some("Must not end with underscore".to_string()),
                 vec![span.clone()],
             );
         }
@@ -76,6 +79,7 @@ impl UserDefinedTargetNameConvention {
             self.finding_collector.error(
                 FindingId::UserDefinedTargetNameConventionFirstChar,
                 format!("target_name '{target_name}' must not start with underscore"),
+                Some("Must not start with underscore".to_string()),
                 vec![span.clone()],
             );
         }

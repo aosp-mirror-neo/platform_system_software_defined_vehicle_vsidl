@@ -44,11 +44,18 @@ impl FindingCollector {
     ///
     /// * `id` - The unique identifier ([FindingId]) for this type of warning.
     /// * `message` - A descriptive message explaining the warning.
-    pub fn warn(&mut self, id: FindingId, message: impl Into<String>, spans: Vec<Option<Span>>) {
+    pub fn warn(
+        &mut self,
+        id: FindingId,
+        message: impl Into<String>,
+        lsp_message: Option<String>,
+        spans: Vec<Option<Span>>,
+    ) {
         self.findings.push(Finding {
             severity: FindingSeverity::Warn,
             id,
             message: message.into(),
+            lsp_message,
             spans,
         });
     }
@@ -62,11 +69,18 @@ impl FindingCollector {
     ///
     /// * `id` - The unique identifier ([FindingId]) for this type of error.
     /// * `message` - A descriptive message explaining the error.
-    pub fn error(&mut self, id: FindingId, message: impl Into<String>, spans: Vec<Option<Span>>) {
+    pub fn error(
+        &mut self,
+        id: FindingId,
+        message: impl Into<String>,
+        lsp_message: Option<String>,
+        spans: Vec<Option<Span>>,
+    ) {
         self.findings.push(Finding {
             severity: FindingSeverity::Error,
             id,
             message: message.into(),
+            lsp_message,
             spans,
         });
     }
@@ -85,11 +99,18 @@ impl FindingCollector {
     ///
     /// This function will always panic after recording the finding and printing the summary,
     /// except when running in a test environment (`#[cfg(not(test))]`).
-    pub fn fatal(&mut self, id: FindingId, message: impl Into<String>, spans: Vec<Option<Span>>) {
+    pub fn fatal(
+        &mut self,
+        id: FindingId,
+        message: impl Into<String>,
+        lsp_message: Option<String>,
+        spans: Vec<Option<Span>>,
+    ) {
         self.findings.push(Finding {
             severity: FindingSeverity::Fatal,
             id,
             message: message.into(),
+            lsp_message,
             spans,
         });
         self.print_findings();
@@ -243,7 +264,12 @@ mod tests {
         let mut collector = FindingCollector::default();
 
         // WHEN a warning is added
-        collector.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
 
         // THEN the warning is present in the findings
         let findings = collector.findings();
@@ -262,6 +288,7 @@ mod tests {
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -279,7 +306,12 @@ mod tests {
         let mut collector = FindingCollector::default();
 
         // WHEN a fatal error is added
-        collector.fatal(FindingId::SdvPublicationMessageCountPositive, "test fatal", Vec::new());
+        collector.fatal(
+            FindingId::SdvPublicationMessageCountPositive,
+            "test fatal",
+            None,
+            Vec::new(),
+        );
 
         // THEN the fatal error is present in the findings
         let findings = collector.findings();
@@ -293,10 +325,16 @@ mod tests {
     fn test_disable_finding_id() {
         // GIVEN a FindingCollector with a warning and an error
         let mut collector = FindingCollector::default();
-        collector.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -315,12 +353,18 @@ mod tests {
     fn test_merge() {
         // GIVEN two FindingCollectors, each with a finding
         let mut collector1 = FindingCollector::default();
-        collector1.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector1.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
 
         let mut collector2 = FindingCollector::default();
         collector2.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -342,10 +386,16 @@ mod tests {
     fn test_print_findings() {
         // GIVEN a FindingCollector with a warning and an error
         let mut collector = FindingCollector::default();
-        collector.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -361,6 +411,7 @@ mod tests {
                 Finding {
                     severity: FindingSeverity::Warn,
                     id: FindingId::MultipleRpcServersForSameInterface,
+                    lsp_message: None,
                     message: "test warning".to_string(),
                     spans: Vec::new(),
                 }
@@ -373,6 +424,7 @@ mod tests {
                 Finding {
                     severity: FindingSeverity::Error,
                     id: FindingId::UserDefinedNameNamingConventionFirstChar,
+                    lsp_message: None,
                     message: "test error".to_string(),
                     spans: Vec::new(),
                 }
@@ -399,6 +451,7 @@ mod tests {
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -414,7 +467,12 @@ mod tests {
     fn test_error_summary_with_warnings() {
         // GIVEN a FindingCollector with only warnings
         let mut collector = FindingCollector::default();
-        collector.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
 
         // WHEN error_summary is called
         let result = collector.error_summary();
@@ -430,6 +488,7 @@ mod tests {
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
         collector.disable_finding_id(FindingId::UserDefinedNameNamingConventionFirstChar);
@@ -448,6 +507,7 @@ mod tests {
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -463,6 +523,7 @@ mod tests {
                 Finding {
                     severity: FindingSeverity::Error,
                     id: FindingId::UserDefinedNameNamingConventionFirstChar,
+                    lsp_message: None,
                     message: "test error".to_string(),
                     spans: Vec::new(),
                 }
@@ -486,7 +547,12 @@ mod tests {
     fn test_print_findings_if_error_with_warnings() {
         // GIVEN a FindingCollector with only warnings
         let mut collector = FindingCollector::default();
-        collector.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
 
         // WHEN print_findings_if_error is called
         let printed_findings = collector.print_findings_if_error();
@@ -499,7 +565,12 @@ mod tests {
     fn test_print_findings_if_error_with_fatal() {
         // GIVEN a FindingCollector with a fatal error
         let mut collector = FindingCollector::default();
-        collector.fatal(FindingId::SdvPublicationMessageCountPositive, "test fatal", Vec::new());
+        collector.fatal(
+            FindingId::SdvPublicationMessageCountPositive,
+            "test fatal",
+            None,
+            Vec::new(),
+        );
 
         // WHEN print_findings_if_error is called
         let printed_findings = collector.print_findings_if_error();
@@ -513,6 +584,7 @@ mod tests {
                 Finding {
                     severity: FindingSeverity::Fatal,
                     id: FindingId::SdvPublicationMessageCountPositive,
+                    lsp_message: None,
                     message: "test fatal".to_string(),
                     spans: Vec::new(),
                 }
@@ -527,6 +599,7 @@ mod tests {
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
         collector.disable_finding_id(FindingId::UserDefinedNameNamingConventionFirstChar);
@@ -557,6 +630,7 @@ mod tests {
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 
@@ -571,7 +645,12 @@ mod tests {
     fn test_error_count_with_warnings() {
         // GIVEN a FindingCollector with a warning
         let mut collector = FindingCollector::default();
-        collector.warn(FindingId::MultipleRpcServersForSameInterface, "test warning", Vec::new());
+        collector.warn(
+            FindingId::MultipleRpcServersForSameInterface,
+            "test warning",
+            None,
+            Vec::new(),
+        );
 
         // WHEN error_count is called
         let error_count = collector.error_count();
@@ -583,7 +662,12 @@ mod tests {
     fn test_error_count_with_fatal() {
         // GIVEN a FindingCollector with a fatal error
         let mut collector = FindingCollector::default();
-        collector.fatal(FindingId::SdvPublicationMessageCountPositive, "test fatal", Vec::new());
+        collector.fatal(
+            FindingId::SdvPublicationMessageCountPositive,
+            "test fatal",
+            None,
+            Vec::new(),
+        );
 
         // WHEN error_count is called
         let error_count = collector.error_count();
@@ -595,10 +679,16 @@ mod tests {
     fn test_error_count_with_fatal_and_error() {
         // GIVEN a FindingCollector with a fatal error and a error
         let mut collector = FindingCollector::default();
-        collector.fatal(FindingId::SdvPublicationMessageCountPositive, "test fatal", Vec::new());
+        collector.fatal(
+            FindingId::SdvPublicationMessageCountPositive,
+            "test fatal",
+            None,
+            Vec::new(),
+        );
         collector.error(
             FindingId::UserDefinedNameNamingConventionFirstChar,
             "test error",
+            None,
             Vec::new(),
         );
 

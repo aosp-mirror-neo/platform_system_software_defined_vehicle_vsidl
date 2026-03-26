@@ -38,6 +38,7 @@ impl VsidlVisitor for ProtoPackageNameTooLong {
                         "Proto package name '{}' exceeds the length limit of {} characters",
                         package_str, PACKAGE_IDENTIFIER_MAX_LENGTH_BYTES
                     ),
+                    None,
                     Vec::new(),
                 );
             }

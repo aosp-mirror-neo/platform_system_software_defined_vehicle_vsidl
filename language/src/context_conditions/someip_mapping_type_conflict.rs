@@ -34,7 +34,7 @@ impl VsidlVisitor for SomeIpMappingTypeConflict {
                     "SOME/IP service mapping for unit type '{}' defines both 'service_oriented_mapping' and 'service_unit_mapping'. These cannot be set together.",
                     node.unit_type.type_name
                 ),
-                vec![
+                None, vec![
                     node.service_oriented_mapping_span.clone().into_option(),
                     node.service_unit_mapping_span.first().cloned()
                 ],

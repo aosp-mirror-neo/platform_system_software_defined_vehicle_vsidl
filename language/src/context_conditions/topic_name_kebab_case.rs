@@ -37,24 +37,26 @@ fn is_kebab_case(s: &str) -> bool {
 
 impl VsidlVisitor for TopicNameKebabCase {
     fn start_visit_publisher(&mut self, node: &Publisher) {
-        for topic in &node.topic {
+        for (index, topic) in node.topic.iter().enumerate() {
             if !is_kebab_case(topic) {
                 self.finding_collector.error(
                     FindingId::TopicNameKebabCase,
                     format!("Topic '{}' must be in lowercase kebab case", topic),
-                    vec![node.span.clone().into_option()],
+                    Some("Must be in lowercase kebab case".to_string()),
+                    vec![node.topic_span.get(index).cloned()],
                 );
             }
         }
     }
 
     fn start_visit_subscriber(&mut self, node: &Subscriber) {
-        for topic in &node.topic {
+        for (index, topic) in node.topic.iter().enumerate() {
             if !is_kebab_case(topic) {
                 self.finding_collector.error(
                     FindingId::TopicNameKebabCase,
                     format!("Topic '{}' must be in lowercase kebab case", topic),
-                    vec![node.span.clone().into_option()],
+                    Some("Must be in lowercase kebab case".to_string()),
+                    vec![node.topic_span.get(index).cloned()],
                 );
             }
         }
@@ -65,6 +67,7 @@ impl VsidlVisitor for TopicNameKebabCase {
             self.finding_collector.error(
                 FindingId::TopicNameKebabCase,
                 format!("Topic '{}' must be in lowercase kebab case", &node.topic),
+                None,
                 vec![],
             );
         }
