@@ -50,6 +50,7 @@ impl SymbolTableChecker for MultipleRpcServersForSameInterface {
                         service_bundle.full_name(symbol_table),
                         server.service
                     ),
+                    Some("Service bundle contains multiple servers for this service".to_string()),
                     vec![server.service_span.clone().into_option()],
                 );
             }

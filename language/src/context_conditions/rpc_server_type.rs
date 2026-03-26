@@ -38,12 +38,13 @@ impl SymbolTableChecker for RpcServerType {
         // ERROR: No Proto RPC service
         if service_symbols.is_empty() {
             self.finding_collector.error(
-                FindingId::RpcClientTypeDoesNotExist,
+                FindingId::RpcServerTypeDoesNotExist,
                 format!(
                     "RPC server '{}' in service bundle '{}' does not have a corresponding Proto RPC service",
                     rpc_server.service,
                     rpc_server.owning_service_bundle(symbol_table).full_name(symbol_table)
                 ),
+                Some("RPC service does not exist in Proto".to_string()),
                 vec![rpc_server.service_span.clone().into_option()],
             );
         }
@@ -57,6 +58,7 @@ impl SymbolTableChecker for RpcServerType {
                     rpc_server.service,
                     rpc_server.owning_service_bundle(symbol_table).full_name(symbol_table)
                 ),
+                Some("Ambiguous - multiple Proto RPC services found".to_string()),
                 vec![rpc_server.service_span.clone().into_option()],
             );
         }

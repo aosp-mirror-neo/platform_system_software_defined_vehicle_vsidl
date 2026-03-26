@@ -46,16 +46,18 @@ impl SymbolTableChecker for ProtoMessageExceedsMaxSize {
                 self.finding_collector.error(
                     FindingId::ProtoMessageExceedsMaxSize,
                     format!(
-                        "message '{}' exceeds proto limit size of 2GiB",
+                        "Message '{}' exceeds proto limit size of 2GiB",
                         message.full_name(symbol_table),
                     ),
+                    Some("Message exceeds proto limit size of 2GiB".to_string()),
                     vec![message.span()],
                 );
             }
         } else {
             self.finding_collector.error(
                 FindingId::ProtoMessageExceedsMaxSize,
-                format!("message '{}' has unknown maximum size", message.full_name(symbol_table),),
+                format!("Message '{}' has unknown maximum size", message.full_name(symbol_table),),
+                Some("Message has unknown maximum size".to_string()),
                 vec![message.span()],
             );
         }
@@ -95,7 +97,7 @@ mod test {
         assert!(check.is_err());
         assert!(check.any_finding_contains(
             FindingSeverity::Error,
-            "message 'sdv.test.TirePressure' exceeds proto limit size of 2GiB"
+            "Message 'sdv.test.TirePressure' exceeds proto limit size of 2GiB"
         ));
     }
 

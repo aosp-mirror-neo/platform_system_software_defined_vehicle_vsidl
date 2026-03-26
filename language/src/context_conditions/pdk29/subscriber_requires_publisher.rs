@@ -69,6 +69,7 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
                         channel,
                         subscriber.full_name(symbol_table)
                     ),
+                    Some("Channel does not have a corresponding publisher".to_string()),
                     vec![subscriber.channel_span.get(index).cloned()],
                 );
             }

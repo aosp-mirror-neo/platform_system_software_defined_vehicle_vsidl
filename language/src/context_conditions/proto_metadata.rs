@@ -30,6 +30,7 @@ impl VsidlVisitor for ProtoMetadata {
             self.finding_collector.error(
                 FindingId::ProtoMetadataProtoLibraryDoesNotExist,
                 format!("Library name for proto file '{}' is undefined", node.1.name()),
+                None,
                 vec![Some(Span {
                     file_path: node.0.folder.join(node.1.name()).display().to_string(),
                     ..Default::default()

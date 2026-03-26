@@ -51,6 +51,7 @@ impl VsidlVisitor for UniqueUserDefinedServiceUnitNamesPerBundle {
                     "'{}' is specified as the name of multiple publishers",
                     node.service_unit_name
                 ),
+                Some("Used as the name of multiple publishers in this bundle".to_string()),
                 vec![node.service_unit_name_span.clone().into_option()],
             );
         }
@@ -70,6 +71,7 @@ impl VsidlVisitor for UniqueUserDefinedServiceUnitNamesPerBundle {
                     "'{}' is specified as the name of multiple RPC servers",
                     node.service_unit_name
                 ),
+                Some("Used as the name of multiple RPC servers in this bundle".to_string()),
                 vec![node.service_unit_name_span.clone().into_option()],
             );
         }
@@ -88,6 +90,7 @@ impl VsidlVisitor for UniqueUserDefinedServiceUnitNamesPerBundle {
                     "'{}' is specified as the name of multiple publishers",
                     node.service_unit_name
                 ),
+                Some("Used as the name of multiple publishers in this bundle".to_string()),
                 Vec::new(),
             );
         }

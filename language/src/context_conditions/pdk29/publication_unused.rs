@@ -15,7 +15,7 @@
  */
 
 use crate::impl_context_condition_symtab;
-use crate::{FindingCollector, FindingId};
+use crate::FindingCollector;
 use vsidl_v1_common::visitors::visitor::VsidlVisitor;
 use vsidl_v1_symbols::{
     proto_publication_symbol::ProtoPublicationSymbol, SymbolTable, SymbolTableChecker,
@@ -37,8 +37,9 @@ impl SymbolTableChecker for PublicationUnused {
     ) {
         if publication.publishers(symbol_table).is_empty() {
             self.finding_collector.warn(
-                FindingId::PublicationUnused,
+                crate::FindingId::PublicationUnused,
                 format!("Publication '{}' is unused.", publication.full_name(symbol_table)),
+                Some("Publication is unused".to_string()),
                 vec![publication.span()],
             );
         }

@@ -40,7 +40,8 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
                     "There is no publisher for the message of subscriber '{}'",
                     subscriber.full_name(symbol_table)
                 ),
-                vec![subscriber.span.clone().into_option()],
+                Some("There is no publisher for this message".to_string()),
+                vec![subscriber.ast_node.message_span.clone().into_option()],
             );
             return;
         }
@@ -56,6 +57,7 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
                         "Topic '{topic}' of subscriber '{}' does not have a corresponding publisher",
                         subscriber.full_name(symbol_table)
                     ),
+                    Some("Topic does not have a corresponding publisher".to_string()),
                     vec![subscriber.topic_span.get(index).cloned()],
                 );
             }

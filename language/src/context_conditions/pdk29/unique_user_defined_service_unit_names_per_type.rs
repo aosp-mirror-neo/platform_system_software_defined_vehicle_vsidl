@@ -48,7 +48,10 @@ impl SymbolTableChecker for UniqueUserDefinedServiceUnitNamesPerType {
             append(
                 &mut self.seen_rpc_names,
                 server_service_name.clone(),
-                (rpc_server_name.clone(), rpc_server.span()),
+                (
+                    rpc_server_name.clone(),
+                    rpc_server.ast_node.service_unit_name_span.clone().into_option(),
+                ),
             );
         }
     }
@@ -62,7 +65,10 @@ impl SymbolTableChecker for UniqueUserDefinedServiceUnitNamesPerType {
                 append(
                     &mut self.seen_pub_names,
                     publication_type_name.clone(),
-                    (publisher_name.clone(), publisher.span()),
+                    (
+                        publisher_name.clone(),
+                        publisher.ast_node.service_unit_name_span.clone().into_option(),
+                    ),
                 );
             }
         }
@@ -77,6 +83,7 @@ impl SymbolTableChecker for UniqueUserDefinedServiceUnitNamesPerType {
                 self.finding_collector.error(
                     FindingId::UniqueUserDefinedServiceUnitNamesPerTypePublisher,
                     format!("'{duplicate}' is specified as the name of multiple rpc servers"),
+                    Some("Used as the name of multiple RPC servers".to_string()),
                     spans,
                 );
             }
@@ -90,6 +97,7 @@ impl SymbolTableChecker for UniqueUserDefinedServiceUnitNamesPerType {
                 self.finding_collector.error(
                     FindingId::UniqueUserDefinedServiceUnitNamesPerTypePublisher,
                     format!("'{duplicate}' is specified as the name of multiple publishers"),
+                    Some("Used as the name of multiple publishers".to_string()),
                     spans,
                 );
             }

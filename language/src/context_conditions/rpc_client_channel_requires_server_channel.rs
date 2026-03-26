@@ -49,7 +49,8 @@ impl SymbolTableChecker for RpcClientChannelRequiresServerChannel {
                     channel.name(),
                     requested_service.full_name(symbol_table)
                 ),
-                vec![rpc_client.span.clone().into_option()],
+                Some("There is no server for this service is defined on this channel".to_string()),
+                vec![rpc_client.ast_node.channel_span.clone().into_option()],
             );
         }
     }

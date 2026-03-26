@@ -32,6 +32,7 @@ impl VsidlVisitor for RpcChannelMandatory {
             self.finding_collector.error(
                 FindingId::RpcChannelMandatory,
                 "RPC server channel is mandatory. Please specify 'channel: \"channel-name\"'",
+                None,
                 vec![node.span.clone().into_option()],
             );
         }
@@ -42,6 +43,7 @@ impl VsidlVisitor for RpcChannelMandatory {
             self.finding_collector.error(
                 FindingId::RpcChannelMandatory,
                 "RPC client channel is mandatory. Please specify 'channel: \"channel-name\"'",
+                None,
                 vec![node.span.clone().into_option()],
             );
         }

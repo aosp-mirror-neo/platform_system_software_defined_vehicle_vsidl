@@ -68,7 +68,7 @@ impl SymbolTableChecker for MultiplePublishersSameMultipubTopicPerBundle {
                         format!(
                             "Multipub type '{message_type_fqn}' is used by multiple publishers in the same service bundle ('{bundle_fqn}')",
                         ),
-                        spans,
+                        None, spans,
                     );
                 }
             }

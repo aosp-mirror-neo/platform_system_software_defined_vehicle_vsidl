@@ -34,6 +34,7 @@ pub struct Finding {
     pub severity: FindingSeverity,
     pub id: FindingId,
     pub message: String,
+    pub lsp_message: Option<String>,
     pub spans: Vec<Option<Span>>,
 }
 
@@ -117,7 +118,7 @@ impl Finding {
             severity: Some(severity),
             code: Some(lsp_types::NumberOrString::String(self.id.to_string())),
             source: Some("VSIDLC".to_string()),
-            message: self.message.clone(),
+            message: self.lsp_message.clone().unwrap_or_else(|| self.message.clone()),
             ..Default::default()
         }
     }
@@ -134,6 +135,7 @@ mod tests {
             severity: FindingSeverity::Error,
             id: FindingId::UserDefinedNameNamingConventionFirstChar,
             message: "Test message".to_string(),
+            lsp_message: None,
             spans: Vec::new(),
         };
 

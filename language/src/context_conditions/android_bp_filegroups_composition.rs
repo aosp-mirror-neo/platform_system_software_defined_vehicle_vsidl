@@ -62,7 +62,7 @@ impl AndroidBpFilegroupsComposition {
                     format!(
                         "rust_protobuf library '{library}' uses filegroup '{filegroup}' which reference to another filegroup. Not supported",
                     ),
-                    Vec::new(),
+                    None, Vec::new(),
                 );
             }
         }

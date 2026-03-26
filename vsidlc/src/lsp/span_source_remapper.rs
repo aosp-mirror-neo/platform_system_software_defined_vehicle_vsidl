@@ -16,19 +16,24 @@
 
 use crate::lsp::shadow_workspace::ShadowWorkspace;
 use protobuf::MessageField;
+use std::collections::HashMap;
 use vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::{
     publication_mapping::TopicMapping as SomeIpTopicMapping,
     rpc_interface_mapping::RpcChannelMapping as SomeIpRpcChannelMapping,
     PublicationMapping as SomeIpPublicationMapping,
     RpcInterfaceMapping as SomeIpRpcInterfaceMapping,
 };
-use vsidl_v1::someip::some_ip_mapping::some_ip_instance_implementation::{
-    event::GroupEventPart as SomeIpGroupEventPart, event::SimpleEvent as SomeIpSimpleEvent,
-    RpcInterface as SomeIpRpcInterface,
-};
 use vsidl_v1::someip::some_ip_mapping::{
     sdv_type_mapping::ServiceOrientedMapping as SomeIpServiceOrientedMapping,
     SdvTypeMapping as SomeIpSdvTypeMapping,
+};
+use vsidl_v1::someip::some_ip_mapping::{
+    some_ip_instance_implementation::{
+        event::GroupEventPart as SomeIpGroupEventPart, event::SimpleEvent as SomeIpSimpleEvent,
+        RpcInterface as SomeIpRpcInterface,
+    },
+    some_ip_instance_mapping::SdvTopicParameters,
+    SomeIpInstanceMapping, SomeIpServiceMapping,
 };
 use vsidl_v1::someip::SomeIpMapping;
 use vsidl_v1::span::Span;
@@ -64,6 +69,14 @@ impl<'a> SpanSourceRemapper<'a> {
     fn update_spans(&self, spans: &mut Vec<Span>) {
         if let Some(shadow) = self.shadow_workspace {
             for span in spans {
+                span.file_path = shadow.map_to_source(&span.file_path);
+            }
+        }
+    }
+
+    fn update_map_spans(&self, spans: &mut HashMap<u32, Span>) {
+        if let Some(shadow) = self.shadow_workspace {
+            for span in spans.values_mut() {
                 span.file_path = shadow.map_to_source(&span.file_path);
             }
         }
@@ -153,6 +166,29 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.publication_mapping_span);
     }
 
+    fn start_visit_someip_service_mapping(&mut self, node: &mut SomeIpServiceMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.someip_service_id_span);
+        self.update_message_field_span(&mut node.version_major_span);
+        self.update_message_field_span(&mut node.version_minor_span);
+        self.update_spans(&mut node.instance_span);
+        self.update_spans(&mut node.instance_impl_span);
+        self.update_message_field_span(&mut node.sd_behavior_span);
+    }
+
+    fn start_visit_someip_instance_mapping(&mut self, node: &mut SomeIpInstanceMapping) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.instance_id_span);
+        self.update_map_spans(&mut node.sdv_service_unit_parameterization_span);
+        self.update_map_spans(&mut node.sdv_topic_parameterization_span);
+    }
+
+    fn start_visit_sdv_topic_parameters(&mut self, node: &mut SdvTopicParameters) {
+        self.update_message_field_span(&mut node.span);
+        self.update_message_field_span(&mut node.topic_span);
+        self.update_message_field_span(&mut node.capacity_span);
+    }
+
     fn start_visit_someip_rpc_interface_mapping(&mut self, node: &mut SomeIpRpcInterfaceMapping) {
         self.update_message_field_span(&mut node.span);
         self.update_message_field_span(&mut node.offered_interface_span);
@@ -183,7 +219,6 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.sdv_unit_type_span);
         self.update_message_field_span(&mut node.service_unit_span);
         self.update_spans(&mut node.method_span);
-        self.update_message_field_span(&mut node.channel_span);
     }
 
     fn start_visit_someip_simple_event(&mut self, node: &mut SomeIpSimpleEvent) {
@@ -193,7 +228,6 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.type_definition_span);
         self.update_message_field_span(&mut node.message_translation_mode_span);
         self.update_message_field_span(&mut node.topic_span);
-        self.update_message_field_span(&mut node.capacity_span);
     }
 
     fn start_visit_someip_group_event_part(&mut self, node: &mut SomeIpGroupEventPart) {
@@ -201,6 +235,5 @@ impl<'a> VsidlVisitorMut for SpanSourceRemapper<'a> {
         self.update_message_field_span(&mut node.sdv_unit_type_span);
         self.update_message_field_span(&mut node.service_unit_span);
         self.update_message_field_span(&mut node.topic_span);
-        self.update_message_field_span(&mut node.capacity_span);
     }
 }

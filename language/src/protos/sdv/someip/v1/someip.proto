@@ -88,15 +88,27 @@ message SomeIpMapping {
 
   // SOME/IP service instance mapping
   message SomeIpInstanceMapping {
+    message SdvTopicParameters {
+      string topic = 1;
+      uint32 capacity = 2;
+
+      // Parsing metadata that describes where the syntax element was found in
+      // the input. Do not fill fields of this type manually.
+      sdv.vsidl.v1.Span span = 10000;
+      sdv.vsidl.v1.Span topic_span = 10001;
+      sdv.vsidl.v1.Span capacity_span = 10002;
+    }
     // SOME/IP Instance ID
     uint32 instance_id = 1;
     // Service unit name parameterization.
     // These are the service unit names that will be registered by the broker
     // for this SOME/IP instance. These are referenced inside the
-    // SomeIpInstanceImplementation struct
-    // DEPRECATED: please use `topic` in (`GroupEventPart` or `SimpleEvent`) or
-    // `channel` in `RpcInterface` instead.
+    // 'SomeIpInstanceImplementation' struct
     map<uint32, string> sdv_service_unit_parameterization = 2;
+    // Topic parameterization. These are the topics that will be registered by
+    // the broker for this SOME/IP instance. These are referenced inside the
+    // Event struct
+    map<uint32, SdvTopicParameters> sdv_topic_parameterization = 3;
 
     // Parsing metadata that describes where the syntax element was found in the
     // input. Do not fill fields of this type manually.
@@ -104,6 +116,7 @@ message SomeIpMapping {
     sdv.vsidl.v1.Span instance_id_span = 10001;
     map<uint32, sdv.vsidl.v1.Span> sdv_service_unit_parameterization_span =
         10002;
+    map<uint32, sdv.vsidl.v1.Span> sdv_topic_parameterization_span = 10003;
   }
 
   message SomeIpInstanceImplementation {
@@ -134,16 +147,12 @@ message SomeIpMapping {
       // Service unit name that will be created inside SOME/IP broker bundle for
       // this interface instance. Refers to a map key from SomeIpInstanceMapping
       // struct
-      // DEPRECATED: please use `channel_name` instead.
       uint32 service_unit = 2;
       // RPC methods available on this service. Only Request/Response methods
       // are described here, since Fire&Forget has no equivalent in SDV. To call
       // F&F methods, they must be specified as translations of SDV topics
       // through a SdvTypeMapping
       repeated RequestResponseMethod method = 3;
-      // Channel name that will be created inside SOME/IP broker bundle
-      // for this event instance.
-      string channel = 4;
 
       // Parsing metadata that describes where the syntax element was found in
       // the input. Do not fill fields of this type manually.
@@ -151,7 +160,6 @@ message SomeIpMapping {
       sdv.vsidl.v1.Span sdv_unit_type_span = 10001;
       sdv.vsidl.v1.Span service_unit_span = 10002;
       repeated sdv.vsidl.v1.Span method_span = 10003;
-      sdv.vsidl.v1.Span channel_span = 10004;
     }
 
     // SOME/IP event mapping to SDV topics.
@@ -176,7 +184,6 @@ message SomeIpMapping {
         // Service unit name that will be created inside SOME/IP broker bundle
         // for this event instance. Refers to a map key from the
         // sdv_service_unit_parameterization map in SomeIpInstanceMapping struct
-        // DEPRECATED: please use `topic` instead.
         uint32 service_unit = 2;
         // SOME/IP data format of the event. The fields specified in the
         // definition MUST match the field names defined in the proto message
@@ -185,12 +192,9 @@ message SomeIpMapping {
         // Message translation mode to be used for this event. If unspecified,
         // default translation mode is used
         optional MessageTranslationMode message_translation_mode = 4;
-        // Topic name that will be created inside SOME/IP broker bundle
+        // Topic that will be created inside SOME/IP broker bundle
         // for this event instance.
-        string topic = 5;
-        // Capacity of the publisher created inside SOME/IP broker bundle for
-        // this event instance.
-        uint32 capacity = 6;
+        uint32 topic = 5;
 
         // Parsing metadata that describes where the syntax element was found in
         // the input. Do not fill fields of this type manually.
@@ -200,7 +204,6 @@ message SomeIpMapping {
         sdv.vsidl.v1.Span type_definition_span = 10003;
         sdv.vsidl.v1.Span message_translation_mode_span = 10004;
         sdv.vsidl.v1.Span topic_span = 10005;
-        sdv.vsidl.v1.Span capacity_span = 10006;
       }
       message GroupEventPart {
         // SDV Unit Type corresponding to this group event part
@@ -208,7 +211,6 @@ message SomeIpMapping {
         // Service unit name that will be created inside SOME/IP broker bundle
         // for this event instance. Refers to a map key from the
         // sdv_service_unit_parameterization map in SomeIpInstanceMapping struct
-        // DEPRECATED: please use `topic` instead.
         uint32 service_unit = 2;
         // Specifies what fields to use from the GroupEvent type_definition to
         // construct the SDV topic's type definition. Maps the incoming SOME/IP
@@ -216,12 +218,9 @@ message SomeIpMapping {
         // must have a corresponding field name defined in the proto message
         // corresponding to `sdv_unit_type`
         map<string, string> field_name_mapping = 3;
-        // Topic name that will be created inside SOME/IP broker bundle
+        // Topic that will be created inside SOME/IP broker bundle
         // for this event instance.
-        string topic = 4;
-        // Capacity of the publisher created inside SOME/IP broker bundle for
-        // this event instance.
-        uint32 capacity = 5;
+        uint32 topic = 4;
 
         // Parsing metadata that describes where the syntax element was found in
         // the input. Do not fill fields of this type manually.
@@ -230,7 +229,6 @@ message SomeIpMapping {
         sdv.vsidl.v1.Span service_unit_span = 10002;
         map<string, sdv.vsidl.v1.Span> field_name_mapping_span = 10003;
         sdv.vsidl.v1.Span topic_span = 10004;
-        sdv.vsidl.v1.Span capacity_span = 10005;
       }
       message GroupEvent {
         // SOME/IP data format of the event

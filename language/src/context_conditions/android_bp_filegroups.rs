@@ -50,7 +50,7 @@ impl AndroidBpFilegroups {
                         android_bp_file.file_path.display(),
                         filegroup,
                     ),
-                    Vec::new(),
+                    None, Vec::new(),
                 );
             }
         }
@@ -66,6 +66,7 @@ impl AndroidBpFilegroups {
                         filegroup,
                         print_list_of_element(files, 2, |p| p.display().to_string())
                     ),
+                    None,
                     Vec::new(),
                 );
             }

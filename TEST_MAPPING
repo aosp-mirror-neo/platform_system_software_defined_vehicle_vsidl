@@ -64,5 +64,10 @@
     {
       "name": "sdv_vsidl_provider_query_test"
     }
+  ],
+  "sdv_ivi_tests_presubmit": [
+    {
+      "name": "sdv_vsidl_provider_query_test"
+    }
   ]
 }

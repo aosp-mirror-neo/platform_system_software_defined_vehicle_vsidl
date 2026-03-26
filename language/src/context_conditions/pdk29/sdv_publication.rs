@@ -40,6 +40,7 @@ impl SdvPublication {
             self.finding_collector.error(
                 FindingId::SdvPublicationMessageCountPositive,
                 format!("Message count must be set, >= 2, and even for: {message_fqn}"),
+                Some("Message count must be set, >= 2, and even".to_string()),
                 Vec::new(),
             );
         }
@@ -73,6 +74,7 @@ impl VsidlVisitor for SdvPublication {
             self.finding_collector.error(
                 FindingId::SdvPublicationMultiPubWithChannels,
                 format!("Channels for multipub types are not allowed: {message_fqn}"),
+                Some("Channels for multipub types are not allowed".to_string()),
                 Vec::new(),
             );
         }
@@ -112,6 +114,7 @@ impl SymbolTableChecker for SdvPublication {
                         channels_enum_name,
                         publication.full_name(symbol_table)
                     ),
+                    Some("channels_enum is undefined".to_string()),
                     vec![publication.span()],
                 );
             }

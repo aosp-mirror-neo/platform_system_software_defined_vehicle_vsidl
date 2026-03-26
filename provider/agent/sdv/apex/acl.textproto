@@ -15,21 +15,6 @@
 # //system/software_defined_vehicle/middleware/service_authz/proto/sdv/authz/policy/authz_policy.proto
 # proto-message: AuthzPolicy
 
-# ACL policies for Vsidl Provider Agent Unit Types.
-
-acls {
-  name : "VsidlProviderClients"
-  include : "com.google.sdv.telemetry.TelemetryService"
-
-  # this is for the tests:
-  include : "com.sdv.google.sample.*"
-}
-
-service_units {
-  name : "vsidl-provider-server"
-  acl_names : "VsidlProviderClients"
-}
-
 # Permissions
 
 server {

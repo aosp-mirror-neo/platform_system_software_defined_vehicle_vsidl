@@ -74,6 +74,7 @@ impl VsidlRedundantExplicitChannelListing {
                         service_bundle.full_name(symbol_table),
                         name.clone(),
                     ),
+                    Some("Channel declarations could be removed. Omitting channel declarations implicitly uses all channels.".to_string()),
                     vec![symbol_table.resolve_publisher_fqn(name)[0].span.clone().into_option()],
                 );
             }
@@ -124,6 +125,7 @@ impl VsidlRedundantExplicitChannelListing {
                         service_bundle.full_name(symbol_table),
                         name.clone(),
                     ),
+                    Some("Channel declarations could be removed. Omitting channel declarations implicitly uses all channels.".to_string()),
                     vec![symbol_table.resolve_subscriber_fqn(name)[0].span.clone().into_option()],
                 );
             }

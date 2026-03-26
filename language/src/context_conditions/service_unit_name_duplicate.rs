@@ -58,6 +58,7 @@ impl ServiceUnitNameDuplicate {
                 format!(
                     "Service unit name '{service_unit_name}' is used multiple times in service bundle '{service_bundle_name}'"
                 ),
+                Some("Used multiple times in this service bundle".to_string()),
                 vec![span.clone()],
             );
         }
@@ -65,6 +66,7 @@ impl ServiceUnitNameDuplicate {
             self.finding_collector.error(
                 FindingId::ServiceUnitNameDuplicate,
                 format!("Service unit name '{service_unit_name}' is used by multiple publishers"),
+                Some("Used by multiple publishers".to_string()),
                 vec![span],
             );
         }
@@ -118,7 +120,7 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
                 publisher.service_unit_name.clone(),
                 service_bundle_name.clone(),
                 IS_PUBLISHER,
-                publisher.span.clone().into_option(),
+                publisher.ast_node.service_unit_name_span.clone().into_option(),
             );
             return;
         }
@@ -135,7 +137,7 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
                 service_unit_name,
                 service_bundle_name.clone(),
                 IS_PUBLISHER,
-                publisher.span.clone().into_option(),
+                publisher.ast_node.message_span.clone().into_option(),
             );
         }
     }
@@ -155,15 +157,22 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
                 rpc_server.channel.clone(),
                 service_bundle_name,
                 !IS_PUBLISHER,
-                rpc_server.span.clone().into_option(),
+                rpc_server.ast_node.channel_span.clone().into_option(),
             );
         } else {
             // 2. Check service unit name
             let service_unit_name = if rpc_server.service_unit_name.is_empty() {
                 // Validate generated name
-                format!("{}.{}", rpc_server.package(symbol_table), rpc_server.service)
+                let name = format!("{}.{}", rpc_server.package(symbol_table), rpc_server.service)
                     .replace('.', "-")
-                    .to_kebab_case()
+                    .to_kebab_case();
+                self.check(
+                    name,
+                    service_bundle_name.clone(),
+                    !IS_PUBLISHER,
+                    rpc_server.ast_node.service_span.clone().into_option(),
+                );
+                return;
             } else {
                 // Validate user-defined name
                 rpc_server.service_unit_name.clone()
@@ -172,7 +181,7 @@ impl SymbolTableChecker for ServiceUnitNameDuplicate {
                 service_unit_name.clone(),
                 service_bundle_name.clone(),
                 !IS_PUBLISHER,
-                rpc_server.span.clone().into_option(),
+                rpc_server.ast_node.service_unit_name_span.clone().into_option(),
             );
         }
     }

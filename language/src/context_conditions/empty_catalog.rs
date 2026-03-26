@@ -36,7 +36,7 @@ impl VsidlVisitor for EmptyCatalog {
                         "No .vsidl files detected in catalog path '{}'. Code generation will be skipped.",
                         path.display()
                     ),
-                    vec![],
+                    None, vec![],
                 );
             }
             return;
@@ -61,7 +61,7 @@ impl VsidlVisitor for EmptyCatalog {
                         "All .vsidl files in catalog path '{}' are empty. Code generation will be skipped.",
                         path.display()
                     ),
-                    vec![],
+                    None, vec![],
                 );
             }
         }

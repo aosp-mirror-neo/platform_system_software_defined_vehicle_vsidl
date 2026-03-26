@@ -66,7 +66,7 @@ impl VsidlVisitor for AndroidBpMappingProtos {
                             rust_protobuf_info.name,
                             unknown_filegroup,
                         ),
-                        Vec::new(),
+                        None, Vec::new(),
                     );
                 }
 
@@ -78,7 +78,7 @@ impl VsidlVisitor for AndroidBpMappingProtos {
                             android_bp_file.display(),
                             empty_glob
                         ),
-                        Vec::new(),
+                        None, Vec::new(),
                     );
                 }
 
@@ -91,7 +91,7 @@ impl VsidlVisitor for AndroidBpMappingProtos {
                             rust_protobuf_info.name,
                             proto_file
                         ),
-                        Vec::new(),
+                        None, Vec::new(),
                     );
                 }
 
@@ -111,7 +111,7 @@ impl VsidlVisitor for AndroidBpMappingProtos {
                                 "Multiple rust_protobuf points to '{}'; ensure unique definitions to avoid random selection.",
                                 proto_file.display()
                             ),
-                            Vec::new(),
+                            None, Vec::new(),
                         );
                     }
                 }

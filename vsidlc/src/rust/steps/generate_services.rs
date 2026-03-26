@@ -157,6 +157,7 @@ impl GeneratorStepExecution for GenerateServices {
                             path = main_rs_path.display(),
                             gen_path = gen_path.display()
                         ),
+                        None,
                         vec![],
                     );
                     write_bytes_to_file(

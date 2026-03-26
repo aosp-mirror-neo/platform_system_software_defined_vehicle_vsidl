@@ -48,6 +48,7 @@ impl VsidlVisitor for UniqueTargetName {
             self.finding_collector.error(
                 FindingId::UniqueTargetName,
                 format!("'{service_bundle_crate_name}' is defined in multiple build target names"),
+                None,
                 vec![node.span.clone().into_option()],
             );
         }

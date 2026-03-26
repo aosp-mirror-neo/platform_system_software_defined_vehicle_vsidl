@@ -617,6 +617,7 @@ impl<'a> DiagnosticSession<'a> {
                 severity: FindingSeverity::Fatal,
                 id: FindingId::ParserError,
                 message: message.clone(),
+                lsp_message: None,
                 spans: vec![Some(Span {
                     file_path: file_path.clone(),
                     start,

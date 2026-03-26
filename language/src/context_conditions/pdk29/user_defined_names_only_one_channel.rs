@@ -32,7 +32,8 @@ impl VsidlVisitor for UserDefinedNamesOnlyOneChannel {
             self.finding_collector.error(
                 FindingId::UserDefinedNamesOnlyOneChannel,
                 format!("Publisher '{}' must not serve multiple channel names and have a user-defined name", node.service_unit_name.clone()),
-                vec![node.span.clone().into_option()],
+                Some("A publisher serving multiple channels cannot have a user-defined service unit name".to_string()),
+                vec![node.service_unit_name_span.clone().into_option()],
             );
         }
     }

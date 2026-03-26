@@ -44,6 +44,7 @@ impl VsidlVisitor for ServiceBundleNamingConvention {
             self.finding_collector.error(
                 FindingId::ServiceBundleNamingConventionEmptyName,
                 format!("Package '{}' contains a service bundle with an empty name.", self.package),
+                Some("Service bundle name may not be empty".to_string()),
                 vec![node.span.clone().into_option()],
             );
         }
@@ -58,6 +59,7 @@ impl VsidlVisitor for ServiceBundleNamingConvention {
                         first_char,
                         node.name.clone()
                     ),
+                    Some(format!("Character '{}' is not a valid first character. Must start with unicode XID start character.", first_char)),
                     vec![node.name_span.clone().into_option()],
                 );
             }
@@ -73,6 +75,7 @@ impl VsidlVisitor for ServiceBundleNamingConvention {
                         current_char,
                         node.name.clone()
                     ),
+                    Some(format!("Character '{}' is invalid. Must only contain unicode XID continue characters.", current_char)),
                     vec![node.name_span.clone().into_option()],
                 );
             }
@@ -88,6 +91,7 @@ impl VsidlVisitor for ServiceBundleNamingConvention {
                     "Service bundle name '{}' is a reserved Rust keyword and cannot be used. See: https://doc.rust-lang.org/reference/keywords.html",
                     node.name
                 ),
+                Some(format!("'{}' is a reserved Rust keyword", node.name)),
                 vec![node.name_span.clone().into_option()],
             );
         }
@@ -102,6 +106,7 @@ impl VsidlVisitor for ServiceBundleNamingConvention {
                     "Service bundle name '{}' is a reserved Java keyword and cannot be used. See: https://docs.oracle.com/javase/specs/jls/se21/html/jls-3.html#jls-Keyword",
                     node.name
                 ),
+                Some(format!("'{}' is a reserved Java keyword", node.name)),
                 vec![node.name_span.clone().into_option()],
             );
         }
@@ -114,6 +119,7 @@ impl VsidlVisitor for ServiceBundleNamingConvention {
                     "Service bundle name '{}' is a reserved C++ keyword and cannot be used. See: https://en.cppreference.com/w/cpp/keyword",
                     node.name
                 ),
+                Some(format!("'{}' is a reserved C++ keyword", node.name)),
                 vec![node.name_span.clone().into_option()],
             );
         }
