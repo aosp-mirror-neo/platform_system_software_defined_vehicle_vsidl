@@ -32,7 +32,7 @@ rust_binary {
         "libclap",
         "libsdv_dump",
     ],
-    required: ["com.sdv.google.sample.vsidl_provider"],
+    required: ["com.android.sdv.sample.vsidl_provider"],
 }
 
 rust_test {

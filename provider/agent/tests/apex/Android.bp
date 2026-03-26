@@ -17,12 +17,12 @@ package {
 }
 
 apex {
-    name: "com.sdv.google.sample.vsidl_provider",
+    name: "com.android.sdv.sample.vsidl_provider",
     key: "com.android.sdv.samples.key",
     file_contexts: "file_contexts",
     prebuilts: [
-        "com.sdv.google.sample.vsidl_provider.manifest",
-        "com.sdv.google.sample.vsidl_provider.permissions",
+        "com.android.sdv.sample.vsidl_provider.manifest",
+        "com.android.sdv.sample.vsidl_provider.permissions",
     ],
     product_specific: true,
     min_sdk_version: "35",
@@ -30,7 +30,7 @@ apex {
 }
 
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.manifest",
+    name: "com.android.sdv.sample.vsidl_provider.manifest",
     src: "sdv_service_bundles_manifest.textproto",
     filename: "sdv_service_bundles_manifest.textproto",
     installable: false,
@@ -38,7 +38,7 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
-    name: "com.sdv.google.sample.vsidl_provider.permissions",
+    name: "com.android.sdv.sample.vsidl_provider.permissions",
     src: "permissions.textproto",
     filename: "permissions.textproto",
     installable: false,

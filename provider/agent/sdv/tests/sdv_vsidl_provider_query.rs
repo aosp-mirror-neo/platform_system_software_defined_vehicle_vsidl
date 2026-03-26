@@ -34,7 +34,7 @@ use tokio::time::sleep;
 use tokio::time::Duration;
 
 static DEFAULT_CLIENT_FQIN_STR: &str =
-    "ignored:com.sdv.google.sample.vsidl_provider.Client/default";
+    "ignored:com.android.sdv.sample.vsidl_provider.Client/default";
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 enum QueryVariant {
