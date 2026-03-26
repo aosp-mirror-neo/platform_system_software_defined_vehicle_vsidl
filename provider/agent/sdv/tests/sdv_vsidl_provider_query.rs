@@ -15,8 +15,6 @@
  */
 
 //! Sample Cross VM VSIDL Provider Call
-// TODO update readme with rest of commands
-// TODO update python side
 
 use clap::Parser;
 use clap::ValueEnum;
