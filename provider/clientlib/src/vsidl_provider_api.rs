@@ -15,6 +15,7 @@
  */
 //! API declarations for VSIDL configuration provider.
 
+use crate::v1_adapter::V1Adapter;
 use async_trait::async_trait;
 use futures::Stream;
 use log::error;
@@ -27,6 +28,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::marker::{Send, Sync};
 use std::pin::Pin;
+use std::sync::Arc;
 use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
 use vsidl_v1::someip::SomeIpMapping;
 
@@ -67,6 +69,14 @@ pub trait VsidlConfigProviderV1: Sync + Send + Display {
         &self,
         fqin: &ServiceFqin,
     ) -> Option<DiagnosticsDeclaration>;
+}
+
+/// Converts an `Arc<dyn VsidlConfigProvider>` to an `Arc<dyn VsidlConfigProviderV1>`.
+///
+/// This is useful for providing a V2 provider to code that still depends on the
+/// deprecated V1 trait.
+pub fn to_v1_provider(provider: Arc<dyn VsidlConfigProvider>) -> Arc<dyn VsidlConfigProviderV1> {
+    Arc::new(V1Adapter { inner: provider })
 }
 
 /// Event indicating a change in availability.
@@ -490,5 +500,189 @@ mod tests {
 
         let result = VsidlConfigProviderV1::get_diagnostics_declaration(&mock, &get_fqin()).await;
         assert_eq!(result, None);
+    }
+}
+
+#[cfg(test)]
+mod v1_adapter_tests {
+    use super::*;
+    use protobuf::well_known_types::empty::Empty;
+    use sdv_status_rs::{SdvStatus, SdvStatusCode};
+    use std::str::FromStr;
+
+    fn get_fqin() -> ServiceFqin {
+        ServiceFqin::from_str("vm:pkg.bundle.Service/instance").unwrap()
+    }
+
+    fn get_unit_type() -> UnitType {
+        UnitType::from_str("pkg.bundle.Unit").unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_publication_descriptor() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        let expected = PublicationDescriptor {
+            message_descriptor: MessageDescriptor::for_type::<Empty>(),
+            size_metadata: SizeMetadata::default(),
+        };
+        mock_v2.expect_get_publication_descriptor().returning(move |_, _| Ok(expected.clone()));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider.clone());
+
+        let v2_result = v2_provider.get_publication_descriptor(&get_fqin(), &get_unit_type()).await;
+        let v1_result = v1_adapter.get_publication_descriptor(&get_fqin(), &get_unit_type()).await;
+
+        assert_eq!(v2_result.ok(), v1_result);
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_rpc_method_descriptor() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        let expected = RpcMethodDescriptor::default();
+        mock_v2.expect_get_rpc_method_descriptor().returning(move |_, _, _| Ok(expected.clone()));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider.clone());
+
+        let v2_result =
+            v2_provider.get_rpc_method_descriptor(&get_fqin(), &get_unit_type(), "method").await;
+        let v1_result =
+            v1_adapter.get_rpc_method_descriptor(&get_fqin(), &get_unit_type(), "method").await;
+
+        assert_eq!(v2_result.ok(), v1_result);
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_message_descriptor() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        let expected = MessageDescriptor::for_type::<Empty>();
+        mock_v2.expect_get_message_descriptor().returning(move |_, _| Ok(expected.clone()));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider.clone());
+
+        let v2_result = v2_provider.get_message_descriptor(&get_fqin(), "message").await;
+        let v1_result = v1_adapter.get_message_descriptor(&get_fqin(), "message").await;
+
+        assert_eq!(v2_result.ok(), v1_result);
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_someip_mappings() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        let expected = vec![SomeIpMapping::default()];
+        mock_v2.expect_get_someip_mappings().returning(move |_| Ok(expected.clone()));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider.clone());
+
+        let v2_result = v2_provider.get_someip_mappings(&get_fqin()).await;
+        let v1_result = v1_adapter.get_someip_mappings(&get_fqin()).await;
+
+        assert_eq!(v2_result.ok(), v1_result);
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_diagnostics_declaration() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        let expected = DiagnosticsDeclaration::default();
+        mock_v2.expect_get_diagnostics_declaration().returning(move |_| Ok(expected.clone()));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider.clone());
+
+        let v2_result = v2_provider.get_diagnostics_declaration(&get_fqin()).await;
+        let v1_result = v1_adapter.get_diagnostics_declaration(&get_fqin()).await;
+
+        assert_eq!(v2_result.ok(), v1_result);
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_publication_descriptor_error() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        mock_v2
+            .expect_get_publication_descriptor()
+            .returning(|_, _| Err(SdvStatus::with_message(SdvStatusCode::NotFound, "Not found")));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider);
+
+        let v1_result = v1_adapter.get_publication_descriptor(&get_fqin(), &get_unit_type()).await;
+
+        assert!(v1_result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_rpc_method_descriptor_error() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        mock_v2.expect_get_rpc_method_descriptor().returning(|_, _, _| {
+            Err(SdvStatus::with_message(SdvStatusCode::NotFound, "Not found"))
+        });
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider);
+
+        let v1_result =
+            v1_adapter.get_rpc_method_descriptor(&get_fqin(), &get_unit_type(), "method").await;
+
+        assert!(v1_result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_message_descriptor_error() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        mock_v2
+            .expect_get_message_descriptor()
+            .returning(|_, _| Err(SdvStatus::with_message(SdvStatusCode::NotFound, "Not found")));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider);
+
+        let v1_result = v1_adapter.get_message_descriptor(&get_fqin(), "message").await;
+
+        assert!(v1_result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_someip_mappings_error() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        mock_v2
+            .expect_get_someip_mappings()
+            .returning(|_| Err(SdvStatus::with_message(SdvStatusCode::NotFound, "Not found")));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider);
+
+        let v1_result = v1_adapter.get_someip_mappings(&get_fqin()).await;
+
+        assert!(v1_result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_adapter_get_diagnostics_declaration_error() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        mock_v2
+            .expect_get_diagnostics_declaration()
+            .returning(|_| Err(SdvStatus::with_message(SdvStatusCode::NotFound, "Not found")));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider);
+
+        let v1_result = v1_adapter.get_diagnostics_declaration(&get_fqin()).await;
+
+        assert!(v1_result.is_none());
+    }
+
+    #[test]
+    fn test_adapter_display() {
+        let mut mock_v2 = MockVsidlConfigProvider::new();
+        mock_v2.expect_fmt().returning(|f| write!(f, "MockV2Provider"));
+
+        let v2_provider: Arc<dyn VsidlConfigProvider> = Arc::new(mock_v2);
+        let v1_adapter = to_v1_provider(v2_provider);
+
+        let display_str = format!("{}", v1_adapter);
+        assert_eq!(display_str, "V1Adapter(MockV2Provider)");
     }
 }

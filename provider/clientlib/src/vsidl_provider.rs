@@ -1224,4 +1224,31 @@ mod test {
         drop(tx2);
         assert_eq!(stream.next().await, None);
     }
+
+    #[tokio::test]
+    async fn test_vsidl_provider_dump() {
+        let mut mock_files_provider = MockVsidlConfigProvider::new();
+        mock_files_provider.expect_fmt().returning(|f| write!(f, "MockFilesProvider"));
+        let mut mock_apexes_provider = MockVsidlConfigProvider::new();
+        mock_apexes_provider.expect_fmt().returning(|f| write!(f, "MockApexesProvider"));
+        let mut mock_agent_provider = MockVsidlConfigProvider::new();
+        mock_agent_provider.expect_fmt().returning(|f| write!(f, "MockAgentProvider"));
+
+        let mock_factory = mock_factory(
+            Some(Box::new(mock_files_provider)),
+            Some(Box::new(mock_apexes_provider)),
+            Some(Box::new(mock_agent_provider)),
+            None, // remote agent
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let dump_output = format!("{}", vsidl_provider);
+
+        assert!(dump_output.contains("Files Provider: MockFilesProvider"));
+        assert!(dump_output.contains("Apexes Provider: MockApexesProvider"));
+        // new_for_vsidl_provider_agent_with_injection doesn't use the agent provider,
+        // so it should not be in the output.
+        assert!(!dump_output.contains("Agent Provider: MockAgentProvider"));
+    }
 }

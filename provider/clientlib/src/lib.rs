@@ -17,6 +17,7 @@
 
 mod cache;
 mod types;
+mod v1_adapter;
 pub mod vsidl_provider;
 pub mod vsidl_provider_api;
 
