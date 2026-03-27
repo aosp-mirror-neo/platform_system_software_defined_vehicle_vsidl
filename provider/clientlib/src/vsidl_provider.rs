@@ -398,6 +398,8 @@ mod test {
     use mockall::predicate::eq as mock_eq;
     use mockall::Predicate;
 
+    use futures::poll;
+    use std::task::Poll;
     use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
 
     use googletest::assert_that;
@@ -1192,6 +1194,10 @@ mod test {
         tokio::task::yield_now().await; // Allow the stream to process
                                         // P1=Un, P2=Av -> Unavailable
         assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
+
+        drop(tx1);
+        drop(tx2);
+        assert_eq!(stream.next().await, None);
     }
 
     #[tokio::test]
@@ -1221,12 +1227,14 @@ mod test {
         // 3. P1: Unavailable
         tx1.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
         tokio::task::yield_now().await; // Allow the stream to process
-                                        // P1=Un, P2=Un -> Unavailable (No change)
+                                        // P1=Un, P2=Un -> Unavailable (No change), so stream should be pending.
+        assert_eq!(poll!(stream.next()), Poll::Pending);
 
         // 4. P2: Available
         tx2.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
         tokio::task::yield_now().await; // Allow the stream to process
-                                        // P1=Un, P2=Av -> Unavailable (No change)
+                                        // P1=Un, P2=Av -> Unavailable (No change), so stream should still be pending.
+        assert_eq!(poll!(stream.next()), Poll::Pending);
 
         drop(tx1);
         drop(tx2);
