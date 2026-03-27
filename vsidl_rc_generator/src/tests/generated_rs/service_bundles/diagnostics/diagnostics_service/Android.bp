@@ -43,6 +43,7 @@ rust_library {
         "liblog_rust",
         "libsdv_rs",
         "libfutures",
+        "libdiagnostics_v1_api",
         "libcom_android_sdv_diagnostics_data_item_data_item_service_rpc_rs",
         "libcom_android_sdv_diagnostics_routine_control_routine_control_service_rpc_rs",
         "libcom_android_sdv_diagnostics_io_control_io_control_service_rpc_rs",
