@@ -74,10 +74,30 @@ impl SymbolTableLinker {
         self.link_clients_to_rpc_services();
         self.link_rpc_servers_to_channels();
         self.link_rpc_clients_to_channels();
+
+        self.clear_topic_links();
         self.link_publishers_to_topics();
-        self.link_topics_to_proto_messages();
         self.link_subscribers_to_topics();
+        self.link_topics_to_proto_messages();
         self.symbol_table.set_state(SymbolTableState::Linked)
+    }
+
+    /// Clears all topic-related links in the symbol table.
+    fn clear_topic_links(&mut self) {
+        let ids: Vec<_> = self.symbol_table.get_all_symbols().iter().map(|s| s.id()).collect();
+        for id in ids {
+            match self.symbol_table.get_symbol_mut(&id).unwrap() {
+                SymbolKind::Topic(s) => {
+                    s.publishers.clear();
+                    s.subscribers.clear();
+                    s.message = None;
+                }
+                SymbolKind::Publisher(s) => s.topics.clear(),
+                SymbolKind::Subscriber(s) => s.topics.clear(),
+                SymbolKind::ProtoMessage(s) => s.topics.clear(),
+                _ => {}
+            }
+        }
     }
 
     /// Links [RpcServerSymbol]s to the corresponding [ProtoRpcServiceSymbol]s they implement.
@@ -524,26 +544,37 @@ impl SymbolTableLinker {
 
     /// Links [PublisherSymbol]s to the [TopicSymbol]s they publish to.
     fn link_publishers_to_topics(&mut self) {
-        // Find links
-        let mut links = HashSet::new();
-        let unlinked = self.symbol_table.get_unlinked_symbols();
-        for publisher in self
-            .symbol_table
-            .get_all_publisher_symbols()
-            .into_iter()
-            .filter(|s| unlinked.contains(&s.id()))
-        {
+        let mut links = Vec::new();
+        for publisher in self.symbol_table.get_all_publisher_symbols() {
+            let message_id = match &publisher.message {
+                Some(id) => id.clone(),
+                None => continue,
+            };
+
             for topic_name in &publisher.ast_node.topic {
                 // Resolve the topic name in global scope
                 let resolved_symbols: Vec<_> = self
                     .symbol_table
                     .resolve(&GLOBAL_SCOPE_ID, topic_name, false)
                     .into_iter()
-                    .filter(|symbol| matches!(symbol, SymbolKind::Topic(_)))
+                    .filter_map(|symbol| match symbol {
+                        SymbolKind::Topic(topic_symbol) => Some((symbol.id(), topic_symbol)),
+                        _ => None,
+                    })
                     .collect();
 
-                if !resolved_symbols.is_empty() {
-                    links.insert((publisher.id().clone(), resolved_symbols[0].id().clone()));
+                // Find the topic that matches the publisher's message.
+                // We resolve the topic's own message name to compare against the linked message ID.
+                for (topic_id, topic_symbol) in resolved_symbols {
+                    let topic_message_name = &topic_symbol.message_fqn;
+                    let enclosing_scope_id = &topic_symbol.symbol.enclosing_scope;
+                    let resolved_topic_messages =
+                        self.symbol_table.resolve(enclosing_scope_id, topic_message_name, false);
+
+                    if resolved_topic_messages.iter().any(|m| m.id() == message_id) {
+                        links.push((publisher.id().clone(), topic_id));
+                        break;
+                    }
                 }
             }
         }
@@ -573,6 +604,16 @@ impl SymbolTableLinker {
         for publisher in self.symbol_table.get_all_publisher_symbols() {
             if let Some(message_id) = &publisher.message {
                 for topic_id in &publisher.topics {
+                    message_to_topics.insert((message_id.clone(), topic_id.clone()));
+                }
+            }
+        }
+
+        // Also iterate through all subscribers to find message-topic associations
+        // (Necessary for topics that only have subscribers)
+        for subscriber in self.symbol_table.get_all_subscriber_symbols() {
+            if let Some(message_id) = &subscriber.message {
+                for topic_id in &subscriber.topics {
                     message_to_topics.insert((message_id.clone(), topic_id.clone()));
                 }
             }
@@ -609,39 +650,39 @@ impl SymbolTableLinker {
     }
 
     /// Links [SubscriberSymbol]s to the [TopicSymbol]s they subscribe to.
-    ///
-    /// This function re-evaluates all subscriber symbols, not just unlinked ones.
-    /// This is necessary because TopicSymbols are implicitly generated from Publishers
-    /// in VSIDL files. Unlike symbols derived from .proto files, TopicSymbols
-    /// can be removed and recreated with new IDs during incremental file processing.
-    /// Therefore, existing subscribers may have stale Topic IDs that need to be updated.
     fn link_subscribers_to_topics(&mut self) {
-        let mut links = HashSet::new();
-        // Iterate through ALL subscribers, as existing ones might need relinking to new TopicSymbol instances.
-        for subscriber in self.symbol_table.get_all_subscriber_symbols().into_iter() {
+        let mut links = Vec::new();
+        for subscriber in self.symbol_table.get_all_subscriber_symbols() {
+            let message_id = match &subscriber.message {
+                Some(id) => id.clone(),
+                None => continue,
+            };
+
             for topic_name in &subscriber.topic {
                 // Resolve the topic name in global scope
                 let resolved_symbols: Vec<_> = self
                     .symbol_table
                     .resolve(&GLOBAL_SCOPE_ID, topic_name, false)
                     .into_iter()
-                    .filter(|symbol| matches!(symbol, SymbolKind::Topic(_)))
+                    .filter_map(|symbol| match symbol {
+                        SymbolKind::Topic(topic_symbol) => Some((symbol.id(), topic_symbol)),
+                        _ => None,
+                    })
                     .collect();
 
-                if let Some(resolved_symbol) = resolved_symbols.first() {
-                    links.insert((subscriber.id().clone(), resolved_symbol.id().clone()));
-                }
-            }
-        }
+                // Find the topic that matches the subscriber's message.
+                // We resolve the topic's own message name to compare against the linked message ID.
+                for (topic_id, topic_symbol) in resolved_symbols {
+                    let topic_message_name = &topic_symbol.message_fqn;
+                    let enclosing_scope_id = &topic_symbol.symbol.enclosing_scope;
+                    let resolved_topic_messages =
+                        self.symbol_table.resolve(enclosing_scope_id, topic_message_name, false);
 
-        // Clear old topic links for all subscribers involved in the new links.
-        // This is crucial to remove stale IDs from topics that might have been recreated.
-        let subscriber_ids_to_update: HashSet<_> = links.iter().map(|(s, _)| s).collect();
-        for subscriber_id in subscriber_ids_to_update {
-            if let Some(subscriber_symbol) =
-                self.symbol_table.get_subscriber_symbol_mut(subscriber_id)
-            {
-                subscriber_symbol.topics.clear();
+                    if resolved_topic_messages.iter().any(|m| m.id() == message_id) {
+                        links.push((subscriber.id().clone(), topic_id));
+                        break;
+                    }
+                }
             }
         }
 
@@ -856,6 +897,7 @@ mod tests {
         // WHEN linking (VSIDL) topics to (Proto) messages
         let mut linker = SymbolTableLinker::from(creator);
         linker.link_publishers_to_messages(); // This is required before linking topics
+        linker.link_publishers_to_topics(); // Required to populate publisher.topics
         linker.link_topics_to_proto_messages();
         let symbol_table = linker.symbol_table;
 
@@ -899,6 +941,7 @@ mod tests {
 
         // WHEN linking (VSIDL) subscribers to (VSIDL) topics
         let mut linker = SymbolTableLinker::from(creator);
+        linker.link_subscribers_to_messages(); // Required for topic filtering
         linker.link_subscribers_to_topics();
         let symbol_table = linker.symbol_table;
 

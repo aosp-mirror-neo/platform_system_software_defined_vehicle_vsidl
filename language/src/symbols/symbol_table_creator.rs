@@ -111,8 +111,8 @@ pub struct SymbolTableCreator<F: FileProvider = DiskFileProvider> {
     diagnostics_context: Option<DiagnosticsContext>,
     /// Flag indicating if the current file should be processed (for incremental updates).
     should_process_current_file: bool,
-    /// Already created channels in the symbol table.
-    created_channels: HashSet<String>,
+    /// Already created topics in the symbol table. Stores (Message FQN, Topic) pairs.
+    created_topics: HashSet<(String, String)>,
     /// Already created RPC channels in the symbol table.
     created_rpc_channels: HashSet<String>,
     /// Optional path to a specific file to process. If set, only this file is processed.
@@ -163,7 +163,7 @@ impl<F: FileProvider> SymbolTableCreator<F> {
             proto_comes_from_catalog: false,
             diagnostics_context: None,
             should_process_current_file: true,
-            created_channels: HashSet::new(),
+            created_topics: HashSet::new(),
             created_rpc_channels: HashSet::new(),
             target_file: None,
             target_api: TargetApi::default(),
@@ -296,6 +296,17 @@ impl<F: FileProvider> SymbolTableCreator<F> {
             s.trim().to_string()
         }
     }
+
+    /// Returns FQN of given message_name. May only be called from start_visit functions of VSIDL.
+    fn get_proto_message_fqn(&mut self, current_scope_id: &ScopeId, message_name: &str) -> String {
+        let scope = self.symbol_table.get_scope(current_scope_id).unwrap();
+        // Calling resolve here is safe because Proto files are processed before VSIDL files
+        if let Some(m) = scope.resolve_proto_message(&self.symbol_table, message_name).first() {
+            m.full_name(&self.symbol_table)
+        } else {
+            message_name.to_string()
+        }
+    }
 }
 
 impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
@@ -309,8 +320,23 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             // Reuse existing symbol table
             self.global_scope = Some(GLOBAL_SCOPE_ID);
         }
-        self.created_channels =
-            self.symbol_table.get_all_topic_symbols().iter().map(|s| s.name()).collect();
+        self.created_topics = self
+            .symbol_table
+            .get_all_topic_symbols()
+            .iter()
+            .map(|s| {
+                let message_name = if let Some(message_id) = &s.message {
+                    if let Some(m) = self.symbol_table.get_proto_message_symbol(message_id) {
+                        m.full_name(&self.symbol_table)
+                    } else {
+                        s.message_fqn.clone()
+                    }
+                } else {
+                    s.message_fqn.clone()
+                };
+                (message_name, s.name())
+            })
+            .collect();
         self.created_rpc_channels =
             self.symbol_table.get_all_rpc_channel_symbols().iter().map(|s| s.name()).collect();
         self.current_scope_id = self.global_scope.clone();
@@ -891,10 +917,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             SymbolKind::Publisher(symbol),
         );
 
-        // Create channel symbols if defined inline
+        // Create topic symbols if defined inline
         for (i, topic_name) in node.topic.iter().enumerate() {
-            if !self.created_channels.contains(topic_name) {
-                let topic_symbol = TopicSymbol { ast_node: node.clone(), ..Default::default() };
+            let message_fqn = self.get_proto_message_fqn(&current_scope_id, &node.message);
+
+            if !self.created_topics.contains(&(message_fqn.clone(), topic_name.clone())) {
+                let topic_symbol =
+                    TopicSymbol { message_fqn: message_fqn.clone(), ..Default::default() };
                 let span = node.topic_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
                     topic_name.clone(),
@@ -903,7 +932,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
                 );
                 // Add to global scope
                 self.symbol_table.add_symbol_to_scope(&GLOBAL_SCOPE_ID, &id);
-                self.created_channels.insert(topic_name.clone());
+                self.created_topics.insert((message_fqn, topic_name.clone()));
             };
         }
 
@@ -947,11 +976,13 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
             SymbolKind::Subscriber(symbol),
         );
 
-        // Create channel symbols if defined inline
+        // Create topic symbols if defined inline
         for (i, topic_name) in node.topic.iter().enumerate() {
-            if !self.created_channels.contains(topic_name) {
+            let message_fqn = self.get_proto_message_fqn(&current_scope_id, &node.message);
+
+            if !self.created_topics.contains(&(message_fqn.clone(), topic_name.clone())) {
                 let topic_symbol =
-                    TopicSymbol { ast_node: Publisher::default(), ..Default::default() };
+                    TopicSymbol { message_fqn: message_fqn.clone(), ..Default::default() };
                 let span = node.topic_span.get(i).cloned();
                 let id = self.symbol_table.create_symbol(
                     topic_name.clone(),
@@ -960,7 +991,7 @@ impl<F: FileProvider> VsidlVisitor for SymbolTableCreator<F> {
                 );
                 // Add to global scope
                 self.symbol_table.add_symbol_to_scope(&GLOBAL_SCOPE_ID, &id);
-                self.created_channels.insert(topic_name.clone());
+                self.created_topics.insert((message_fqn, topic_name.clone()));
             };
         }
 
