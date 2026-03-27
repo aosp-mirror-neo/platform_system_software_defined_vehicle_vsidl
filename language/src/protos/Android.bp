@@ -43,6 +43,10 @@ filegroup {
     srcs: [
         "sdv/vsidl/v1/annotations.proto",
     ],
+    visibility: [
+        "//system/software_defined_vehicle:__subpackages__",
+        "//platform_testing/libraries/automotive:__subpackages__",
+    ],
 }
 
 // Vehicle Services IDL (VSIDL) standard library extension for Diagnostics
