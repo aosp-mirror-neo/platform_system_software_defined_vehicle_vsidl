@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-use crate::{
-    implement_ast_node_deref, implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable,
-};
+use crate::{implement_symbol_deref, SymbolCommon, SymbolId, SymbolTable};
 use vsidl_v1::span::Span;
-use vsidl_v1::syntax::service_bundle::Publisher;
 
 use super::proto_message_symbol::ProtoMessageSymbol;
 use super::publisher_symbol::PublisherSymbol;
@@ -30,11 +27,13 @@ use super::subscriber_symbol::SubscriberSymbol;
 /// path associated with a specific Protobuf message type.
 #[derive(Default, Debug, Clone)]
 pub struct TopicSymbol {
-    /// The original VSIDL AST node ([Publisher]) this symbol was created from.
-    /// Topics are created inline by publishers, i.e., each topic has one publisher defining it.
-    pub ast_node: Publisher,
+    // Topics do not have an `ast_node` field, because they are implicitly created.
+    // In case we decide to add an explicit topic syntax to VSIDL, TopicSymbol will
+    // be extended by an `ast_node` field accordingly.
     /// Common information shared across all symbol types (like ID, name, scope).
     pub symbol: SymbolCommon,
+    /// Name of the message type this topic was created from
+    pub(crate) message_fqn: String,
     /// Symbol ID of the [ProtoMessageSymbol] sent over this topic. Requires the symbol table to be linked.
     pub(crate) message: Option<SymbolId>,
     /// Symbol IDs of the [PublisherSymbol]s that publish to this topic. Requires the symbol table to be linked.
@@ -42,8 +41,6 @@ pub struct TopicSymbol {
     /// Symbol IDs of the [SubscriberSymbol]s that subscribe to this topic. Requires the symbol table to be linked.
     pub(crate) subscribers: Vec<SymbolId>,
 }
-// Implements Deref for the ast_node field, allowing direct access to the Publisher fields.
-implement_ast_node_deref!(TopicSymbol, Publisher);
 
 impl TopicSymbol {
     // This macro implements accessors for SymbolCommon, allowing access to its fields directly.

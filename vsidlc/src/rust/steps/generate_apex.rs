@@ -31,21 +31,21 @@ use vsidl_v1_parser::rpc_server_symbol::RpcServerSymbol;
 use vsidl_v1_parser::service_bundle_symbol::ServiceBundleSource;
 use vsidl_v1_parser::SymbolTable;
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 struct AclUnitType {
     name: String,
     acl_name: String,
     members: BTreeSet<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 struct AclServiceUnit {
     name: String,
     acl_name: String,
     members: BTreeSet<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 struct AclData {
     message_unit_types: Vec<AclUnitType>,
     message_service_units: Vec<AclServiceUnit>,
@@ -187,6 +187,9 @@ impl GeneratorStepExecution for GenerateApex {
 }
 
 fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
+    if !symbol_table.uses_pdk29() {
+        return AclData::default();
+    }
     let mut message_unit_types_map: BTreeMap<String, AclUnitType> = BTreeMap::new();
     let mut message_service_units = Vec::new();
 
@@ -290,6 +293,9 @@ fn generate_acl_data(symbol_table: &SymbolTable) -> AclData {
 
 fn generate_permissions_data(symbol_table: &SymbolTable) -> BTreeMap<String, PermissionBundleData> {
     let mut permissions_map: BTreeMap<String, PermissionBundleData> = BTreeMap::new();
+    if symbol_table.uses_pdk29() {
+        return permissions_map;
+    }
 
     // Publishers
     for publisher in symbol_table.get_all_publisher_symbols() {

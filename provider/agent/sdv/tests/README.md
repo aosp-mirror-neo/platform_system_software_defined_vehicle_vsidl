@@ -49,10 +49,10 @@ the VSIDL Provider Call.
 3.  Start a new terminal and run on 1st VM
 
     ```bash
-    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name DiagService --query-variant diagnostics-declaration
-    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name Manager --query-variant publication-descriptor --unit-type-name TirePressure
-    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name HelloService --query-variant rpc-method-descriptor --unit-type-name HelloInterface --method-name SayHello
-    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name Manager --query-variant message-descriptor --message-name com.sdv.google.sample.vsidl_provider.TirePressure
+    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name DiagService --query-variant diagnostics-declaration
+    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name Manager --query-variant publication-descriptor --unit-type-name TirePressure
+    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name HelloService --query-variant rpc-method-descriptor --unit-type-name HelloInterface --method-name SayHello
+    adb -s 0.0.0.0:6520 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name Manager --query-variant message-descriptor --message-name com.android.sdv.sample.vsidl_provider.TirePressure
     ```
 
 4.  Verify the printed logs on instance1
@@ -68,10 +68,10 @@ the VSIDL Provider Call.
 5.  Start a new terminal and run on 2nd VM
 
     ```bash
-    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name DiagService --query-variant diagnostics-declaration
-    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name Manager --query-variant publication-descriptor --unit-type-name TirePressure
-    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name HelloService --query-variant rpc-method-descriptor --unit-type-name HelloInterface --method-name SayHello
-    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.sdv.google.sample.vsidl_provider --bundle-name Manager --query-variant message-descriptor --message-name com.sdv.google.sample.vsidl_provider.TirePressure
+    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name DiagService --query-variant diagnostics-declaration
+    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name Manager --query-variant publication-descriptor --unit-type-name TirePressure
+    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name HelloService --query-variant rpc-method-descriptor --unit-type-name HelloInterface --method-name SayHello
+    adb -s 0.0.0.0:6521 shell su root sdv_vsidl_provider_query --server-vm-name instance2 --package-name com.android.sdv.sample.vsidl_provider --bundle-name Manager --query-variant message-descriptor --message-name com.android.sdv.sample.vsidl_provider.TirePressure
     ```
 
 6.  Verify the printed logs on instance2

@@ -54,7 +54,7 @@ rust_binary {
 prebuilt_etc {
     name: "ivi_acl_vsidl_provider_agent_textproto",
     sub_dir: "sdv_authz_acls/com.android.sdv.vsidl_provider",
-    src: "ivi_acl.textproto",
+    src: "ivi_permissions.textproto",
     filename: "Agent.textproto",
     system_ext_specific: true,
 }

@@ -231,7 +231,8 @@ impl PublicationTypeContext {
             message_count: proto_message
                 .topics(symbol_table)
                 .iter()
-                .map(|c| c.capacity as u32)
+                .flat_map(|topic| topic.publishers(symbol_table))
+                .map(|publisher| publisher.capacity)
                 .max()
                 .unwrap_or_default(),
             // TODO: b/477164517 - Set the is_multipub flag to true once all types of subscribers / observers

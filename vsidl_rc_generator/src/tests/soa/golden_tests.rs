@@ -19,6 +19,7 @@ mod test {
     use anyhow::Context;
     use clap::Parser;
     use protobuf::Message;
+    use std::collections::BTreeMap;
     use std::fs;
     use std::fs::File;
     use std::io::{self, BufRead, BufReader};
@@ -28,6 +29,9 @@ mod test {
     use vsidl_v1::diagnostics_syntax::DiagnosticsDeclaration;
     use vsidl_v1::runtime_config::SomeipRuntimeConfig;
     use vsidl_v1::runtime_config::VsidlRuntimeConfig;
+    use vsidl_v1::someip::some_ip_mapping::Mapping_type;
+    #[allow(unused_imports)]
+    use vsidl_v1::someip::SomeIpMapping;
 
     /// Compares two files, ignoring lines that start with "//" (after trimming whitespace)
     /// and ignoring empty lines.
@@ -151,17 +155,67 @@ mod test {
         assert_eq!(golden_proto, generated_proto);
     }
 
+    /// Sorts repeated fields and maps within the config to ensure deterministic comparison.
+    fn normalize_someip_runtime_config(config: &mut SomeipRuntimeConfig) {
+        // Sort the main some_ip_mapping array.
+        config.some_ip_mapping.sort_by(|a, b| match (&a.mapping_type, &b.mapping_type) {
+            (
+                Some(Mapping_type::SdvTypeMapping(a_map)),
+                Some(Mapping_type::SdvTypeMapping(b_map)),
+            ) => a_map
+                .someip_service_id
+                .cmp(&b_map.someip_service_id)
+                .then_with(|| a_map.unit_type.package_name.cmp(&b_map.unit_type.package_name))
+                .then_with(|| a_map.unit_type.type_name.cmp(&b_map.unit_type.type_name)),
+            (
+                Some(Mapping_type::SomeipServiceMapping(a_map)),
+                Some(Mapping_type::SomeipServiceMapping(b_map)),
+            ) => a_map.someip_service_id.cmp(&b_map.someip_service_id),
+            (
+                Some(Mapping_type::SdvTypeMapping(_)),
+                Some(Mapping_type::SomeipServiceMapping(_)),
+            ) => std::cmp::Ordering::Less,
+            (
+                Some(Mapping_type::SomeipServiceMapping(_)),
+                Some(Mapping_type::SdvTypeMapping(_)),
+            ) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
+            (Some(_), None) => std::cmp::Ordering::Greater,
+            (None, Some(_)) => std::cmp::Ordering::Less,
+            (&Some(_), &Some(_)) => todo!(),
+        });
+
+        // Normalize within each mapping
+        for mapping in &mut config.some_ip_mapping {
+            if let Some(Mapping_type::SomeipServiceMapping(ref mut service_mapping)) =
+                mapping.mapping_type
+            {
+                for instance in &mut service_mapping.instance {
+                    // Sort the sdv_topic_parameterization map by key
+                    let sorted_map: BTreeMap<u32, _> =
+                        instance.sdv_topic_parameterization.clone().into_iter().collect();
+                    instance.sdv_topic_parameterization = sorted_map.into_iter().collect();
+                }
+            }
+            // SdvTypeMapping doesn't seem to have maps that need sorting based on the description.
+        }
+    }
+
     fn compare_someip_runtime_config_proto_files(golden_path: &Path, generated_path: &Path) {
-        let golden_proto: SomeipRuntimeConfig =
-            read_proto_from_file(golden_path).unwrap_or_else(|e| {
+        let mut golden_proto: SomeipRuntimeConfig = read_proto_from_file(golden_path)
+            .unwrap_or_else(|e| {
                 // Panic with a clear error message if the file can't be read.
                 panic!("Failed to build read golden file {:?}: {}", golden_path, e)
             });
 
-        let generated_proto: SomeipRuntimeConfig = read_proto_from_file(generated_path)
+        let mut generated_proto: SomeipRuntimeConfig = read_proto_from_file(generated_path)
             .unwrap_or_else(|e| {
                 panic!("Failed to read generated file {:?}: {}", generated_path, e)
             });
+
+        // Normalize both protos before comparison
+        normalize_someip_runtime_config(&mut golden_proto);
+        normalize_someip_runtime_config(&mut generated_proto);
 
         assert_eq!(golden_proto, generated_proto);
     }

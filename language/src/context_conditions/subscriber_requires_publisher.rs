@@ -49,7 +49,13 @@ impl SymbolTableChecker for SubscriberRequiresPublisher {
         // Case 2: Subscriber has explicit topics, some of them are not published
         let message_topics = subscriber.message(symbol_table).topics(symbol_table);
         for (index, topic) in subscriber.topics(symbol_table).iter().enumerate() {
-            if !message_topics.iter().any(|c| c.name() == *topic) {
+            let topic_has_publisher = message_topics
+                .iter()
+                .find(|c| c.name() == *topic)
+                .map(|c| !c.publishers(symbol_table).is_empty())
+                .unwrap_or(false);
+
+            if !topic_has_publisher {
                 // WARN: There's no publisher for the topic requested by the subscriber
                 self.finding_collector.warn(
                     FindingId::SubscriberRequiresPublisher,

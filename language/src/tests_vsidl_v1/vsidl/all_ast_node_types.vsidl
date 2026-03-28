@@ -379,6 +379,125 @@ some_ip_mapping {
   }
 }
 
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.android.sdv.someip.sample"
+      service_bundle_name: "ServiceBundleFoo"
+      type_name: "SdvInterface"
+    }
+    someip_service_id: 0x48
+    version_major: 0x1
+    version_minor: 0x0
+    offered_topic {
+      type_definition {
+        length_field_size: ZERO
+        field {
+          field_name: "value"
+          field_type {
+            someip_primitive: UINT32
+          }
+        }
+      }
+      someip_ff_methods: true
+    }
+    service_unit_mapping {
+      service_unit_id {
+        package_name: "com.android.sdv.someip.sample"
+        service_bundle_name: "ServiceBundleName"
+        service_unit_name: "com-android-sdv-someip-sample-name"
+      }
+      instance_id: 0x0001
+      fire_and_forget_method {
+        service_id: 0x3700
+        instance_id: 0x1000
+        version_major: 0x1
+        version_minor: 0x0
+        method_id: 0x1000
+      }
+    }
+  }
+}
+
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.android.sdv.test.someip.soa"
+      type_name: "TestRpc"
+    }
+    someip_service_id: 0x4002
+    version_major: 1
+    version_minor: 0
+    service_oriented_mapping {
+      rpc_interface_mapping {
+        offered_interface {
+          method {
+            procedure: "TestMethod"
+            method_id: 0x0001
+            request_payload_mapping {
+              length_field_size: ZERO
+              field {
+                field_name: "req_val"
+                field_type {
+                  someip_primitive: INT16
+                }
+              }
+            }
+            response_payload_mapping {
+              length_field_size: ZERO
+              field {
+                field_name: "res_val"
+                field_type {
+                  someip_primitive: INT16
+                }
+              }
+            }
+          }
+        }
+        rpc_channel_mapping {
+          channel: "test_rpc_channel"
+          instance_id: 0x0001
+        }
+      }
+    }
+  }
+}
+
+some_ip_mapping {
+  sdv_type_mapping {
+    unit_type {
+      package_name: "com.android.sdv.someip.sample"
+      type_name: "SimpleMapping"
+    }
+    someip_service_id: 0x14
+    version_major: 0x1
+    version_minor: 0x0
+    service_oriented_mapping {
+      publication_mapping {
+        offered_topic {
+          type_definition {
+            length_field_size: ZERO
+            field {
+              field_name: "value"
+              field_type {
+                someip_primitive: UINT32
+              }
+            }
+          }
+          simple_mapping {
+            group_id: 0x491
+            event_id: 54
+          }
+        }
+        topic_mapping {
+          topic: "soa-simple-mapping-topic"
+          instance_id: 0x1
+        }
+      }
+    }
+  }
+}
+
 vhal_mapping {
   property {
     prop_config {

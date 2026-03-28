@@ -2719,4 +2719,74 @@ mod test {
         assert!(!dir.path().join("someip-config.binpb").exists());
         assert!(!dir.path().join("diagnostics-config.binpb").exists());
     }
+
+    #[test]
+    fn test_generate_someip_runtime_config_soa_generates_expected_mappings() {
+        // GIVEN
+        let catalog = build_catalog_soa();
+
+        // WHEN
+        let someip_config =
+            generate_some_ip_mapping(&catalog).expect("Failed to generate someip mappings");
+
+        // THEN
+        assert_eq!(someip_config.some_ip_mapping.len(), 2);
+
+        let sdv_mapping = someip_config
+            .some_ip_mapping
+            .iter()
+            .find_map(|mapping| match &mapping.mapping_type {
+                Some(vsidl_v1::someip::some_ip_mapping::Mapping_type::SdvTypeMapping(tm)) => {
+                    if tm.unit_type.as_ref().is_some_and(|ut| {
+                        ut.package_name == "com.android.sdv.sample.someip"
+                            && ut.type_name == "CounterLoadSoa"
+                    }) {
+                        Some(tm)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .expect(
+                "Failed to find someip mapping for com.android.sdv.sample.someip.CounterLoadSoa",
+            );
+
+        assert_eq!(
+            sdv_mapping.unit_type.as_ref().unwrap().package_name,
+            "com.android.sdv.sample.someip"
+        );
+        assert_eq!(sdv_mapping.unit_type.as_ref().unwrap().type_name, "CounterLoadSoa");
+        assert_eq!(sdv_mapping.someip_service_id, 0x14);
+        assert_eq!(sdv_mapping.version_major, 0x1);
+        assert_eq!(sdv_mapping.version_minor, 0x0);
+
+        let soa_mapping = sdv_mapping
+            .service_oriented_mapping
+            .as_ref()
+            .expect("Failed to get service_oriented_mapping");
+
+        let Some(vsidl_v1::someip::some_ip_mapping::sdv_type_mapping::service_oriented_mapping::Soa_mapping_type::PublicationMapping(publication_mapping)) =
+            &soa_mapping.soa_mapping_type
+        else {
+            panic!("Expected PublicationMapping")
+        };
+
+        assert_eq!(publication_mapping.topic_mapping.len(), 1);
+        let topic_mapping = &publication_mapping.topic_mapping[0];
+
+        assert_eq!(topic_mapping.topic, "soa-topic");
+        assert_eq!(topic_mapping.instance_id, 0x1);
+
+        assert_eq!(topic_mapping.fire_and_forget_method.len(), 1);
+        let ff_method = topic_mapping
+            .fire_and_forget_method
+            .first()
+            .expect("Failed to get fire_and_forget_method");
+        assert_eq!(ff_method.service_id, 0x3701);
+        assert_eq!(ff_method.instance_id, 0x1000);
+        assert_eq!(ff_method.version_major, 0x1);
+        assert_eq!(ff_method.version_minor, 0x0);
+        assert_eq!(ff_method.method_id, 0x1000);
+    }
 }

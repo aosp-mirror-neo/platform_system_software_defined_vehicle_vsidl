@@ -47,7 +47,8 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file",
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -78,7 +79,8 @@ genrule {
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
-        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file",
+        " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -122,7 +124,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
-        " --service-bundle-name DiagService",
+        " --service-bundle-name DiagService" +
+        " --target-api pdk29",
     out: [
         "diagnostics-config.binpb",
         "vsidl-config.binpb",
@@ -155,7 +158,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
-        " --service-bundle-name HelloService",
+        " --service-bundle-name HelloService" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -187,7 +191,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
-        " --service-bundle-name OtherManager",
+        " --service-bundle-name OtherManager" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -219,7 +224,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
-        " --service-bundle-name OtherMonitor",
+        " --service-bundle-name OtherMonitor" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -251,7 +257,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
-        " --service-bundle-name Manager",
+        " --service-bundle-name Manager" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -283,7 +290,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_per_bundle_config_file" +
-        " --service-bundle-name Monitor",
+        " --service-bundle-name Monitor" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -327,7 +335,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
-        " --service-bundle-name DiagService",
+        " --service-bundle-name DiagService" +
+        " --target-api pdk29",
     out: [
         "diagnostics-config.binpb",
         "vsidl-config.binpb",
@@ -360,7 +369,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
-        " --service-bundle-name HelloService",
+        " --service-bundle-name HelloService" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -392,7 +402,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
-        " --service-bundle-name OtherManager",
+        " --service-bundle-name OtherManager" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -424,7 +435,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
-        " --service-bundle-name OtherMonitor",
+        " --service-bundle-name OtherMonitor" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -456,7 +468,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
-        " --service-bundle-name Manager",
+        " --service-bundle-name Manager" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -488,7 +501,8 @@ genrule {
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
         " --output-path $(genDir) " +
         " --package-name com.android.sdv.sample.vsidl_provider.apex_with_shared_config_file" +
-        " --service-bundle-name Monitor",
+        " --service-bundle-name Monitor" +
+        " --target-api pdk29",
     out: [
         "vsidl-config.binpb",
     ],
@@ -529,7 +543,8 @@ genrule {
     cmd: "$(location vsidl_rc_generator) " +
         " --vsidl-path  system/software_defined_vehicle/vsidl/language/src/protos" +
         " --catalog-path system/software_defined_vehicle/vsidl/provider/clientlib/test_data/v1/source" +
-        " --output-path $(genDir) ",
+        " --output-path $(genDir) " +
+        " --target-api pdk29",
     out: [
         "someip-config.binpb",
         "vsidl-config.binpb",

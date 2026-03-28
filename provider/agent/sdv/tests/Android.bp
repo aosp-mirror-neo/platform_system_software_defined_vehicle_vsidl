@@ -22,7 +22,6 @@ rust_binary {
     rustlibs: [
         "libanyhow",
         "libfutures",
-        "liblazy_static",
         "liblog_rust",
         "libsdv_log_rust",
         "libsdv_comms_rs",
@@ -32,7 +31,7 @@ rust_binary {
         "libclap",
         "libsdv_dump",
     ],
-    required: ["com.sdv.google.sample.vsidl_provider"],
+    required: ["com.android.sdv.sample.vsidl_provider"],
 }
 
 rust_test {

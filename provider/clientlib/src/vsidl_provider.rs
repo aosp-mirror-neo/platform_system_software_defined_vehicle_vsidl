@@ -1173,20 +1173,24 @@ mod test {
 
         // 1. P1: Available
         tx1.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
+        tokio::task::yield_now().await; // Allow the stream to process
 
         // 2. P2: Unavailable
         tx2.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
-        // P1=Av, P2=Un -> Unavailable
+        tokio::task::yield_now().await; // Allow the stream to process
+                                        // P1=Av, P2=Un -> Unavailable
         assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
 
         // 3. P2: Available
         tx2.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
-        // P1=Av, P2=Av -> Available
+        tokio::task::yield_now().await; // Allow the stream to process
+                                        // P1=Av, P2=Av -> Available
         assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Available));
 
         // 4. P1: Unavailable
         tx1.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
-        // P1=Un, P2=Av -> Unavailable
+        tokio::task::yield_now().await; // Allow the stream to process
+                                        // P1=Un, P2=Av -> Unavailable
         assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
     }
 
@@ -1206,22 +1210,53 @@ mod test {
 
         // 1. P1: Available
         tx1.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
+        tokio::task::yield_now().await; // Allow the stream to process
 
         // 2. P2: Unavailable
         tx2.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
-        // P1=Av, P2=Un -> Unavailable
+        tokio::task::yield_now().await; // Allow the stream to process
+                                        // P1=Av, P2=Un -> Unavailable
         assert_eq!(stream.next().await, Some(AvailabilityChangeEvent::Unavailable));
 
         // 3. P1: Unavailable
         tx1.unbounded_send(AvailabilityChangeEvent::Unavailable).unwrap();
-        // P1=Un, P2=Un -> Unavailable (No change)
+        tokio::task::yield_now().await; // Allow the stream to process
+                                        // P1=Un, P2=Un -> Unavailable (No change)
 
         // 4. P2: Available
         tx2.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
-        // P1=Un, P2=Av -> Unavailable (No change)
+        tokio::task::yield_now().await; // Allow the stream to process
+                                        // P1=Un, P2=Av -> Unavailable (No change)
 
         drop(tx1);
         drop(tx2);
         assert_eq!(stream.next().await, None);
+    }
+
+    #[tokio::test]
+    async fn test_vsidl_provider_dump() {
+        let mut mock_files_provider = MockVsidlConfigProvider::new();
+        mock_files_provider.expect_fmt().returning(|f| write!(f, "MockFilesProvider"));
+        let mut mock_apexes_provider = MockVsidlConfigProvider::new();
+        mock_apexes_provider.expect_fmt().returning(|f| write!(f, "MockApexesProvider"));
+        let mut mock_agent_provider = MockVsidlConfigProvider::new();
+        mock_agent_provider.expect_fmt().returning(|f| write!(f, "MockAgentProvider"));
+
+        let mock_factory = mock_factory(
+            Some(Box::new(mock_files_provider)),
+            Some(Box::new(mock_apexes_provider)),
+            Some(Box::new(mock_agent_provider)),
+            None, // remote agent
+        );
+
+        let vsidl_provider = super::new_for_vsidl_provider_agent_with_injection(mock_factory);
+
+        let dump_output = format!("{}", vsidl_provider);
+
+        assert!(dump_output.contains("Files Provider: MockFilesProvider"));
+        assert!(dump_output.contains("Apexes Provider: MockApexesProvider"));
+        // new_for_vsidl_provider_agent_with_injection doesn't use the agent provider,
+        // so it should not be in the output.
+        assert!(!dump_output.contains("Agent Provider: MockAgentProvider"));
     }
 }
