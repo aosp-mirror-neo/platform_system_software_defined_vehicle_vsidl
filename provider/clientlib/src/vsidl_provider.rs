@@ -1230,6 +1230,10 @@ mod test {
                                         // P1=Un, P2=Un -> Unavailable (No change), so stream should be pending.
         assert_eq!(poll!(stream.next()), Poll::Pending);
 
+        // Force the stream to digest P1's event sequentially.
+        // It shouldn't yield a new state, so we expect it to timeout rather than hang.
+        let _ = tokio::time::timeout(std::time::Duration::from_millis(10), stream.next()).await;
+
         // 4. P2: Available
         tx2.unbounded_send(AvailabilityChangeEvent::Available).unwrap();
         tokio::task::yield_now().await; // Allow the stream to process
