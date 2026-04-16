@@ -86,3 +86,12 @@ sdv_service_bundle_metadata {
 
   authorization_policy_path : "etc/permissions.textproto"
 }
+
+sdv_service_bundle_metadata {
+  name : "Client"
+  version_number : 1
+  version_name : "1"
+  native_library_path : "etc/sdv_service_bundles_manifest.textproto"
+
+  authorization_policy_path : "etc/permissions.textproto"
+}
